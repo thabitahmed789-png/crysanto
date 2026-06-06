@@ -814,8 +814,12 @@ async function doLogout() {
 
 async function fetchProfile() {
   if(!currentUser) return;
-  const {data}=await db.from('users').select('*').eq('auth_id',currentUser.id).single();
-  if(data) userProfile=data;
+  try {
+    const {data,error}=await db.from('users').select('*').eq('auth_id',currentUser.id).single();
+    if(data && !error) userProfile=data;
+  } catch(e) {
+    console.log('Profile fetch error:', e);
+  }
 }
 
 function afterLogin() {
@@ -1049,14 +1053,22 @@ function updatePrices(){
 
 // ── SESSION RESTORE ──
 async function restoreSession(){
-  showLoading(true,{ar:'جارٍ التحميل...',en:'Loading...',tr:'Yükleniyor...'});
-  const {data:{session}}=await db.auth.getSession();
-  if(session && session.user){
-    currentUser=session.user;
-    await fetchProfile();
-    if(userProfile && !isLoggedIn) afterLogin();
+  // timeout احتياطي عشان مش يفضل loading للأبد
+  const timeout = setTimeout(() => showLoading(false), 4000);
+  try {
+    showLoading(true,{ar:'جارٍ التحميل...',en:'Loading...',tr:'Yükleniyor...'});
+    const {data,error} = await db.auth.getSession();
+    if(data?.session?.user){
+      currentUser = data.session.user;
+      await fetchProfile();
+      if(userProfile && !isLoggedIn) afterLogin();
+    }
+  } catch(e) {
+    console.log('Session restore error:', e);
+  } finally {
+    clearTimeout(timeout);
+    showLoading(false);
   }
-  showLoading(false);
 }
 
 
