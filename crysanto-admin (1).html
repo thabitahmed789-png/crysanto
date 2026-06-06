@@ -1,0 +1,2156 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crysanto Admin — لوحة الإدارة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --gold:#C9A84C;--gold-l:#E8C97A;--gold-dim:rgba(201,168,76,0.12);
+  --dark:#060A10;--dark2:#0C1219;--dark3:#101820;--dark4:#141E28;
+  --border:rgba(201,168,76,0.18);--border2:rgba(255,255,255,0.05);
+  --text:#E2E8F0;--muted:#6B7A92;--muted2:#8B97AE;
+  --green:#10D9A0;--green-dim:rgba(16,217,160,0.12);
+  --red:#FF3D60;--red-dim:rgba(255,61,96,0.12);
+  --blue:#3B82F6;--blue-dim:rgba(59,130,246,0.12);
+  --orange:#F97316;--orange-dim:rgba(249,115,22,0.12);
+  --purple:#A855F7;--purple-dim:rgba(168,85,247,0.12);
+  --sidebar:200px;
+  --font:'Cairo',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:var(--text);font-family:var(--font);min-height:100vh;direction:rtl;}
+body.ltr{direction:ltr;}
+
+/* GRID BG */
+body::after{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(201,168,76,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,0.03) 1px,transparent 1px);
+  background-size:50px 50px;pointer-events:none;z-index:0;}
+
+/* ── LOGIN SCREEN ── */
+#login-screen{
+  position:fixed;inset:0;z-index:1000;
+  background:var(--dark);display:flex;align-items:center;justify-content:center;
+}
+.login-card{
+  background:var(--dark2);border:1px solid var(--border);border-radius:24px;
+  padding:48px;width:420px;max-width:95vw;position:relative;z-index:1;
+}
+.login-logo{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--gold);text-align:center;margin-bottom:4px;}
+.login-sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:36px;}
+.login-badge{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--red-dim);border:1px solid rgba(255,61,96,0.3);
+  padding:10px;border-radius:10px;margin-bottom:24px;font-size:13px;color:var(--red);
+}
+.form-g{margin-bottom:18px;}
+.form-g label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;letter-spacing:.5px;}
+.form-g input{
+  width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:10px;
+  padding:13px 16px;color:var(--text);font-size:14px;font-family:var(--font);
+  transition:.2s;outline:none;
+}
+.form-g input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-dim);}
+.err-msg{color:var(--red);font-size:12px;margin-top:8px;display:none;}
+.btn-login-main{
+  width:100%;padding:14px;border-radius:10px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--gold),var(--gold-l));
+  color:#000;font-size:15px;font-weight:700;font-family:var(--font);
+  transition:.3s;
+}
+.btn-login-main:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(201,168,76,0.3);}
+
+/* ── LAYOUT ── */
+#app{display:none;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{
+  position:fixed;top:0;right:0;left:0;height:60px;z-index:100;
+  background:rgba(6,10,16,0.92);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 24px;
+}
+.tb-logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--gold);}
+.tb-logo span{font-size:11px;background:var(--red-dim);color:var(--red);border:1px solid rgba(255,61,96,0.3);padding:2px 8px;border-radius:100px;margin-right:8px;font-family:var(--font);font-weight:700;}
+.tb-right{display:flex;align-items:center;gap:16px;}
+.tb-admin{font-size:13px;color:var(--muted);}
+.tb-admin strong{color:var(--gold);}
+.notif-bell{
+  width:36px;height:36px;border-radius:8px;background:var(--dark3);
+  border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;font-size:16px;transition:.2s;
+}
+.notif-bell:hover{border-color:var(--gold);}
+.notif-dot{
+  position:absolute;top:6px;right:6px;width:8px;height:8px;
+  background:var(--red);border-radius:50%;border:2px solid var(--dark);
+}
+.tb-logout{
+  padding:7px 16px;border-radius:8px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted);font-size:12px;font-weight:600;
+  cursor:pointer;font-family:var(--font);transition:.2s;
+}
+.tb-logout:hover{border-color:var(--red);color:var(--red);}
+
+/* LANG btns */
+.lang-sw{display:flex;gap:3px;background:var(--dark3);border:1px solid var(--border2);border-radius:8px;padding:3px;}
+.lb{padding:4px 10px;border-radius:5px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;}
+.lb.on{background:var(--gold);color:#000;}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;top:60px;right:0;bottom:0;width:var(--sidebar);z-index:90;
+  background:var(--dark2);border-left:1px solid var(--border);
+  overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:2px;
+}
+body.ltr .sidebar{right:auto;left:0;border-left:none;border-right:1px solid var(--border);}
+.sb-section{font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;padding:16px 8px 6px;text-transform:uppercase;}
+.sb-item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  cursor:pointer;transition:.15s;font-size:13px;color:var(--muted2);font-weight:500;
+}
+.sb-item:hover{background:var(--gold-dim);color:var(--gold);}
+.sb-item.active{background:var(--gold-dim);color:var(--gold);font-weight:700;}
+.sb-icon{font-size:16px;flex-shrink:0;}
+.sb-badge{
+  margin-right:auto;background:var(--red);color:#fff;border-radius:100px;
+  font-size:10px;font-weight:700;padding:1px 7px;min-width:20px;text-align:center;
+}
+body.ltr .sb-badge{margin-right:0;margin-left:auto;}
+
+/* MAIN */
+.main{
+  margin-top:60px;margin-right:var(--sidebar);padding:28px;
+  position:relative;z-index:1;min-height:calc(100vh - 60px);
+}
+body.ltr .main{margin-right:0;margin-left:var(--sidebar);}
+
+/* PANELS */
+.section-title{font-size:20px;font-weight:800;margin-bottom:20px;letter-spacing:-.5px;}
+.section-title span{font-size:13px;color:var(--muted);font-weight:400;margin-right:10px;}
+body.ltr .section-title span{margin-right:0;margin-left:10px;}
+
+.panel{background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px;}
+.panel-head{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;
+  font-size:14px;font-weight:700;
+}
+.panel-head .ph-actions{display:flex;gap:8px;}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+.sc{
+  background:var(--dark2);border:1px solid var(--border);border-radius:14px;
+  padding:22px;position:relative;overflow:hidden;transition:.2s;
+}
+.sc:hover{border-color:var(--gold);}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.sc.gold::before{background:linear-gradient(90deg,var(--gold),transparent);}
+.sc.green::before{background:linear-gradient(90deg,var(--green),transparent);}
+.sc.red::before{background:linear-gradient(90deg,var(--red),transparent);}
+.sc.blue::before{background:linear-gradient(90deg,var(--blue),transparent);}
+.sc.orange::before{background:linear-gradient(90deg,var(--orange),transparent);}
+.sc.purple::before{background:linear-gradient(90deg,var(--purple),transparent);}
+.sc-icon{font-size:28px;margin-bottom:12px;}
+.sc-label{font-size:12px;color:var(--muted);margin-bottom:6px;}
+.sc-val{font-size:28px;font-weight:900;font-family:var(--mono);}
+.sc.gold .sc-val{color:var(--gold);}
+.sc.green .sc-val{color:var(--green);}
+.sc.red .sc-val{color:var(--red);}
+.sc.blue .sc-val{color:var(--blue);}
+.sc.orange .sc-val{color:var(--orange);}
+.sc.purple .sc-val{color:var(--purple);}
+.sc-trend{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:4px;}
+.sc-trend.up{color:var(--green);}
+.sc-trend.down{color:var(--red);}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{padding:12px 14px;font-size:11px;font-weight:700;color:var(--muted);
+   border-bottom:1px solid var(--border);text-align:right;letter-spacing:.5px;text-transform:uppercase;}
+body.ltr th{text-align:left;}
+td{padding:14px;font-size:13px;border-bottom:1px solid var(--border2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(201,168,76,0.03);}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;}
+.b-active{background:var(--green-dim);color:var(--green);}
+.b-pending{background:var(--orange-dim);color:var(--orange);}
+.b-blocked{background:var(--red-dim);color:var(--red);}
+.b-approved{background:var(--green-dim);color:var(--green);}
+.b-rejected{background:var(--red-dim);color:var(--red);}
+.b-kyc{background:var(--blue-dim);color:var(--blue);}
+.b-gold{background:var(--gold-dim);color:var(--gold);}
+
+/* ACTION BTNS */
+.act-btn{
+  padding:5px 12px;border-radius:6px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted2);font-size:11px;font-weight:600;
+  cursor:pointer;font-family:var(--font);transition:.2s;
+}
+.act-btn:hover{border-color:var(--gold);color:var(--gold);}
+.act-btn.green:hover{border-color:var(--green);color:var(--green);}
+.act-btn.red:hover{border-color:var(--red);color:var(--red);}
+.act-btn.blue:hover{border-color:var(--blue);color:var(--blue);}
+.act-btn-primary{
+  padding:8px 18px;border-radius:8px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--gold),var(--gold-l));
+  color:#000;font-size:13px;font-weight:700;font-family:var(--font);transition:.2s;
+}
+.act-btn-primary:hover{opacity:.85;}
+
+/* SEARCH BAR */
+.search-bar{
+  display:flex;align-items:center;gap:10px;background:var(--dark);
+  border:1px solid var(--border2);border-radius:10px;padding:8px 14px;
+  margin-bottom:16px;
+}
+.search-bar input{
+  background:none;border:none;outline:none;color:var(--text);
+  font-size:13px;font-family:var(--font);flex:1;
+}
+.search-bar input::placeholder{color:var(--muted);}
+
+/* FILTER TABS */
+.filter-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.ft{
+  padding:6px 16px;border-radius:8px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted);font-size:12px;font-weight:600;
+  cursor:pointer;font-family:var(--font);transition:.2s;
+}
+.ft.on{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+
+/* PROFIT CONTROL */
+.profit-ctrl{
+  display:grid;grid-template-columns:1fr 1fr;gap:20px;
+}
+.profit-card{background:var(--dark3);border:1px solid var(--border2);border-radius:12px;padding:20px;}
+.profit-card h4{font-size:14px;font-weight:700;margin-bottom:16px;}
+.input-group{display:flex;gap:8px;}
+.input-group input{
+  flex:1;background:var(--dark);border:1px solid var(--border2);border-radius:8px;
+  padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono);
+}
+.input-group input:focus{outline:none;border-color:var(--gold);}
+
+/* CHART */
+.chart-wrap{position:relative;height:200px;margin-top:8px;}
+canvas{display:block;}
+
+/* AVATAR */
+.u-av{
+  width:34px;height:34px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;font-family:var(--mono);flex-shrink:0;
+}
+
+/* NOTIF ALERT */
+.alert-bar{
+  background:var(--orange-dim);border:1px solid rgba(249,115,22,0.3);
+  border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;
+  font-size:13px;margin-bottom:20px;
+}
+.alert-bar.red{background:var(--red-dim);border-color:rgba(255,61,96,0.3);}
+.alert-bar.green{background:var(--green-dim);border-color:rgba(16,217,160,0.3);}
+
+/* NOTIF COMPOSER */
+.notif-preview{
+  background:var(--dark);border:1px solid var(--border);border-radius:12px;
+  padding:16px;margin-top:12px;font-size:13px;color:var(--muted);
+  min-height:60px;
+}
+
+/* MODAL */
+.modal-bg{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);
+  backdrop-filter:blur(8px);z-index:500;align-items:center;justify-content:center;
+}
+.modal-bg.open{display:flex;}
+.modal{
+  background:var(--dark2);border:1px solid var(--border);border-radius:20px;
+  padding:36px;max-width:500px;width:90%;position:relative;
+}
+.modal h3{font-size:20px;font-weight:800;margin-bottom:20px;}
+.m-close{
+  position:absolute;top:16px;left:16px;background:var(--dark3);border:1px solid var(--border2);
+  color:var(--muted);border-radius:8px;width:30px;height:30px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;
+}
+body.ltr .m-close{left:auto;right:16px;}
+.m-close:hover{color:var(--text);}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;left:24px;z-index:600;
+  background:var(--dark2);border:1px solid var(--green);border-radius:12px;
+  padding:14px 20px;font-size:13px;color:var(--green);
+  transform:translateY(60px);opacity:0;transition:.3s;pointer-events:none;
+  display:flex;align-items:center;gap:8px;
+}
+body.ltr .toast{left:auto;right:24px;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* SCROLL */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--dark2);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .main{margin-right:0!important;margin-left:0!important;padding:16px;}
+  .stat-grid{grid-template-columns:1fr 1fr;}
+  .profit-ctrl{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">Crysanto</div>
+    <div class="login-sub" id="ls-sub">لوحة إدارة النظام — دخول مقيد</div>
+    <div class="login-badge">🔐 <span id="ls-warn">منطقة محمية — المسؤولون فقط</span></div>
+    <div class="form-g">
+      <label id="ll-user">اسم المستخدم</label>
+      <input type="text" id="li-user" placeholder="admin">
+    </div>
+    <div class="form-g">
+      <label id="ll-pass">كلمة المرور</label>
+      <input type="password" id="li-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="err-msg" id="li-err">❌ بيانات خاطئة، حاول مجدداً</div>
+    </div>
+    <button class="btn-login-main" onclick="doLogin()" id="ll-btn">دخول لوحة الإدارة</button>
+    <div style="margin-top:16px;text-align:center">
+      <div class="lang-sw" style="display:inline-flex">
+        <button class="lb on" onclick="setLang('ar')">عر</button>
+        <button class="lb" onclick="setLang('en')">EN</button>
+        <button class="lb" onclick="setLang('tr')">TR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-logo">Crysanto <span id="adm-tag">ADMIN</span></div>
+    <div class="tb-right">
+      <div class="lang-sw">
+        <button class="lb on" onclick="setLang('ar')">عر</button>
+        <button class="lb" onclick="setLang('en')">EN</button>
+        <button class="lb" onclick="setLang('tr')">TR</button>
+      </div>
+      <div class="notif-bell" onclick="switchSection('s-notifs')">🔔<div class="notif-dot"></div></div>
+      <div class="tb-admin"><span id="tb-welcome">مرحباً،</span> <strong>Admin</strong></div>
+      <button class="tb-logout" onclick="doLogout()" id="tb-logout-btn">خروج</button>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-section" id="sb-s1">الرئيسية</div>
+    <div class="sb-item active" onclick="switchSection('s-overview')" id="sb-overview">
+      <span class="sb-icon">📊</span><span class="sb-lbl" data-ar="نظرة عامة" data-en="Overview" data-tr="Genel Bakış">نظرة عامة</span>
+    </div>
+
+    <div class="sb-section" id="sb-s2">إدارة</div>
+    <div class="sb-item" onclick="switchSection('s-users')" id="sb-users">
+      <span class="sb-icon">👥</span><span class="sb-lbl" data-ar="المستخدمون" data-en="Users" data-tr="Kullanıcılar">المستخدمون</span>
+      <span class="sb-badge" id="users-badge">48K</span>
+    </div>
+    <div class="sb-item" onclick="switchSection('s-deposits')" id="sb-deposits">
+      <span class="sb-icon">📥</span><span class="sb-lbl" data-ar="الإيداعات" data-en="Deposits" data-tr="Yatırımlar">الإيداعات</span>
+      <span class="sb-badge" id="dep-badge">12</span>
+    </div>
+    <div class="sb-item" onclick="switchSection('s-withdrawals')" id="sb-withdrawals">
+      <span class="sb-icon">📤</span><span class="sb-lbl" data-ar="السحوبات" data-en="Withdrawals" data-tr="Çekimler">السحوبات</span>
+      <span class="sb-badge" id="wd-badge">27</span>
+    </div>
+    <div class="sb-item" onclick="switchSection('s-investments')" id="sb-investments">
+      <span class="sb-icon">💹</span><span class="sb-lbl" data-ar="الاستثمارات" data-en="Investments" data-tr="Yatırımlar">الاستثمارات</span>
+    </div>
+    <div class="sb-item" onclick="switchSection('s-kyc')" id="sb-kyc">
+      <span class="sb-icon">🪪</span><span class="sb-lbl" data-ar="KYC طلبات" data-en="KYC Requests" data-tr="KYC Talepleri">KYC طلبات</span>
+      <span class="sb-badge" style="background:var(--blue)">8</span>
+    </div>
+    <div class="sb-item" onclick="switchSection('s-referrals')" id="sb-referrals">
+      <span class="sb-icon">🎁</span><span class="sb-lbl" data-ar="الإحالات" data-en="Referrals" data-tr="Referanslar">الإحالات</span>
+    </div>
+
+    <div class="sb-section" id="sb-s3">التحكم</div>
+    <div class="sb-item" onclick="switchSection('s-profits')" id="sb-profits">
+      <span class="sb-icon">⚙️</span><span class="sb-lbl" data-ar="التحكم بالأرباح" data-en="Profit Control" data-tr="Kar Kontrolü">التحكم بالأرباح</span>
+    </div>
+    <div class="sb-item" onclick="switchSection('s-packages')" id="sb-packages">
+      <span class="sb-icon">📦</span><span class="sb-lbl" data-ar="الباقات" data-en="Packages" data-tr="Paketler">الباقات</span>
+    </div>
+    <div class="sb-item" onclick="switchSection('s-notifs')" id="sb-notifs">
+      <span class="sb-icon">📢</span><span class="sb-lbl" data-ar="إرسال إشعارات" data-en="Send Notifications" data-tr="Bildirim Gönder">إرسال إشعارات</span>
+    </div>
+    <div class="sb-item" onclick="switchSection('s-wallets')" id="sb-wallets">
+      <span class="sb-icon">👛</span><span class="sb-lbl" data-ar="محافظ الاستقبال" data-en="Deposit Wallets" data-tr="Yatırım Cüzdanları">محافظ الاستقبال</span>
+    </div>
+    <div class="sb-item" onclick="switchSection('s-stats')" id="sb-stats">
+      <span class="sb-icon">📈</span><span class="sb-lbl" data-ar="الإحصائيات" data-en="Statistics" data-tr="İstatistikler">الإحصائيات</span>
+    </div>
+    <div class="sb-item" onclick="switchSection('s-settings')" id="sb-settings">
+      <span class="sb-icon">🔧</span><span class="sb-lbl" data-ar="الإعدادات" data-en="Settings" data-tr="Ayarlar">الإعدادات</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main-content">
+
+    <!-- ══ OVERVIEW ══ -->
+    <div id="s-overview" class="section-wrap">
+      <div class="alert-bar green">✅ <span id="ov-alert">جميع الأنظمة تعمل بشكل طبيعي · آخر تحديث: الآن</span></div>
+      <div class="stat-grid">
+        <div class="sc gold"><div class="sc-icon">💰</div><div class="sc-label" id="sc1l">إجمالي الرصيد</div><div class="sc-val" id="sc1v">$14.2M</div><div class="sc-trend up">↑ +8.4% هذا الشهر</div></div>
+        <div class="sc green"><div class="sc-icon">👥</div><div class="sc-label" id="sc2l">المستخدمون الكليون</div><div class="sc-val" id="sc2v">48,214</div><div class="sc-trend up">↑ +342 اليوم</div></div>
+        <div class="sc blue"><div class="sc-icon">📥</div><div class="sc-label" id="sc3l">إيداعات اليوم</div><div class="sc-val" id="sc3v">$284K</div><div class="sc-trend up">↑ +12%</div></div>
+        <div class="sc orange"><div class="sc-icon">📤</div><div class="sc-label" id="sc4l">سحوبات معلقة</div><div class="sc-val" id="sc4v">127</div><div class="sc-trend down">↓ 27 جديد</div></div>
+        <div class="sc red"><div class="sc-icon">🚫</div><div class="sc-label" id="sc5l">حسابات محظورة</div><div class="sc-val" id="sc5v">23</div><div class="sc-trend down">↑ 2 اليوم</div></div>
+        <div class="sc purple"><div class="sc-icon">🪪</div><div class="sc-label" id="sc6l">طلبات KYC</div><div class="sc-val" id="sc6v">8</div><div class="sc-trend up">↑ 3 جديد</div></div>
+        <div class="sc gold"><div class="sc-icon">🎁</div><div class="sc-label" id="sc7l">أرباح الإحالات</div><div class="sc-val" id="sc7v">$42K</div><div class="sc-trend up">↑ +5%</div></div>
+        <div class="sc green"><div class="sc-icon">📊</div><div class="sc-label" id="sc8l">صافي الأرباح</div><div class="sc-val" id="sc8v">$4.4M</div><div class="sc-trend up">↑ +18%</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:20px">
+        <div class="panel">
+          <div class="panel-head"><span id="rev-chart-title">إيرادات آخر 30 يوم</span></div>
+          <div class="chart-wrap"><canvas id="rev-canvas"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span id="dist-title">توزيع العملات</span></div>
+          <div class="chart-wrap"><canvas id="dist-canvas"></canvas></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span id="recent-tx-title">آخر المعاملات</span></div>
+        <div class="tbl-wrap" id="recent-tx-wrap"></div>
+      </div>
+    </div>
+
+    <!-- ══ USERS ══ -->
+    <div id="s-users" class="section-wrap" style="display:none">
+      <div class="section-title" id="users-title">إدارة المستخدمين <span id="users-count-lbl">48,214 مستخدم</span></div>
+      <div class="filter-tabs">
+        <button class="ft on" onclick="filterUsers(this,'all')" id="fu-all">الكل</button>
+        <button class="ft" onclick="filterUsers(this,'active')" id="fu-active">نشط</button>
+        <button class="ft" onclick="filterUsers(this,'pending')" id="fu-pending">معلق</button>
+        <button class="ft" onclick="filterUsers(this,'blocked')" id="fu-blocked">محظور</button>
+      </div>
+      <div class="search-bar">
+        <span>🔍</span>
+        <input type="text" id="user-search" placeholder="ابحث بالاسم أو البريد..." oninput="renderUsers()">
+      </div>
+      <div class="panel">
+        <div class="tbl-wrap" id="users-table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- ══ DEPOSITS ══ -->
+    <div id="s-deposits" class="section-wrap" style="display:none">
+      <div class="section-title" id="dep-title">طلبات الإيداع <span id="dep-pending-lbl">12 معلق</span></div>
+      <div class="alert-bar" id="dep-alert">⏳ يوجد 12 طلب إيداع ينتظر المراجعة والموافقة</div>
+      <div class="filter-tabs">
+        <button class="ft on" onclick="filterDep(this,'all')" id="fd-all">الكل</button>
+        <button class="ft" onclick="filterDep(this,'pending')" id="fd-pend">معلق</button>
+        <button class="ft" onclick="filterDep(this,'approved')" id="fd-app">مقبول</button>
+        <button class="ft" onclick="filterDep(this,'rejected')" id="fd-rej">مرفوض</button>
+      </div>
+      <div class="panel">
+        <div class="tbl-wrap" id="dep-table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- ══ WITHDRAWALS ══ -->
+    <div id="s-withdrawals" class="section-wrap" style="display:none">
+      <div class="section-title" id="wd-title">طلبات السحب <span id="wd-pending-lbl">27 معلق</span></div>
+      <div class="alert-bar red" id="wd-alert">🔴 يوجد 27 طلب سحب يحتاج مراجعة عاجلة</div>
+      <div class="filter-tabs">
+        <button class="ft on" onclick="filterWd(this,'all')" id="fw-all">الكل</button>
+        <button class="ft" onclick="filterWd(this,'pending')" id="fw-pend">معلق</button>
+        <button class="ft" onclick="filterWd(this,'approved')" id="fw-app">مقبول</button>
+        <button class="ft" onclick="filterWd(this,'rejected')" id="fw-rej">مرفوض</button>
+      </div>
+      <div class="panel">
+        <div class="tbl-wrap" id="wd-table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- ══ INVESTMENTS ══ -->
+    <div id="s-investments" class="section-wrap" style="display:none">
+      <div class="section-title" id="inv-title">الاستثمارات النشطة</div>
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="sc gold"><div class="sc-icon">⭐</div><div class="sc-label" id="inv-sc1l">الباقة الأساسية</div><div class="sc-val">1,240</div><div class="sc-trend up">مستثمر نشط</div></div>
+        <div class="sc gold"><div class="sc-icon">🥇</div><div class="sc-label" id="inv-sc2l">الباقة الذهبية</div><div class="sc-val">3,820</div><div class="sc-trend up">مستثمر نشط</div></div>
+        <div class="sc purple"><div class="sc-icon">💎</div><div class="sc-label" id="inv-sc3l">باقة VIP</div><div class="sc-val">892</div><div class="sc-trend up">مستثمر نشط</div></div>
+      </div>
+      <div class="panel">
+        <div class="tbl-wrap" id="inv-table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- ══ KYC ══ -->
+    <div id="s-kyc" class="section-wrap" style="display:none">
+      <div class="section-title" id="kyc-main-title">طلبات التحقق KYC</div>
+      <div class="alert-bar" id="kyc-alert">🪪 يوجد 8 طلبات KYC جديدة تحتاج مراجعة</div>
+      <div class="panel">
+        <div class="tbl-wrap" id="kyc-table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- ══ REFERRALS ══ -->
+    <div id="s-referrals" class="section-wrap" style="display:none">
+      <div class="section-title" id="ref-title">نظام الإحالات</div>
+      <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="sc green"><div class="sc-icon">🎁</div><div class="sc-label" id="ref-sc1l">إجمالي الإحالات</div><div class="sc-val">12,847</div><div class="sc-trend up">↑ +120 اليوم</div></div>
+        <div class="sc gold"><div class="sc-icon">💵</div><div class="sc-label" id="ref-sc2l">عمولات مدفوعة</div><div class="sc-val">$42K</div><div class="sc-trend up">↑ +8%</div></div>
+        <div class="sc orange"><div class="sc-icon">⏳</div><div class="sc-label" id="ref-sc3l">عمولات معلقة</div><div class="sc-val">$6,200</div><div class="sc-trend">انتظار</div></div>
+        <div class="sc blue"><div class="sc-icon">📊</div><div class="sc-label" id="ref-sc4l">معدل التحويل</div><div class="sc-val">38%</div><div class="sc-trend up">↑ +2%</div></div>
+      </div>
+      <div class="panel">
+        <div class="tbl-wrap" id="ref-table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- ══ PROFIT CONTROL ══ -->
+    <div id="s-profits" class="section-wrap" style="display:none">
+      <div class="section-title" id="profit-title">التحكم بالأرباح</div>
+      <div class="alert-bar">⚙️ <span id="profit-alert">تحكم يدوي بنسب الأرباح اليومية لكل باقة — التغييرات تُطبق فوراً</span></div>
+      <div class="profit-ctrl">
+        <div>
+          <div class="profit-card" style="margin-bottom:16px">
+            <h4 id="pc-title1">⭐ الباقة الأساسية</h4>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:8px" id="pc-l1">نسبة الربح اليومي (%)</label>
+            <div class="input-group">
+              <input type="number" id="p1-rate" value="2.5" step="0.1" min="0" max="20">
+              <button class="act-btn-primary" onclick="applyProfit(1)" id="pc-apply1">تطبيق</button>
+            </div>
+            <div style="margin-top:12px;padding:10px;background:var(--dark);border-radius:8px;font-family:var(--mono);font-size:13px">
+              <span style="color:var(--muted)">مجموع الأرباح اليوم: </span><span style="color:var(--gold)" id="p1-total">$3,100</span>
+            </div>
+          </div>
+          <div class="profit-card" style="margin-bottom:16px">
+            <h4 id="pc-title2">🥇 الباقة الذهبية</h4>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:8px" id="pc-l2">نسبة الربح اليومي (%)</label>
+            <div class="input-group">
+              <input type="number" id="p2-rate" value="4.8" step="0.1" min="0" max="20">
+              <button class="act-btn-primary" onclick="applyProfit(2)" id="pc-apply2">تطبيق</button>
+            </div>
+            <div style="margin-top:12px;padding:10px;background:var(--dark);border-radius:8px;font-family:var(--mono);font-size:13px">
+              <span style="color:var(--muted)">مجموع الأرباح اليوم: </span><span style="color:var(--gold)" id="p2-total">$18,336</span>
+            </div>
+          </div>
+          <div class="profit-card">
+            <h4 id="pc-title3">💎 باقة VIP</h4>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:8px" id="pc-l3">نسبة الربح اليومي (%)</label>
+            <div class="input-group">
+              <input type="number" id="p3-rate" value="8.2" step="0.1" min="0" max="20">
+              <button class="act-btn-primary" onclick="applyProfit(3)" id="pc-apply3">تطبيق</button>
+            </div>
+            <div style="margin-top:12px;padding:10px;background:var(--dark);border-radius:8px;font-family:var(--mono);font-size:13px">
+              <span style="color:var(--muted)">مجموع الأرباح اليوم: </span><span style="color:var(--gold)" id="p3-total">$36,859</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="panel" style="margin-bottom:0">
+            <div class="panel-head"><span id="plog-title">سجل التعديلات</span></div>
+            <div id="profit-log" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PACKAGES ══ -->
+    <div id="s-packages" class="section-wrap" style="display:none">
+      <div class="section-title" id="pkg-title">إدارة الباقات</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px" id="pkg-cards"></div>
+    </div>
+
+    <!-- ══ NOTIFICATIONS ══ -->
+    <div id="s-notifs" class="section-wrap" style="display:none">
+      <div class="section-title" id="notif-send-title">إرسال الإشعارات</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="panel">
+          <div class="panel-head"><span id="notif-compose-title">إنشاء إشعار</span></div>
+          <div class="form-g">
+            <label id="notif-target-label">المستهدفون</label>
+            <select id="notif-target" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font);cursor:pointer">
+              <option value="all" id="nt-opt-all">جميع المستخدمين</option>
+              <option value="active" id="nt-opt-active">المستخدمون النشطون</option>
+              <option value="vip" id="nt-opt-vip">مشتركو VIP</option>
+              <option value="gold" id="nt-opt-gold">مشتركو الذهبية</option>
+              <option value="kyc" id="nt-opt-kyc">بانتظار KYC</option>
+            </select>
+          </div>
+          <div class="form-g">
+            <label id="notif-type-label">نوع الإشعار</label>
+            <div class="filter-tabs" style="margin-bottom:0">
+              <button class="ft on" onclick="setNotifType(this,'info')" id="nt-info">💬 معلومات</button>
+              <button class="ft" onclick="setNotifType(this,'success')" id="nt-success">✅ نجاح</button>
+              <button class="ft" onclick="setNotifType(this,'warning')" id="nt-warning">⚠️ تحذير</button>
+              <button class="ft" onclick="setNotifType(this,'profit')" id="nt-profit">💰 ربح</button>
+            </div>
+          </div>
+          <div class="form-g">
+            <label id="notif-title-label">عنوان الإشعار</label>
+            <input type="text" id="notif-title-in" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)" oninput="updateNotifPreview()">
+          </div>
+          <div class="form-g">
+            <label id="notif-body-label">نص الإشعار</label>
+            <textarea id="notif-body-in" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font);resize:vertical;min-height:80px" oninput="updateNotifPreview()"></textarea>
+          </div>
+          <div class="notif-preview" id="notif-preview">
+            <span style="color:var(--muted)">معاينة الإشعار ستظهر هنا...</span>
+          </div>
+          <button class="act-btn-primary" style="width:100%;margin-top:16px" onclick="sendNotif()" id="send-notif-btn">📢 إرسال الإشعار</button>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span id="notif-hist-title">سجل الإشعارات المرسلة</span></div>
+          <div id="notif-history" style="display:flex;flex-direction:column;gap:10px;max-height:500px;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ WALLETS ══ -->
+    <div id="s-wallets" class="section-wrap" style="display:none">
+      <div class="section-title" id="wallets-title">محافظ الاستقبال</div>
+      <div class="alert-bar">🔐 <span id="wallets-alert">هذه هي عناوين محافظ استقبال الإيداعات — تأكد من دقتها دائماً</span></div>
+      <div id="wallets-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px"></div>
+    </div>
+
+    <!-- ══ STATS ══ -->
+    <div id="s-stats" class="section-wrap" style="display:none">
+      <div class="section-title" id="stats-title">الإحصائيات التفصيلية</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="panel">
+          <div class="panel-head"><span id="stats-monthly-title">إيرادات شهرية</span></div>
+          <div class="chart-wrap"><canvas id="monthly-canvas"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span id="stats-reg-title">تسجيلات يومية (آخر أسبوع)</span></div>
+          <div class="chart-wrap"><canvas id="reg-canvas"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span id="stats-coins-title">توزيع الإيداعات بالعملة</span></div>
+          <div class="chart-wrap"><canvas id="coins-canvas"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span id="stats-geo-title">توزيع المستخدمين جغرافياً</span></div>
+          <div id="geo-list" style="display:flex;flex-direction:column;gap:10px;padding-top:8px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS ══ -->
+    <div id="s-settings" class="section-wrap" style="display:none">
+      <div class="section-title" id="settings-title">إعدادات النظام</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="panel">
+          <div class="panel-head"><span id="set-site-title">إعدادات الموقع</span></div>
+          <div class="form-g"><label id="set-sitename-l">اسم الموقع</label><input type="text" value="Crysanto" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
+          <div class="form-g"><label id="set-email-l">البريد الإلكتروني</label><input type="email" value="support@crysanto.io" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
+          <div class="form-g"><label id="set-min-dep-l">الحد الأدنى للإيداع ($)</label><input type="number" value="100" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
+          <div class="form-g"><label id="set-min-wd-l">الحد الأدنى للسحب ($)</label><input type="number" value="50" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
+          <button class="act-btn-primary" onclick="showToast('تم حفظ الإعدادات ✓')" id="set-save-btn">💾 حفظ الإعدادات</button>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span id="set-sec-title">إعدادات الأمان</span></div>
+          <div class="form-g"><label id="set-pass-l">كلمة مرور الإدارة</label><input type="password" placeholder="••••••••" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
+          <div class="form-g"><label id="set-newpass-l">كلمة مرور جديدة</label><input type="password" placeholder="••••••••" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--dark);border-radius:8px;margin-bottom:12px">
+            <span style="font-size:13px" id="set-maint-l">وضع الصيانة</span>
+            <label style="position:relative;width:44px;height:24px;cursor:pointer">
+              <input type="checkbox" id="maint-toggle" style="opacity:0;width:0;height:0" onchange="toggleMaint()">
+              <span id="toggle-track" style="position:absolute;inset:0;background:var(--border2);border-radius:12px;transition:.3s"></span>
+              <span id="toggle-thumb" style="position:absolute;top:3px;right:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.3s"></span>
+            </label>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--dark);border-radius:8px;margin-bottom:12px">
+            <span style="font-size:13px" id="set-reg-l">السماح بالتسجيل</span>
+            <label style="position:relative;width:44px;height:24px;cursor:pointer">
+              <input type="checkbox" checked style="opacity:0;width:0;height:0">
+              <span style="position:absolute;inset:0;background:var(--green);border-radius:12px"></span>
+              <span style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%"></span>
+            </label>
+          </div>
+          <button class="act-btn-primary" onclick="showToast('تم حفظ إعدادات الأمان ✓')" id="set-sec-save">🔐 حفظ إعدادات الأمان</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- USER DETAIL MODAL -->
+<div class="modal-bg" id="user-modal">
+  <div class="modal">
+    <button class="m-close" onclick="closeModal()">✕</button>
+    <h3 id="modal-user-name">Ahmed Khalid</h3>
+    <div id="modal-user-body"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✓ <span id="toast-msg">تم التنفيذ</span></div>
+
+<script>
+// ── CREDENTIALS ──
+const CREDS = { user:'admin', pass:'crysanto2025' };
+
+// ── STATE ──
+let lang = 'ar';
+let currentFilter = { users:'all', dep:'all', wd:'all' };
+let notifType = 'info';
+let profitLog = [];
+let notifHistory = [];
+
+// ── SAMPLE DATA ──
+const users = [
+  {id:1, name:'Ahmed Khalid', email:'ahmed@mail.com', bal:12847, invested:7000, plan:'Gold', status:'active', country:'SA', kyc:'verified', ref:4, joined:'2025-01-12'},
+  {id:2, name:'Sara Yilmaz', email:'sara@yilmaz.com', bal:8200, invested:5000, plan:'VIP', status:'active', country:'TR', kyc:'verified', ref:2, joined:'2025-02-03'},
+  {id:3, name:'John Walker', email:'john@mail.com', bal:3400, invested:2000, plan:'Starter', status:'pending', country:'US', kyc:'pending', ref:0, joined:'2025-03-15'},
+  {id:4, name:'Maria Lopez', email:'maria@mail.com', bal:21100, invested:15000, plan:'VIP', status:'active', country:'ES', kyc:'verified', ref:8, joined:'2024-11-20'},
+  {id:5, name:'Omar Nasser', email:'omar@nasser.com', bal:0, invested:0, plan:'-', status:'blocked', country:'EG', kyc:'rejected', ref:0, joined:'2025-04-01'},
+  {id:6, name:'Fatima Al-Zahra', email:'fatima@mail.com', bal:6540, invested:4000, plan:'Gold', status:'active', country:'MA', kyc:'verified', ref:6, joined:'2025-01-30'},
+  {id:7, name:'Chen Wei', email:'chen@mail.com', bal:42000, invested:30000, plan:'VIP', status:'active', country:'CN', kyc:'verified', ref:15, joined:'2024-10-05'},
+  {id:8, name:'Ali Hassan', email:'ali@mail.com', bal:1200, invested:1000, plan:'Starter', status:'pending', country:'LB', kyc:'pending', ref:1, joined:'2025-05-10'},
+];
+
+const deposits = [
+  {id:'D001', user:'Ahmed Khalid', amount:500, coin:'USDT', hash:'0xab3f...9d2c', date:'2025-05-26 10:23', status:'pending'},
+  {id:'D002', user:'Sara Yilmaz', amount:2000, coin:'BTC', hash:'bc1q...r7x2', date:'2025-05-26 09:11', status:'approved'},
+  {id:'D003', user:'John Walker', amount:100, coin:'ETH', hash:'0xcc4e...a8f1', date:'2025-05-25 22:40', status:'pending'},
+  {id:'D004', user:'Maria Lopez', amount:5000, coin:'USDT', hash:'TXkm...8b2z', date:'2025-05-25 18:05', status:'approved'},
+  {id:'D005', user:'Chen Wei', amount:10000, coin:'BTC', hash:'bc1q...p9w4', date:'2025-05-25 14:30', status:'pending'},
+  {id:'D006', user:'Fatima Al-Zahra', amount:800, coin:'BNB', hash:'bnb1...x4r2', date:'2025-05-24 11:20', status:'rejected'},
+  {id:'D007', user:'Ali Hassan', amount:200, coin:'TRX', hash:'TBau...k3m1', date:'2025-05-24 08:45', status:'pending'},
+];
+
+const withdrawals = [
+  {id:'W001', user:'Ahmed Khalid', amount:300, coin:'USDT', wallet:'TXkm...bH9k', date:'2025-05-26 11:05', status:'pending'},
+  {id:'W002', user:'Sara Yilmaz', amount:1500, coin:'ETH', wallet:'0x71C...f3e', date:'2025-05-26 09:30', status:'pending'},
+  {id:'W003', user:'Maria Lopez', amount:5000, coin:'BTC', wallet:'bc1q...8a8', date:'2025-05-25 20:10', status:'approved'},
+  {id:'W004', user:'Chen Wei', amount:8000, coin:'USDT', wallet:'TBau...xZ1', date:'2025-05-25 16:00', status:'pending'},
+  {id:'W005', user:'Fatima Al-Zahra', amount:400, coin:'BNB', wallet:'bnb1...g9z', date:'2025-05-25 12:30', status:'rejected'},
+  {id:'W006', user:'Ali Hassan', amount:50, coin:'TRX', wallet:'TXkm...2a1', date:'2025-05-24 09:00', status:'pending'},
+];
+
+const investments = [
+  {user:'Ahmed Khalid', plan:'Gold', amount:5000, daily:'4.8%', start:'2025-04-10', end:'2025-06-09', profit:7200, status:'active'},
+  {user:'Sara Yilmaz', plan:'VIP', amount:7000, daily:'8.2%', start:'2025-04-20', end:'2025-07-19', profit:51660, status:'active'},
+  {user:'Maria Lopez', plan:'VIP', amount:15000, daily:'8.2%', start:'2025-03-01', end:'2025-05-29', profit:110700, status:'active'},
+  {user:'Chen Wei', plan:'VIP', amount:30000, daily:'8.2%', start:'2025-02-15', end:'2025-05-15', profit:221400, status:'completed'},
+  {user:'Fatima Al-Zahra', plan:'Gold', amount:4000, daily:'4.8%', start:'2025-04-01', end:'2025-05-31', profit:5760, status:'active'},
+  {user:'John Walker', plan:'Starter', amount:2000, daily:'2.5%', start:'2025-05-01', end:'2025-05-31', profit:1500, status:'active'},
+];
+
+const kycReqs = [
+  {user:'John Walker', email:'john@mail.com', type:'National ID', submitted:'2025-05-24', status:'pending'},
+  {user:'Ali Hassan', email:'ali@mail.com', type:'Passport', submitted:'2025-05-25', status:'pending'},
+  {user:'Omar Nasser', email:'omar@nasser.com', type:'National ID', submitted:'2025-04-28', status:'rejected'},
+  {user:'Sara Yilmaz', email:'sara@yilmaz.com', type:'Passport', submitted:'2025-02-01', status:'approved'},
+  {user:'Ahmed Khalid', email:'ahmed@mail.com', type:'National ID', submitted:'2025-01-10', status:'approved'},
+];
+
+const refData = [
+  {referrer:'Chen Wei', referred:'Maria Lopez', amount:750, date:'2025-05-20', status:'paid'},
+  {referrer:'Sara Yilmaz', referred:'Ali Hassan', amount:10, date:'2025-05-22', status:'pending'},
+  {referrer:'Ahmed Khalid', referred:'John Walker', amount:100, date:'2025-05-18', status:'paid'},
+  {referrer:'Fatima Al-Zahra', referred:'Omar Nasser', amount:0, date:'2025-04-28', status:'rejected'},
+  {referrer:'Chen Wei', referred:'Fatima Al-Zahra', amount:200, date:'2025-03-05', status:'paid'},
+];
+
+const walletAddrs = [
+  {
+    coin:'Tether (USDT)', sym:'USDT', icon:'₮', color:'#26a17b',
+    addr:'TTU9KEnVvjKFj7pAbtk3hGZcepAbYzuVeq',
+    network:'TRON (TRC-20)',
+    note:{ar:'الأسرع والأرخص — موصى به للعملاء', en:'Fastest & cheapest — recommended for clients', tr:'En hızlı ve ucuz — müşteriler için önerilir'}
+  },
+  {
+    coin:'Tether (USDT)', sym:'USDT', icon:'₮', color:'#26a17b',
+    addr:'0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335',
+    network:'BNB Smart Chain (BEP-20)',
+    note:{ar:'مناسب للعملاء الذين يستخدمون بينانس', en:'Suitable for clients using Binance', tr:'Binance kullanan müşteriler için uygun'}
+  },
+  {
+    coin:'Ethereum', sym:'ETH', icon:'Ξ', color:'#627eea',
+    addr:'0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335',
+    network:'Ethereum (ERC-20)',
+    note:{ar:'رسوم شبكة أعلى', en:'Higher network fees', tr:'Daha yüksek ağ ücretleri'}
+  },
+  {
+    coin:'BNB', sym:'BNB', icon:'B', color:'#f0b90b',
+    addr:'0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335',
+    network:'BNB Smart Chain (BEP-20)',
+    note:{ar:'نفس عنوان USDT BEP-20', en:'Same as USDT BEP-20 address', tr:'USDT BEP-20 ile aynı adres'}
+  },
+];
+
+const geoData = [
+  {country:'SA 🇸🇦', pct:22, val:10607},
+  {country:'TR 🇹🇷', pct:18, val:8678},
+  {country:'EG 🇪🇬', pct:14, val:6749},
+  {country:'MA 🇲🇦', pct:10, val:4821},
+  {country:'US 🇺🇸', pct:9, val:4339},
+  {country:'CN 🇨🇳', pct:8, val:3857},
+  {country:'Other 🌍', pct:19, val:9163},
+];
+
+const packages_data = [
+  {name:{ar:'الباقة الأساسية',en:'Starter Plan',tr:'Başlangıç'}, roi:'2.5', days:30, min:100, max:5000, active:1240, color:'var(--green)', icon:'⭐'},
+  {name:{ar:'الباقة الذهبية',en:'Gold Plan',tr:'Altın'}, roi:'4.8', days:60, min:500, max:50000, active:3820, color:'var(--gold)', icon:'🥇'},
+  {name:{ar:'باقة VIP',en:'VIP Plan',tr:'VIP'}, roi:'8.2', days:90, min:5000, max:500000, active:892, color:'var(--purple)', icon:'💎'},
+];
+
+// ── TRANSLATIONS ──
+const T = {
+  ar:{
+    loginSub:'لوحة إدارة النظام — دخول مقيد', loginWarn:'منطقة محمية — المسؤولون فقط',
+    llUser:'اسم المستخدم', llPass:'كلمة المرور', llBtn:'دخول لوحة الإدارة',
+    liErr:'بيانات خاطئة، حاول مجدداً', tbWelcome:'مرحباً،', tbLogout:'خروج',
+    sbS1:'الرئيسية', sbS2:'إدارة', sbS3:'التحكم',
+    ovAlert:'جميع الأنظمة تعمل بشكل طبيعي · آخر تحديث: الآن',
+    sc1l:'إجمالي الرصيد', sc2l:'المستخدمون', sc3l:'إيداعات اليوم', sc4l:'سحوبات معلقة',
+    sc5l:'حسابات محظورة', sc6l:'طلبات KYC', sc7l:'أرباح الإحالات', sc8l:'صافي الأرباح',
+    revChartTitle:'إيرادات آخر 30 يوم', distTitle:'توزيع العملات', recentTxTitle:'آخر المعاملات',
+    usersTitle:'إدارة المستخدمين', depTitle:'طلبات الإيداع', wdTitle:'طلبات السحب',
+    invTitle:'الاستثمارات النشطة', kycTitle:'طلبات التحقق KYC', refTitle:'نظام الإحالات',
+    profitTitle:'التحكم بالأرباح', pkgTitle:'إدارة الباقات', notifTitle:'إرسال الإشعارات',
+    walletsTitle:'محافظ الاستقبال', statsTitle:'الإحصائيات', settingsTitle:'إعدادات النظام',
+    approve:'قبول', reject:'رفض', block:'حظر', unblock:'رفع الحظر', view:'عرض', details:'تفاصيل',
+    all:'الكل', active:'نشط', pending:'معلق', blocked:'محظور', approved:'مقبول', rejected:'مرفوض',
+    save:'حفظ',
+  },
+  en:{
+    loginSub:'System Admin Panel — Restricted Access', loginWarn:'Protected Area — Admins Only',
+    llUser:'Username', llPass:'Password', llBtn:'Login to Admin Panel',
+    liErr:'Incorrect credentials, try again', tbWelcome:'Welcome,', tbLogout:'Logout',
+    sbS1:'Home', sbS2:'Management', sbS3:'Control',
+    ovAlert:'All systems running normally · Last update: now',
+    sc1l:'Total Balance', sc2l:'Total Users', sc3l:"Today's Deposits", sc4l:'Pending Withdrawals',
+    sc5l:'Blocked Accounts', sc6l:'KYC Requests', sc7l:'Referral Earnings', sc8l:'Net Revenue',
+    revChartTitle:'Revenue — Last 30 Days', distTitle:'Currency Distribution', recentTxTitle:'Recent Transactions',
+    usersTitle:'User Management', depTitle:'Deposit Requests', wdTitle:'Withdrawal Requests',
+    invTitle:'Active Investments', kycTitle:'KYC Verification Requests', refTitle:'Referral System',
+    profitTitle:'Profit Control', pkgTitle:'Package Management', notifTitle:'Send Notifications',
+    walletsTitle:'Deposit Wallets', statsTitle:'Statistics', settingsTitle:'System Settings',
+    approve:'Approve', reject:'Reject', block:'Block', unblock:'Unblock', view:'View', details:'Details',
+    all:'All', active:'Active', pending:'Pending', blocked:'Blocked', approved:'Approved', rejected:'Rejected',
+    save:'Save',
+  },
+  tr:{
+    loginSub:'Sistem Yönetici Paneli — Kısıtlı Erişim', loginWarn:'Korumalı Alan — Yalnızca Yöneticiler',
+    llUser:'Kullanıcı Adı', llPass:'Şifre', llBtn:'Yönetici Paneline Giriş',
+    liErr:'Yanlış bilgiler, tekrar deneyin', tbWelcome:'Hoşgeldiniz,', tbLogout:'Çıkış',
+    sbS1:'Ana Sayfa', sbS2:'Yönetim', sbS3:'Kontrol',
+    ovAlert:'Tüm sistemler normal çalışıyor · Son güncelleme: şimdi',
+    sc1l:'Toplam Bakiye', sc2l:'Toplam Kullanıcı', sc3l:"Bugünkü Yatırımlar", sc4l:'Bekleyen Çekimler',
+    sc5l:'Engelli Hesaplar', sc6l:'KYC Talepleri', sc7l:'Referans Kazancı', sc8l:'Net Gelir',
+    revChartTitle:'Son 30 Gün Geliri', distTitle:'Para Birimi Dağılımı', recentTxTitle:'Son İşlemler',
+    usersTitle:'Kullanıcı Yönetimi', depTitle:'Yatırım Talepleri', wdTitle:'Çekim Talepleri',
+    invTitle:'Aktif Yatırımlar', kycTitle:'KYC Doğrulama Talepleri', refTitle:'Referans Sistemi',
+    profitTitle:'Kar Kontrolü', pkgTitle:'Paket Yönetimi', notifTitle:'Bildirim Gönder',
+    walletsTitle:'Yatırım Cüzdanları', statsTitle:'İstatistikler', settingsTitle:'Sistem Ayarları',
+    approve:'Onayla', reject:'Reddet', block:'Engelle', unblock:'Engeli Kaldır', view:'Görüntüle', details:'Detaylar',
+    all:'Hepsi', active:'Aktif', pending:'Beklemede', blocked:'Engelli', approved:'Onaylı', rejected:'Reddedildi',
+    save:'Kaydet',
+  }
+};
+
+function t(key){ return (T[lang]||T.ar)[key] || key; }
+
+// ── LOGIN ──
+function doLogin(){
+  const u = document.getElementById('li-user').value.trim();
+  const p = document.getElementById('li-pass').value;
+  const err = document.getElementById('li-err');
+  if(u===CREDS.user && p===CREDS.pass){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    initApp();
+  } else {
+    err.style.display='block';
+    err.textContent = t('liErr');
+    document.getElementById('li-pass').value='';
+  }
+}
+function doLogout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('li-user').value='';
+  document.getElementById('li-pass').value='';
+}
+
+// ── LANG ──
+function setLang(l){
+  lang = l;
+  document.querySelectorAll('.lb').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll(`.lb[onclick="setLang('${l}')"]`).forEach(b=>b.classList.add('on'));
+  const isRtl = l==='ar';
+  document.body.direction = isRtl?'rtl':'ltr';
+  document.body.classList.toggle('ltr',!isRtl);
+  document.documentElement.setAttribute('dir',isRtl?'rtl':'ltr');
+  document.documentElement.setAttribute('lang',l);
+  applyTranslations();
+  renderCurrentSection();
+}
+
+function applyTranslations(){
+  const ids = {
+    'ls-sub':'loginSub','ls-warn':'loginWarn','ll-user':'llUser','ll-pass':'llPass','ll-btn':'llBtn',
+    'li-err':'liErr','tb-welcome':'tbWelcome','tb-logout-btn':'tbLogout',
+    'sb-s1':'sbS1','sb-s2':'sbS2','sb-s3':'sbS3',
+    'ov-alert':'ovAlert','sc1l':'sc1l','sc2l':'sc2l','sc3l':'sc3l','sc4l':'sc4l',
+    'sc5l':'sc5l','sc6l':'sc6l','sc7l':'sc7l','sc8l':'sc8l',
+    'rev-chart-title':'revChartTitle','dist-title':'distTitle','recent-tx-title':'recentTxTitle',
+    'users-title':'usersTitle','dep-title':'depTitle','wd-title':'wdTitle',
+    'inv-title':'invTitle','kyc-main-title':'kycTitle','ref-title':'refTitle',
+    'profit-title':'profitTitle','pkg-title':'pkgTitle','notif-send-title':'notifTitle',
+    'wallets-title':'walletsTitle','stats-title':'statsTitle','settings-title':'settingsTitle',
+  };
+  Object.entries(ids).forEach(([id,key])=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = t(key);
+  });
+  document.querySelectorAll('[id^="sb-"]:not([class*="section"])').forEach(el=>{
+    const lbl = el.querySelector('.sb-lbl');
+    if(lbl && lbl.dataset[lang]) lbl.textContent = lbl.dataset[lang];
+  });
+}
+
+// ── SECTIONS ──
+let currentSection = 's-overview';
+function switchSection(id){
+  document.querySelectorAll('.section-wrap').forEach(s=>s.style.display='none');
+  document.getElementById(id).style.display='block';
+  document.querySelectorAll('.sb-item').forEach(s=>s.classList.remove('active'));
+  const sbId = 'sb-' + id.replace('s-','');
+  const sbEl = document.getElementById(sbId);
+  if(sbEl) sbEl.classList.add('active');
+  currentSection = id;
+  renderCurrentSection();
+}
+function renderCurrentSection(){
+  // تحميل البيانات الحقيقية من Supabase
+  if(currentSection==='s-deposits') { loadRealDeposits(); return; }
+  if(currentSection==='s-withdrawals') { loadRealWithdrawals(); return; }
+  if(currentSection==='s-users') { loadRealUsers(); return; }
+  const renders = {
+    's-overview':renderOverview,'s-users':renderUsers,'s-deposits':renderDeposits,
+    's-withdrawals':renderWithdrawals,'s-investments':renderInvestments,
+    's-kyc':renderKYC,'s-referrals':renderReferrals,'s-profits':renderProfits,
+    's-packages':renderPackages,'s-notifs':renderNotifs,'s-wallets':renderWallets,
+    's-stats':renderStats,'s-settings':()=>{}
+  };
+  if(renders[currentSection]) renders[currentSection]();
+}
+
+// ── INIT ──
+function initApp(){
+  applyTranslations();
+  renderOverview();
+}
+
+// ── OVERVIEW ──
+function renderOverview(){
+  renderRecentTx();
+  setTimeout(()=>{ drawRevChart(); drawDistChart(); },100);
+}
+
+function renderRecentTx(){
+  const wrap = document.getElementById('recent-tx-wrap');
+  const all = [...deposits.slice(0,3),...withdrawals.slice(0,3)].slice(0,6);
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>${lang==='ar'?'النوع':lang==='en'?'Type':'Tür'}</th>
+      <th>${lang==='ar'?'المستخدم':lang==='en'?'User':'Kullanıcı'}</th>
+      <th>${lang==='ar'?'المبلغ':lang==='en'?'Amount':'Miktar'}</th>
+      <th>${lang==='ar'?'العملة':lang==='en'?'Coin':'Coin'}</th>
+      <th>${lang==='ar'?'التاريخ':lang==='en'?'Date':'Tarih'}</th>
+      <th>${lang==='ar'?'الحالة':lang==='en'?'Status':'Durum'}</th>
+    </tr></thead>
+    <tbody>${all.map(tx=>`
+      <tr>
+        <td>${tx.id.startsWith('D')?'📥':'📤'} ${tx.id}</td>
+        <td>${tx.user}</td>
+        <td style="font-family:var(--mono)">$${tx.amount.toLocaleString()}</td>
+        <td><span style="font-family:var(--mono);color:var(--gold)">${tx.coin}</span></td>
+        <td style="color:var(--muted);font-size:12px">${tx.date}</td>
+        <td>${statusBadge(tx.status)}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+// ── USERS ──
+function renderUsers(){
+  const search = (document.getElementById('user-search')||{}).value||'';
+  const filter = currentFilter.users;
+  let data = users.filter(u=>{
+    const matchFilter = filter==='all'||u.status===filter;
+    const matchSearch = !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
+    return matchFilter && matchSearch;
+  });
+  const wrap = document.getElementById('users-table-wrap');
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>${lang==='ar'?'المستخدم':lang==='en'?'User':'Kullanıcı'}</th>
+      <th>${lang==='ar'?'الدولة':lang==='en'?'Country':'Ülke'}</th>
+      <th>${lang==='ar'?'الرصيد':lang==='en'?'Balance':'Bakiye'}</th>
+      <th>${lang==='ar'?'الباقة':lang==='en'?'Plan':'Plan'}</th>
+      <th>${lang==='ar'?'KYC':lang==='en'?'KYC':'KYC'}</th>
+      <th>${lang==='ar'?'الحالة':lang==='en'?'Status':'Durum'}</th>
+      <th>${lang==='ar'?'الإجراءات':lang==='en'?'Actions':'İşlemler'}</th>
+    </tr></thead>
+    <tbody>${data.map(u=>`
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="u-av" style="background:var(--gold-dim);color:var(--gold)">${u.name[0]}</div>
+            <div><div style="font-weight:600;font-size:13px">${u.name}</div><div style="font-size:11px;color:var(--muted)">${u.email}</div></div>
+          </div>
+        </td>
+        <td>${u.country}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${u.bal.toLocaleString()}</td>
+        <td>${u.plan}</td>
+        <td>${kycBadge(u.kyc)}</td>
+        <td>${statusBadge(u.status)}</td>
+        <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="act-btn blue" onclick="showUserModal(${u.id})">${t('details')}</button>
+            ${u.status==='blocked'
+              ? `<button class="act-btn green" onclick="toggleBlock(${u.id})">${t('unblock')}</button>`
+              : `<button class="act-btn red" onclick="toggleBlock(${u.id})">${t('block')}</button>`}
+          </div>
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function filterUsers(el,f){
+  currentFilter.users=f;
+  document.querySelectorAll('#s-users .ft').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderUsers();
+}
+
+function toggleBlock(id){
+  const u = users.find(u=>u.id===id);
+  if(!u) return;
+  u.status = u.status==='blocked'?'active':'blocked';
+  renderUsers();
+  showToast(u.status==='blocked' ? (lang==='ar'?'تم حظر المستخدم':'User blocked') : (lang==='ar'?'تم رفع الحظر':'User unblocked'));
+}
+
+function showUserModal(id){
+  const u = users.find(u=>u.id===id);
+  if(!u) return;
+  document.getElementById('modal-user-name').textContent = u.name;
+  document.getElementById('modal-user-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      ${infoRow(lang==='ar'?'البريد الإلكتروني':'Email',u.email)}
+      ${infoRow(lang==='ar'?'الدولة':'Country',u.country)}
+      ${infoRow(lang==='ar'?'الرصيد':'Balance','$'+u.bal.toLocaleString())}
+      ${infoRow(lang==='ar'?'المستثمر':'Invested','$'+u.invested.toLocaleString())}
+      ${infoRow(lang==='ar'?'الباقة':'Plan',u.plan)}
+      ${infoRow(lang==='ar'?'الإحالات':'Referrals',u.ref)}
+      ${infoRow('KYC',u.kyc)}
+      ${infoRow(lang==='ar'?'تاريخ الانضمام':'Joined',u.joined)}
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="act-btn-primary" onclick="showToast('${lang==='ar'?'تم إرسال إشعار':'Notification sent'}');closeModal()">${lang==='ar'?'إرسال إشعار':'Send Notification'}</button>
+      <button class="act-btn red" onclick="toggleBlock(${u.id});closeModal()">${u.status==='blocked'?t('unblock'):t('block')}</button>
+    </div>`;
+  document.getElementById('user-modal').classList.add('open');
+}
+
+function infoRow(label,val){
+  return `<div style="background:var(--dark);border-radius:8px;padding:12px">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${label}</div>
+    <div style="font-size:13px;font-weight:600">${val}</div>
+  </div>`;
+}
+
+function closeModal(){ document.getElementById('user-modal').classList.remove('open'); }
+
+// ── DEPOSITS ──
+function renderDeposits(){
+  const filter = currentFilter.dep;
+  const data = filter==='all'?deposits:deposits.filter(d=>d.status===filter);
+  const wrap = document.getElementById('dep-table-wrap');
+  wrap.innerHTML = buildTxTable(data,'deposit');
+}
+
+function filterDep(el,f){
+  currentFilter.dep=f;
+  document.querySelectorAll('#s-deposits .ft').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderDeposits();
+}
+
+// ── WITHDRAWALS ──
+function renderWithdrawals(){
+  const filter = currentFilter.wd;
+  const data = filter==='all'?withdrawals:withdrawals.filter(w=>w.status===filter);
+  const wrap = document.getElementById('wd-table-wrap');
+  wrap.innerHTML = buildTxTable(data,'withdrawal');
+}
+
+function filterWd(el,f){
+  currentFilter.wd=f;
+  document.querySelectorAll('#s-withdrawals .ft').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderWithdrawals();
+}
+
+function buildTxTable(data,type){
+  const isDep = type==='deposit';
+  return `<table>
+    <thead><tr>
+      <th>ID</th>
+      <th>${lang==='ar'?'المستخدم':'User'}</th>
+      <th>${lang==='ar'?'المبلغ':'Amount'}</th>
+      <th>${lang==='ar'?'العملة':'Coin'}</th>
+      <th>${isDep?(lang==='ar'?'Hash التحويل':'TX Hash'):(lang==='ar'?'محفظة السحب':'Wallet')}</th>
+      <th>${lang==='ar'?'التاريخ':'Date'}</th>
+      <th>${lang==='ar'?'الحالة':'Status'}</th>
+      <th>${lang==='ar'?'الإجراء':'Action'}</th>
+    </tr></thead>
+    <tbody>${data.map((tx,i)=>`
+      <tr>
+        <td style="font-family:var(--mono);color:var(--muted);font-size:11px">${tx.id}</td>
+        <td style="font-weight:600">${tx.user}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${tx.amount.toLocaleString()}</td>
+        <td><span style="font-family:var(--mono)">${tx.coin}</span></td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${isDep?tx.hash:tx.wallet}</td>
+        <td style="font-size:11px;color:var(--muted)">${tx.date}</td>
+        <td>${statusBadge(tx.status)}</td>
+        <td>
+          ${tx.status==='pending'?`
+          <div style="display:flex;gap:6px">
+            <button class="act-btn green" onclick="approveTx('${type}','${tx.id}')">${t('approve')}</button>
+            <button class="act-btn red" onclick="rejectTx('${type}','${tx.id}')">${t('reject')}</button>
+          </div>`:`<span style="color:var(--muted);font-size:12px">—</span>`}
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function approveTx(type,id){
+  const arr = type==='deposit'?deposits:withdrawals;
+  const tx = arr.find(t=>t.id===id);
+  if(tx) tx.status='approved';
+  renderCurrentSection();
+  showToast(lang==='ar'?`✓ تم قبول ${id}`:`✓ ${id} approved`);
+}
+function rejectTx(type,id){
+  const arr = type==='deposit'?deposits:withdrawals;
+  const tx = arr.find(t=>t.id===id);
+  if(tx) tx.status='rejected';
+  renderCurrentSection();
+  showToast(lang==='ar'?`✗ تم رفض ${id}`:`✗ ${id} rejected`);
+}
+
+// ── INVESTMENTS ──
+function renderInvestments(){
+  const wrap = document.getElementById('inv-table-wrap');
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>${lang==='ar'?'المستخدم':'User'}</th>
+      <th>${lang==='ar'?'الباقة':'Plan'}</th>
+      <th>${lang==='ar'?'رأس المال':'Capital'}</th>
+      <th>${lang==='ar'?'الربح اليومي':'Daily ROI'}</th>
+      <th>${lang==='ar'?'البداية':'Start'}</th>
+      <th>${lang==='ar'?'النهاية':'End'}</th>
+      <th>${lang==='ar'?'إجمالي الربح':'Total Profit'}</th>
+      <th>${lang==='ar'?'الحالة':'Status'}</th>
+    </tr></thead>
+    <tbody>${investments.map(inv=>`
+      <tr>
+        <td style="font-weight:600">${inv.user}</td>
+        <td>${inv.plan}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${inv.amount.toLocaleString()}</td>
+        <td style="color:var(--green);font-family:var(--mono)">${inv.daily}</td>
+        <td style="font-size:12px;color:var(--muted)">${inv.start}</td>
+        <td style="font-size:12px;color:var(--muted)">${inv.end}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${inv.profit.toLocaleString()}</td>
+        <td>${inv.status==='active'?`<span class="badge b-active">${lang==='ar'?'نشط':'Active'}</span>`:`<span class="badge b-gold">${lang==='ar'?'مكتمل':'Completed'}</span>`}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+// ── KYC ──
+function renderKYC(){
+  const wrap = document.getElementById('kyc-table-wrap');
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>${lang==='ar'?'المستخدم':'User'}</th>
+      <th>${lang==='ar'?'البريد':'Email'}</th>
+      <th>${lang==='ar'?'نوع الوثيقة':'Doc Type'}</th>
+      <th>${lang==='ar'?'تاريخ الطلب':'Submitted'}</th>
+      <th>${lang==='ar'?'الحالة':'Status'}</th>
+      <th>${lang==='ar'?'الإجراء':'Action'}</th>
+    </tr></thead>
+    <tbody>${kycReqs.map((k,i)=>`
+      <tr>
+        <td style="font-weight:600">${k.user}</td>
+        <td style="color:var(--muted);font-size:12px">${k.email}</td>
+        <td>${k.type}</td>
+        <td style="font-size:12px;color:var(--muted)">${k.submitted}</td>
+        <td>${kycBadge(k.status)}</td>
+        <td>
+          ${k.status==='pending'?`
+          <div style="display:flex;gap:6px">
+            <button class="act-btn green" onclick="approveKyc(${i})">${t('approve')}</button>
+            <button class="act-btn red" onclick="rejectKyc(${i})">${t('reject')}</button>
+          </div>`:
+          `<span style="color:var(--muted);font-size:12px">—</span>`}
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+function approveKyc(i){ kycReqs[i].status='approved'; renderKYC(); showToast(lang==='ar'?'تم قبول KYC':'KYC Approved'); }
+function rejectKyc(i){ kycReqs[i].status='rejected'; renderKYC(); showToast(lang==='ar'?'تم رفض KYC':'KYC Rejected'); }
+
+// ── REFERRALS ──
+function renderReferrals(){
+  const wrap = document.getElementById('ref-table-wrap');
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>${lang==='ar'?'المُحيل':'Referrer'}</th>
+      <th>${lang==='ar'?'المُحال':'Referred'}</th>
+      <th>${lang==='ar'?'العمولة':'Commission'}</th>
+      <th>${lang==='ar'?'التاريخ':'Date'}</th>
+      <th>${lang==='ar'?'الحالة':'Status'}</th>
+      <th>${lang==='ar'?'الإجراء':'Action'}</th>
+    </tr></thead>
+    <tbody>${refData.map((r,i)=>`
+      <tr>
+        <td style="font-weight:600">${r.referrer}</td>
+        <td>${r.referred}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${r.amount}</td>
+        <td style="font-size:12px;color:var(--muted)">${r.date}</td>
+        <td>${r.status==='paid'?`<span class="badge b-active">${lang==='ar'?'مدفوع':'Paid'}</span>`
+            :r.status==='rejected'?`<span class="badge b-rejected">${lang==='ar'?'مرفوض':'Rejected'}</span>`
+            :`<span class="badge b-pending">${lang==='ar'?'معلق':'Pending'}</span>`}</td>
+        <td>${r.status==='pending'?`<button class="act-btn green" onclick="payRef(${i})">${lang==='ar'?'صرف':'Pay'}</button>`:
+            `<span style="color:var(--muted);font-size:12px">—</span>`}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+function payRef(i){ refData[i].status='paid'; renderReferrals(); showToast(lang==='ar'?'تم صرف العمولة':'Commission Paid'); }
+
+// ── PROFITS ──
+function renderProfits(){
+  if(!document.getElementById('profit-log').children.length) {
+    profitLog = [
+      {time:'2025-05-26 09:00', plan:'Gold', rate:'4.8%', by:'admin'},
+      {time:'2025-05-25 08:30', plan:'VIP', rate:'8.2%', by:'admin'},
+    ];
+    renderProfitLog();
+  }
+}
+function applyProfit(plan){
+  const rates = {1:document.getElementById('p1-rate'),2:document.getElementById('p2-rate'),3:document.getElementById('p3-rate')};
+  const names = {1:lang==='ar'?'الأساسية':'Starter',2:lang==='ar'?'الذهبية':'Gold',3:'VIP'};
+  const r = parseFloat(rates[plan].value)||0;
+  const now = new Date().toLocaleString('en-GB').replace(',','');
+  profitLog.unshift({time:now, plan:names[plan], rate:r+'%', by:'admin'});
+  renderProfitLog();
+  showToast(lang==='ar'?`✓ تم تحديث ربح ${names[plan]} إلى ${r}%`:`✓ ${names[plan]} profit updated to ${r}%`);
+}
+function renderProfitLog(){
+  const el = document.getElementById('profit-log');
+  el.innerHTML = profitLog.map(l=>`
+    <div style="padding:10px 12px;background:var(--dark);border-radius:8px;border:1px solid var(--border2)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-weight:600;font-size:13px">${l.plan}</span>
+        <span style="color:var(--gold);font-family:var(--mono);font-size:13px">${l.rate}</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted)">${l.time} · ${l.by}</div>
+    </div>`).join('');
+}
+
+// ── PACKAGES ──
+function renderPackages(){
+  const wrap = document.getElementById('pkg-cards');
+  wrap.innerHTML = packages_data.map(p=>`
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:28px">
+      <div style="font-size:36px;margin-bottom:12px">${p.icon}</div>
+      <h4 style="font-size:18px;font-weight:700;margin-bottom:16px">${p.name[lang]||p.name.en}</h4>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${editRow(lang==='ar'?'الربح اليومي %':'Daily ROI %',p.roi,'%',`rpe-roi-${p.icon}`)}
+        ${editRow(lang==='ar'?'المدة (يوم)':'Duration (days)',p.days,'d',`rpe-days-${p.icon}`)}
+        ${editRow(lang==='ar'?'الحد الأدنى $':'Min Deposit $',p.min,'$',`rpe-min-${p.icon}`)}
+        ${editRow(lang==='ar'?'الحد الأقصى $':'Max Deposit $',p.max,'$',`rpe-max-${p.icon}`)}
+      </div>
+      <div style="margin-top:16px;padding:10px;background:var(--dark);border-radius:8px;font-size:12px;color:var(--muted)">
+        ${lang==='ar'?'المستثمرون النشطون:':'Active investors:'} <strong style="color:var(--gold)">${p.active.toLocaleString()}</strong>
+      </div>
+      <button class="act-btn-primary" style="width:100%;margin-top:12px" onclick="showToast('${lang==='ar'?'تم حفظ الباقة':'Package saved'}')">${lang==='ar'?'💾 حفظ التغييرات':'💾 Save Changes'}</button>
+    </div>`).join('');
+}
+function editRow(label,val,unit,id){
+  return `<div style="display:flex;align-items:center;justify-content:space-between;background:var(--dark);border-radius:8px;padding:10px 12px">
+    <span style="font-size:12px;color:var(--muted)">${label}</span>
+    <input id="${id}" type="number" value="${val}" style="width:80px;background:transparent;border:none;outline:none;color:var(--gold);font-family:var(--mono);font-size:14px;font-weight:700;text-align:center">
+  </div>`;
+}
+
+// ── NOTIFICATIONS ──
+function setNotifType(el,type){
+  notifType=type;
+  document.querySelectorAll('#s-notifs .ft').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  updateNotifPreview();
+}
+function updateNotifPreview(){
+  const title = (document.getElementById('notif-title-in')||{}).value||'';
+  const body = (document.getElementById('notif-body-in')||{}).value||'';
+  const icons = {info:'💬',success:'✅',warning:'⚠️',profit:'💰'};
+  const colors = {info:'var(--blue)',success:'var(--green)',warning:'var(--orange)',profit:'var(--gold)'};
+  const el = document.getElementById('notif-preview');
+  if(!el) return;
+  if(!title&&!body){ el.innerHTML=`<span style="color:var(--muted)">${lang==='ar'?'معاينة الإشعار ستظهر هنا...':'Notification preview will appear here...'}</span>`; return; }
+  el.innerHTML=`
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <span style="font-size:22px">${icons[notifType]}</span>
+      <div>
+        <div style="font-weight:700;font-size:14px;color:${colors[notifType]};margin-bottom:4px">${title||'—'}</div>
+        <div style="font-size:13px;color:var(--muted)">${body||'—'}</div>
+      </div>
+    </div>`;
+}
+function renderNotifs(){
+  if(!document.getElementById('notif-history').children.length) {
+    notifHistory = [
+      {icon:'💰',title:'ربح يومي',body:'تم إضافة الأرباح اليومية لجميع المستثمرين',target:'all',time:'2025-05-25 09:00',count:48214},
+      {icon:'✅',title:'تحديث المنصة',body:'تم تحديث المنصة بنجاح مع ميزات جديدة',target:'all',time:'2025-05-20 14:00',count:48214},
+    ];
+    renderNotifHistory();
+  }
+}
+function sendNotif(){
+  const title=(document.getElementById('notif-title-in')||{}).value||'';
+  const body=(document.getElementById('notif-body-in')||{}).value||'';
+  if(!title) { showToast(lang==='ar'?'أدخل عنوان الإشعار':'Enter notification title'); return; }
+  const icons={info:'💬',success:'✅',warning:'⚠️',profit:'💰'};
+  const target=(document.getElementById('notif-target')||{}).value||'all';
+  notifHistory.unshift({icon:icons[notifType],title,body,target,time:new Date().toLocaleString(),count:48214});
+  renderNotifHistory();
+  document.getElementById('notif-title-in').value='';
+  document.getElementById('notif-body-in').value='';
+  updateNotifPreview();
+  showToast(lang==='ar'?'✓ تم إرسال الإشعار بنجاح':'✓ Notification sent successfully');
+}
+function renderNotifHistory(){
+  const el = document.getElementById('notif-history');
+  el.innerHTML = notifHistory.map(n=>`
+    <div style="padding:14px;background:var(--dark);border-radius:10px;border:1px solid var(--border2)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="font-size:18px">${n.icon}</span>
+        <strong style="font-size:13px">${n.title}</strong>
+        <span style="margin-right:auto;font-size:11px;color:var(--muted)">${n.target}</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${n.body}</div>
+      <div style="font-size:11px;color:var(--muted)">${n.time} · ${n.count.toLocaleString()} ${lang==='ar'?'مستلم':'recipients'}</div>
+    </div>`).join('');
+}
+
+// ── WALLETS ──
+function renderWallets(){
+  const grid = document.getElementById('wallets-grid');
+  grid.innerHTML = walletAddrs.map((w,i)=>`
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:48px;height:48px;border-radius:12px;background:${w.color}22;color:${w.color};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;font-family:var(--mono);flex-shrink:0">${w.icon}</div>
+        <div>
+          <div style="font-weight:700;font-size:15px">${w.coin}</div>
+          <div style="font-size:11px;background:${w.color}22;color:${w.color};padding:2px 8px;border-radius:100px;display:inline-block;margin-top:3px;font-weight:600">${w.network}</div>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div style="font-size:11px;color:var(--muted);background:var(--dark3);border-radius:8px;padding:8px 12px;border-right:3px solid ${w.color}">
+        ${w.note ? (w.note[lang]||w.note.ar) : ''}
+      </div>
+
+      <!-- Address display -->
+      <div style="background:var(--dark);border-radius:10px;padding:14px;font-family:var(--mono);font-size:12px;color:var(--gold);word-break:break-all;border:1px solid var(--border);line-height:1.8">
+        ${w.addr}
+      </div>
+
+      <!-- Editable input -->
+      <input
+        id="wallet-input-${i}"
+        type="text"
+        value="${w.addr}"
+        style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:.2s"
+        onfocus="this.style.borderColor='var(--gold)'"
+        onblur="this.style.borderColor='var(--border2)'"
+        placeholder="${lang==='ar'?'عنوان المحفظة':'Wallet Address'}"
+      >
+
+      <!-- Buttons -->
+      <div style="display:flex;gap:8px">
+        <button class="act-btn-primary" style="flex:1" onclick="saveWallet(${i})">
+          💾 ${lang==='ar'?'حفظ التعديل':'Save'}
+        </button>
+        <button class="act-btn" style="flex:1" onclick="copyWallet(${i})">
+          📋 ${lang==='ar'?'نسخ':'Copy'}
+        </button>
+      </div>
+
+    </div>`).join('');
+}
+
+function saveWallet(i){
+  const input = document.getElementById('wallet-input-'+i);
+  if(!input) return;
+  const newAddr = input.value.trim();
+  if(!newAddr){ showToast(lang==='ar'?'العنوان فارغ':'Address is empty'); return; }
+  walletAddrs[i].addr = newAddr;
+  showToast(lang==='ar'?`✓ تم حفظ محفظة ${walletAddrs[i].sym}`:`✓ ${walletAddrs[i].sym} wallet saved`);
+}
+
+function copyWallet(i){
+  const addr = walletAddrs[i].addr;
+  navigator.clipboard.writeText(addr).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=addr; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+  showToast(lang==='ar'?'✓ تم نسخ العنوان':'✓ Address copied');
+}
+
+// ── STATS CHARTS ──
+function renderStats(){
+  setTimeout(()=>{ drawMonthlyChart(); drawRegChart(); drawCoinsChart(); drawGeo(); },100);
+}
+function drawGeo(){
+  const el = document.getElementById('geo-list');
+  el.innerHTML = geoData.map(g=>`
+    <div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px">
+        <span>${g.country}</span>
+        <span style="color:var(--gold);font-family:var(--mono)">${g.pct}%</span>
+      </div>
+      <div style="height:6px;background:var(--dark);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${g.pct}%;background:linear-gradient(90deg,var(--gold),var(--gold-l));border-radius:3px;transition:.6s"></div>
+      </div>
+    </div>`).join('');
+}
+
+// ── CHART HELPERS ──
+function drawBarChart(canvasId, labels, data, color){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  canvas.width = canvas.offsetWidth||600;
+  canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  const pad={t:20,b:28,l:8,r:8};
+  const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+  const max=Math.max(...data)*1.15||1;
+  const bw=Math.floor(cw/data.length)-4;
+  ctx.clearRect(0,0,W,H);
+  data.forEach((v,i)=>{
+    const bh=(v/max)*ch;
+    const x=pad.l+i*(cw/data.length)+2;
+    const y=pad.t+ch-bh;
+    const grad=ctx.createLinearGradient(0,y,0,y+bh);
+    grad.addColorStop(0,color);
+    grad.addColorStop(1,color+'44');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.roundRect(x,y,bw,bh,3);
+    ctx.fill();
+    if(labels[i]){
+      ctx.fillStyle='#6B7A92';
+      ctx.font='9px IBM Plex Mono,monospace';
+      ctx.textAlign='center';
+      ctx.fillText(labels[i],x+bw/2,H-8);
+    }
+  });
+}
+
+function drawLineChart(canvasId, data, color){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  canvas.width = canvas.offsetWidth||600;
+  canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  const pad={t:16,b:24,l:8,r:8};
+  const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+  const max=Math.max(...data)||1, min=Math.min(...data);
+  const xp=i=>pad.l+(i/(data.length-1))*cw;
+  const yp=v=>pad.t+(1-(v-min)/(max-min||1))*ch;
+  ctx.clearRect(0,0,W,H);
+  const grad=ctx.createLinearGradient(0,pad.t,0,H);
+  grad.addColorStop(0,color+'44');
+  grad.addColorStop(1,color+'00');
+  ctx.beginPath();
+  ctx.moveTo(xp(0),yp(data[0]));
+  data.forEach((v,i)=>i>0&&ctx.lineTo(xp(i),yp(v)));
+  ctx.lineTo(xp(data.length-1),H);
+  ctx.lineTo(xp(0),H);
+  ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(xp(0),yp(data[0]));
+  data.forEach((v,i)=>i>0&&ctx.lineTo(xp(i),yp(v)));
+  ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+  data.forEach((v,i)=>{
+    ctx.beginPath(); ctx.arc(xp(i),yp(v),3,0,Math.PI*2);
+    ctx.fillStyle=color; ctx.fill();
+  });
+}
+
+function drawPieChart(canvasId, data, colors, labels){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas) return;
+  canvas.width=canvas.offsetWidth||300;
+  canvas.height=200;
+  const ctx=canvas.getContext('2d');
+  const cx=canvas.width/2, cy=100, r=70;
+  const total=data.reduce((a,b)=>a+b,0);
+  let start=-Math.PI/2;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  data.forEach((v,i)=>{
+    const slice=(v/total)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,start+slice);
+    ctx.closePath(); ctx.fillStyle=colors[i]; ctx.fill();
+    const mid=start+slice/2;
+    const lx=cx+Math.cos(mid)*(r+18), ly=cy+Math.sin(mid)*(r+18);
+    ctx.fillStyle='#8B97AE'; ctx.font='10px Cairo,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(labels[i],lx,ly);
+    start+=slice;
+  });
+}
+
+function drawRevChart(){ drawBarChart('rev-canvas',['1','5','10','15','20','25','30'],[180,220,195,280,310,260,340],'#C9A84C'); }
+function drawDistChart(){ drawPieChart('dist-canvas',[40,25,15,12,8],['#26a17b','#f7931a','#627eea','#f0b90b','#e84940'],['USDT','BTC','ETH','BNB','TRX']); }
+function drawMonthlyChart(){ drawBarChart('monthly-canvas',['Jan','Feb','Mar','Apr','May'],[820,1100,980,1400,1800],'#C9A84C'); }
+function drawRegChart(){ drawLineChart('reg-canvas',[120,180,95,210,165,240,310],'#10D9A0'); }
+function drawCoinsChart(){ drawPieChart('coins-canvas',[45,22,18,10,5],['#26a17b','#f7931a','#627eea','#f0b90b','#e84940'],['USDT','BTC','ETH','BNB','TRX']); }
+
+// ── HELPERS ──
+function statusBadge(s){
+  const map={active:`<span class="badge b-active">${lang==='ar'?'نشط':'Active'}</span>`,
+    pending:`<span class="badge b-pending">${lang==='ar'?'معلق':'Pending'}</span>`,
+    blocked:`<span class="badge b-blocked">${lang==='ar'?'محظور':'Blocked'}</span>`,
+    approved:`<span class="badge b-approved">${lang==='ar'?'مقبول':'Approved'}</span>`,
+    rejected:`<span class="badge b-rejected">${lang==='ar'?'مرفوض':'Rejected'}</span>`};
+  return map[s]||s;
+}
+function kycBadge(s){
+  const map={verified:`<span class="badge b-active">✓ ${lang==='ar'?'موثق':'Verified'}</span>`,
+    pending:`<span class="badge b-pending">${lang==='ar'?'بانتظار':'Pending'}</span>`,
+    rejected:`<span class="badge b-rejected">${lang==='ar'?'مرفوض':'Rejected'}</span>`};
+  return map[s]||s;
+}
+
+function showToast(msg){
+  const el=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg||'✓';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+function toggleMaint(){
+  const on=document.getElementById('maint-toggle').checked;
+  const track=document.getElementById('toggle-track');
+  const thumb=document.getElementById('toggle-thumb');
+  track.style.background=on?'var(--red)':'var(--border2)';
+  thumb.style.right=on?'3px':'';
+  thumb.style.left=on?'':'3px';
+  showToast(on?(lang==='ar'?'⚠️ وضع الصيانة نشط':'⚠️ Maintenance mode ON'):(lang==='ar'?'✓ الموقع يعمل بشكل طبيعي':'✓ Site is live'));
+}
+
+window.addEventListener('resize',()=>{
+  if(currentSection==='s-overview'){drawRevChart();drawDistChart();}
+  if(currentSection==='s-stats'){drawMonthlyChart();drawRegChart();drawCoinsChart();}
+});
+</script>
+</body>
+</html>
+<!-- PATCH: inject extra features after page load -->
+<script>
+// ── REAL-TIME CLOCK in topbar ──
+(function(){
+  const el = document.createElement('div');
+  el.id = 'live-clock';
+  el.style.cssText = 'font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--dark3);padding:4px 12px;border-radius:6px;border:1px solid var(--border2);';
+  document.querySelector('.tb-right').insertBefore(el, document.querySelector('.notif-bell'));
+  function tick(){
+    const now = new Date();
+    el.textContent = now.toLocaleTimeString('en-GB') + ' UTC';
+  }
+  tick(); setInterval(tick, 1000);
+})();
+
+// ── LIVE STATS SIMULATION (subtle ticks) ──
+(function(){
+  let depCount = 12, wdCount = 27;
+  setInterval(()=>{
+    const roll = Math.random();
+    if(roll < 0.15){
+      depCount++;
+      document.getElementById('dep-badge').textContent = depCount;
+      document.getElementById('sc3v').textContent = '$' + (284 + depCount*2).toLocaleString() + 'K';
+    }
+    if(roll > 0.85){
+      wdCount++;
+      document.getElementById('wd-badge').textContent = wdCount;
+      document.getElementById('sc4v').textContent = wdCount;
+    }
+  }, 6000);
+})();
+
+// ── KEYBOARD SHORTCUTS ──
+document.addEventListener('keydown', e => {
+  if(e.ctrlKey || e.metaKey){
+    const map = {
+      '1':'s-overview','2':'s-users','3':'s-deposits',
+      '4':'s-withdrawals','5':'s-profits','6':'s-notifs'
+    };
+    if(map[e.key]){ e.preventDefault(); switchSection(map[e.key]); }
+  }
+  if(e.key==='Escape') closeModal();
+});
+
+// ── QUICK-ACTION FLOATING BUTTON ──
+(function(){
+  const fab = document.createElement('div');
+  fab.id = 'fab';
+  fab.style.cssText = `
+    position:fixed;bottom:28px;left:28px;z-index:400;
+    display:none;flex-direction:column;gap:8px;align-items:flex-start;
+  `;
+  // quick actions
+  const actions = [
+    {icon:'📥', label:{ar:'الإيداعات',en:'Deposits',tr:'Yatırımlar'}, sec:'s-deposits'},
+    {icon:'📤', label:{ar:'السحوبات',en:'Withdrawals',tr:'Çekimler'}, sec:'s-withdrawals'},
+    {icon:'🪪', label:{ar:'KYC',en:'KYC',tr:'KYC'}, sec:'s-kyc'},
+    {icon:'📢', label:{ar:'إشعار',en:'Notify',tr:'Bildir'}, sec:'s-notifs'},
+  ];
+  fab.innerHTML = actions.map(a=>`
+    <button onclick="switchSection('${a.sec}')" style="
+      display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:100px;
+      border:1px solid var(--border);background:var(--dark2);color:var(--text);
+      font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);
+      transition:.2s;white-space:nowrap;
+    " onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
+       onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">
+      ${a.icon} <span class="fab-lbl" data-ar="${a.label.ar}" data-en="${a.label.en}" data-tr="${a.label.tr}">${a.label.ar}</span>
+    </button>`).join('');
+
+  const trigger = document.createElement('button');
+  trigger.id = 'fab-trigger';
+  trigger.textContent = '⚡';
+  trigger.style.cssText = `
+    width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--gold),var(--gold-l));
+    color:#000;font-size:20px;box-shadow:0 4px 20px rgba(201,168,76,0.4);
+    transition:.3s;
+  `;
+  trigger.onclick = () => {
+    const open = fab.style.display === 'flex';
+    fab.style.display = open ? 'none' : 'flex';
+    trigger.textContent = open ? '⚡' : '✕';
+  };
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;bottom:28px;left:28px;z-index:400;display:none;flex-direction:column;gap:8px;align-items:flex-start;';
+  wrap.id = 'fab-wrap';
+  document.body.appendChild(fab);
+
+  const triggerWrap = document.createElement('div');
+  triggerWrap.style.cssText = 'position:fixed;bottom:28px;left:28px;z-index:401;display:none;';
+  triggerWrap.id = 'fab-trigger-wrap';
+  triggerWrap.appendChild(trigger);
+  document.body.appendChild(triggerWrap);
+
+  // show fab when logged in
+  const origInit = window.initApp;
+  window.initApp = function(){
+    origInit();
+    document.getElementById('fab-trigger-wrap').style.display = 'block';
+    document.getElementById('fab').style.position = 'fixed';
+    document.getElementById('fab').style.bottom = '84px';
+    document.getElementById('fab').style.left = '28px';
+    document.getElementById('fab').style.zIndex = '400';
+  };
+
+  // patch setLang to update fab labels
+  const origSetLang = window.setLang;
+  window.setLang = function(l){
+    origSetLang(l);
+    document.querySelectorAll('.fab-lbl').forEach(el=>{
+      if(el.dataset[l]) el.textContent = el.dataset[l];
+    });
+  };
+})();
+
+// ── CONFIRM DANGEROUS ACTIONS ──
+(function(){
+  const origToggleBlock = window.toggleBlock;
+  window.toggleBlock = function(id){
+    const u = users.find(u=>u.id===id);
+    if(!u) return;
+    const action = u.status==='blocked'
+      ? (lang==='ar'?'رفع الحظر عن':'unblock')
+      : (lang==='ar'?'حظر':'block');
+    const confirmed = confirm(lang==='ar'
+      ? `هل تريد ${action} المستخدم "${u.name}"؟`
+      : `Are you sure you want to ${action} "${u.name}"?`);
+    if(confirmed) origToggleBlock(id);
+  };
+})();
+
+// ── EXPORT TABLE AS CSV ──
+function exportCSV(section){
+  const tables = {
+    users: { data: users, keys: ['name','email','bal','plan','status','country'], headers_ar: ['الاسم','البريد','الرصيد','الباقة','الحالة','الدولة'], headers_en: ['Name','Email','Balance','Plan','Status','Country'] },
+    deposits: { data: deposits, keys: ['id','user','amount','coin','hash','date','status'], headers_ar: ['رقم','المستخدم','المبلغ','العملة','Hash','التاريخ','الحالة'], headers_en: ['ID','User','Amount','Coin','Hash','Date','Status'] },
+    withdrawals: { data: withdrawals, keys: ['id','user','amount','coin','wallet','date','status'], headers_ar: ['رقم','المستخدم','المبلغ','العملة','المحفظة','التاريخ','الحالة'], headers_en: ['ID','User','Amount','Coin','Wallet','Date','Status'] },
+  };
+  const cfg = tables[section];
+  if(!cfg) return;
+  const headers = lang==='ar' ? cfg.headers_ar : cfg.headers_en;
+  const rows = cfg.data.map(row => cfg.keys.map(k => `"${row[k]||''}"`).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `crysanto-${section}-${Date.now()}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast(lang==='ar' ? '✓ تم تصدير البيانات' : '✓ Data exported');
+}
+
+// Inject export buttons into panels after section switch
+const origSwitch = window.switchSection;
+window.switchSection = function(id){
+  origSwitch(id);
+  setTimeout(injectExportButtons, 200);
+};
+function injectExportButtons(){
+  const map = {'s-users':'users','s-deposits':'deposits','s-withdrawals':'withdrawals'};
+  const sec = document.querySelector('.section-wrap:not([style*="display:none"])');
+  if(!sec) return;
+  const secId = sec.id;
+  const key = map[secId];
+  if(!key) return;
+  const panel = sec.querySelector('.panel');
+  if(!panel) return;
+  const head = panel.querySelector('.panel-head');
+  if(!head || head.querySelector('.export-btn')) return;
+  const btn = document.createElement('button');
+  btn.className = 'act-btn export-btn';
+  btn.innerHTML = lang==='ar' ? '📥 تصدير CSV' : '📥 Export CSV';
+  btn.onclick = () => exportCSV(key);
+  btn.style.cssText = 'border-color:var(--green);color:var(--green);';
+  head.appendChild(btn);
+}
+
+// ── PROFIT DAILY AUTO-DISTRIBUTION TOGGLE ──
+(function(){
+  const profitSection = document.getElementById('s-profits');
+  if(!profitSection) return;
+  const autoWrap = document.createElement('div');
+  autoWrap.className = 'alert-bar green';
+  autoWrap.style.display = 'flex';
+  autoWrap.style.justifyContent = 'space-between';
+  autoWrap.style.alignItems = 'center';
+  autoWrap.innerHTML = `
+    <span id="auto-dist-label">⚡ ${lang==='ar'?'التوزيع التلقائي للأرباح كل 24 ساعة: نشط':'Auto daily profit distribution (24h): Active'}</span>
+    <label style="position:relative;width:44px;height:24px;cursor:pointer;flex-shrink:0">
+      <input type="checkbox" id="auto-dist-toggle" checked style="opacity:0;width:0;height:0" onchange="toggleAutoDist()">
+      <span id="auto-dist-track" style="position:absolute;inset:0;background:var(--green);border-radius:12px;transition:.3s"></span>
+      <span id="auto-dist-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.3s"></span>
+    </label>`;
+  profitSection.insertBefore(autoWrap, profitSection.children[1]);
+})();
+
+function toggleAutoDist(){
+  const on = document.getElementById('auto-dist-toggle').checked;
+  const track = document.getElementById('auto-dist-track');
+  const label = document.getElementById('auto-dist-label');
+  track.style.background = on ? 'var(--green)' : 'var(--border2)';
+  label.textContent = on
+    ? (lang==='ar'?'⚡ التوزيع التلقائي للأرباح كل 24 ساعة: نشط':'⚡ Auto daily profit distribution (24h): Active')
+    : (lang==='ar'?'⏸ التوزيع التلقائي: متوقف — يدوي فقط':'⏸ Auto distribution: Paused — manual only');
+  showToast(on
+    ? (lang==='ar'?'✓ التوزيع التلقائي نشط':'✓ Auto distribution ON')
+    : (lang==='ar'?'⏸ التوزيع التلقائي متوقف':'⏸ Auto distribution paused'));
+}
+
+// ── SEARCH USERS - live filter ──
+(function(){
+  const origRenderUsers = window.renderUsers;
+  // already handled via oninput on search input
+})();
+
+// ── DEPOSIT APPROVAL WITH BALANCE UPDATE ──
+(function(){
+  const origApprove = window.approveTx;
+  window.approveTx = function(type, id){
+    if(type==='deposit'){
+      const tx = deposits.find(d=>d.id===id);
+      if(tx && tx.status==='pending'){
+        const u = users.find(u=>u.name===tx.user);
+        if(u) u.bal += tx.amount;
+      }
+    }
+    origApprove(type, id);
+  };
+})();
+
+// ── SEND NOTIF TO SPECIFIC USER (from user modal) ──
+function sendNotifToUser(userId){
+  const u = users.find(u=>u.id===userId);
+  if(!u) return;
+  const msg = prompt(lang==='ar' ? `أرسل إشعاراً لـ ${u.name}:` : `Send notification to ${u.name}:`);
+  if(!msg) return;
+  showToast(lang==='ar' ? `✓ تم إرسال الإشعار لـ ${u.name}` : `✓ Notification sent to ${u.name}`);
+  closeModal();
+}
+
+// ── OVERVIEW: QUICK PENDING ALERTS ──
+(function(){
+  const origRenderOverview = window.renderOverview;
+  window.renderOverview = function(){
+    origRenderOverview();
+    // inject pending action buttons under stat grid
+    const sec = document.getElementById('s-overview');
+    let existing = document.getElementById('quick-actions');
+    if(existing) existing.remove();
+    const qa = document.createElement('div');
+    qa.id = 'quick-actions';
+    qa.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;';
+    const actions = [
+      {label:{ar:`📥 ${deposits.filter(d=>d.status==='pending').length} إيداع معلق`,en:`📥 ${deposits.filter(d=>d.status==='pending').length} Pending Deposits`,tr:`📥 Bekleyen Yatırım`}, sec:'s-deposits', color:'var(--gold)'},
+      {label:{ar:`📤 ${withdrawals.filter(w=>w.status==='pending').length} سحب معلق`,en:`📤 ${withdrawals.filter(w=>w.status==='pending').length} Pending Withdrawals`,tr:`📤 Bekleyen Çekim`}, sec:'s-withdrawals', color:'var(--red)'},
+      {label:{ar:`🪪 ${kycReqs.filter(k=>k.status==='pending').length} طلب KYC`,en:`🪪 ${kycReqs.filter(k=>k.status==='pending').length} KYC Requests`,tr:`🪪 KYC Talepleri`}, sec:'s-kyc', color:'var(--blue)'},
+    ];
+    qa.innerHTML = actions.map(a=>`
+      <button onclick="switchSection('${a.sec}')" style="
+        padding:10px 20px;border-radius:10px;border:1px solid ${a.color}33;
+        background:${a.color}11;color:${a.color};font-size:13px;font-weight:700;
+        cursor:pointer;font-family:var(--font);transition:.2s;
+      " onmouseover="this.style.background='${a.color}22'"
+         onmouseout="this.style.background='${a.color}11'">
+        ${a.label[lang]||a.label.ar}
+      </button>`).join('');
+    const statGrid = sec.querySelector('.stat-grid');
+    if(statGrid) statGrid.after(qa);
+  };
+})();
+
+// ── COMPLETE: PATCH showUserModal to add send notif button ──
+(function(){
+  const orig = window.showUserModal;
+  window.showUserModal = function(id){
+    orig(id);
+    // upgrade modal body
+    const body = document.getElementById('modal-user-body');
+    if(!body) return;
+    const btns = body.querySelector('div[style*="display:flex"]');
+    if(!btns) return;
+    const nb = document.createElement('button');
+    nb.className = 'act-btn blue';
+    nb.textContent = lang==='ar' ? '📢 إشعار' : '📢 Notify';
+    nb.onclick = () => sendNotifToUser(id);
+    btns.appendChild(nb);
+  };
+})();
+
+// ── INIT FAB on login ──
+document.getElementById('li-pass').addEventListener('keydown', e => {
+  if(e.key === 'Enter') doLogin();
+});
+
+// Show fab after login
+const _origDoLogin = window.doLogin;
+window.doLogin = function(){
+  _origDoLogin();
+  const fabTrigger = document.getElementById('fab-trigger-wrap');
+  if(fabTrigger) fabTrigger.style.display = 'block';
+};
+
+
+// ══════════════════════════════
+// SUPABASE — ADMIN
+// ══════════════════════════════
+const SUPA_URL = 'https://pxcnolevnhbxmfarivon.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4Y25vbGV2bmhieG1mYXJpdm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTk3NzksImV4cCI6MjA5NTQ5NTc3OX0.Uj9hytWXYZupPDUSj3SaOWKLA6lOaZlVCKuywCfU5b8';
+const { createClient } = supabase;
+const sdb = createClient(SUPA_URL, SUPA_KEY);
+
+// ── تحميل الإيداعات الحقيقية من Supabase ──
+async function loadRealDeposits() {
+  const { data, error } = await sdb
+    .from('deposits')
+    .select('*, users(name, email, memo)')
+    .order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  if (data) {
+    // استبدال البيانات التجريبية بالحقيقية
+    window.realDeposits = data;
+    renderRealDeposits(data);
+  }
+}
+
+function renderRealDeposits(data) {
+  const wrap = document.getElementById('dep-table-wrap');
+  if (!wrap) return;
+  const filter = currentFilter.dep;
+  const filtered = filter === 'all' ? data : data.filter(d => d.status === filter);
+  if (!filtered.length) {
+    wrap.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">${lang==='ar'?'لا توجد إيداعات':'No deposits'}</div>`;
+    return;
+  }
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>ID</th>
+      <th>${lang==='ar'?'العميل':'Client'}</th>
+      <th>${lang==='ar'?'البريد':'Email'}</th>
+      <th>${lang==='ar'?'المبلغ':'Amount'}</th>
+      <th>${lang==='ar'?'العملة':'Coin'}</th>
+      <th>${lang==='ar'?'TX Hash':'TX Hash'}</th>
+      <th>Memo</th>
+      <th>${lang==='ar'?'التاريخ':'Date'}</th>
+      <th>${lang==='ar'?'الحالة':'Status'}</th>
+      <th>${lang==='ar'?'الإجراء':'Action'}</th>
+    </tr></thead>
+    <tbody>${filtered.map(d => `
+      <tr>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.id.slice(0,8)}...</td>
+        <td style="font-weight:600">${d.users?.name || '—'}</td>
+        <td style="font-size:11px;color:var(--muted)">${d.users?.email || '—'}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(d.amount).toLocaleString()}</td>
+        <td><span style="font-family:var(--mono)">${d.coin}</span></td>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.tx_hash ? d.tx_hash.slice(0,16)+'...' : '—'}</td>
+        <td style="font-family:var(--mono);color:var(--blue)">${d.memo || '—'}</td>
+        <td style="font-size:11px;color:var(--muted)">${d.created_at?.slice(0,16)}</td>
+        <td>${statusBadge(d.status)}</td>
+        <td>
+          ${d.status === 'pending' ? `
+          <div style="display:flex;gap:6px">
+            <button class="act-btn green" onclick="approveDeposit('${d.id}','${d.user_id}',${d.amount},'${d.users?.email||''}','${d.users?.name||''}')">${t('approve')}</button>
+            <button class="act-btn red" onclick="rejectDeposit('${d.id}','${d.users?.email||''}','${d.users?.name||''}')">${t('reject')}</button>
+          </div>` : `<span style="color:var(--muted);font-size:12px">—</span>`}
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+// ── الموافقة على إيداع ──
+async function approveDeposit(depositId, userId, amount, email, name) {
+  const confirmed = confirm(lang==='ar' ? `موافقة على إيداع $${amount} لـ ${name}؟` : `Approve $${amount} deposit for ${name}?`);
+  if (!confirmed) return;
+
+  showToast(lang==='ar'?'جارٍ المعالجة...':'Processing...');
+
+  // 1. تحديث حالة الإيداع
+  await sdb.from('deposits').update({ status: 'approved', approved_at: new Date().toISOString() }).eq('id', depositId);
+
+  // 2. إضافة المبلغ لرصيد العميل
+  const { data: userData } = await sdb.from('users').select('balance').eq('id', userId).single();
+  const newBalance = (parseFloat(userData?.balance) || 0) + parseFloat(amount);
+  await sdb.from('users').update({ balance: newBalance }).eq('id', userId);
+
+  // 3. إضافة معاملة في سجل المعاملات
+  await sdb.from('transactions').insert({
+    user_id: userId,
+    type: 'deposit',
+    amount: amount,
+    coin: 'USDT',
+    description: lang==='ar' ? `تم قبول إيداع $${amount}` : `Deposit of $${amount} approved`
+  });
+
+  // 4. إرسال إشعار للعميل في قاعدة البيانات
+  await sdb.from('notifications').insert({
+    user_id: userId,
+    title: lang==='ar' ? '✅ تم قبول إيداعك' : '✅ Deposit Approved',
+    body: lang==='ar' ? `تم إضافة $${amount} لرصيدك بنجاح` : `$${amount} has been added to your balance`,
+    type: 'success'
+  });
+
+  // 5. إرسال إيميل للعميل عبر Supabase
+  await sendEmailNotification(email, name, amount, 'approved');
+
+  showToast(lang==='ar' ? `✓ تم قبول إيداع $${amount} وإضافته لحساب ${name}` : `✓ $${amount} deposit approved for ${name}`);
+  await loadRealDeposits();
+}
+
+// ── رفض إيداع ──
+async function rejectDeposit(depositId, email, name) {
+  const reason = prompt(lang==='ar' ? 'سبب الرفض (اختياري):' : 'Rejection reason (optional):') || '';
+  await sdb.from('deposits').update({ status: 'rejected' }).eq('id', depositId);
+  await sendEmailNotification(email, name, 0, 'rejected', reason);
+  showToast(lang==='ar' ? `✗ تم رفض الإيداع` : `✗ Deposit rejected`);
+  await loadRealDeposits();
+}
+
+// ── إرسال إيميل عبر Supabase Edge Function (بسيط) ──
+async function sendEmailNotification(email, name, amount, status, reason='') {
+  // نستخدم Supabase Realtime notifications بدل إيميل مباشر
+  // الإيميل الحقيقي محتاج Supabase Edge Function أو SendGrid
+  console.log('Email notification:', { email, name, amount, status });
+  // في المرحلة دي بنحفظ الإشعار في قاعدة البيانات وهيظهر للعميل في الموقع
+}
+
+// ── تحميل السحوبات الحقيقية ──
+async function loadRealWithdrawals() {
+  const { data } = await sdb
+    .from('withdrawals')
+    .select('*, users(name, email)')
+    .order('created_at', { ascending: false });
+  if (data) {
+    window.realWithdrawals = data;
+    renderRealWithdrawals(data);
+  }
+}
+
+function renderRealWithdrawals(data) {
+  const wrap = document.getElementById('wd-table-wrap');
+  if (!wrap) return;
+  const filter = currentFilter.wd;
+  const filtered = filter === 'all' ? data : data.filter(w => w.status === filter);
+  if (!filtered.length) {
+    wrap.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">${lang==='ar'?'لا توجد سحوبات':'No withdrawals'}</div>`;
+    return;
+  }
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>ID</th>
+      <th>${lang==='ar'?'العميل':'Client'}</th>
+      <th>${lang==='ar'?'المبلغ':'Amount'}</th>
+      <th>${lang==='ar'?'العملة':'Coin'}</th>
+      <th>${lang==='ar'?'المحفظة':'Wallet'}</th>
+      <th>${lang==='ar'?'التاريخ':'Date'}</th>
+      <th>${lang==='ar'?'الحالة':'Status'}</th>
+      <th>${lang==='ar'?'الإجراء':'Action'}</th>
+    </tr></thead>
+    <tbody>${filtered.map(w => `
+      <tr>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${w.id.slice(0,8)}...</td>
+        <td style="font-weight:600">${w.users?.name || '—'}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(w.amount).toLocaleString()}</td>
+        <td><span style="font-family:var(--mono)">${w.coin}</span></td>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${w.wallet_address?.slice(0,20)}...</td>
+        <td style="font-size:11px;color:var(--muted)">${w.created_at?.slice(0,16)}</td>
+        <td>${statusBadge(w.status)}</td>
+        <td>
+          ${w.status === 'pending' ? `
+          <div style="display:flex;gap:6px">
+            <button class="act-btn green" onclick="approveWithdrawal('${w.id}','${w.user_id}',${w.amount},'${w.users?.name||''}')">${t('approve')}</button>
+            <button class="act-btn red" onclick="rejectWithdrawal('${w.id}','${w.user_id}',${w.amount},'${w.users?.name||''}')">${t('reject')}</button>
+          </div>` : `<span style="color:var(--muted);font-size:12px">—</span>`}
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function approveWithdrawal(wdId, userId, amount, name) {
+  const confirmed = confirm(lang==='ar' ? `موافقة على سحب $${amount} لـ ${name}؟` : `Approve $${amount} withdrawal for ${name}?`);
+  if (!confirmed) return;
+  await sdb.from('withdrawals').update({ status: 'approved', approved_at: new Date().toISOString() }).eq('id', wdId);
+  // خصم المبلغ من الرصيد
+  const { data: userData } = await sdb.from('users').select('balance').eq('id', userId).single();
+  const newBalance = Math.max(0, (parseFloat(userData?.balance)||0) - parseFloat(amount));
+  await sdb.from('users').update({ balance: newBalance }).eq('id', userId);
+  await sdb.from('transactions').insert({ user_id: userId, type: 'withdrawal', amount, description: lang==='ar'?`تم صرف $${amount}`:`Withdrawal of $${amount} approved` });
+  await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'✅ تم قبول طلب السحب':'✅ Withdrawal Approved', body: lang==='ar'?`تم تحويل $${amount} لمحفظتك`:`$${amount} has been sent to your wallet`, type: 'success' });
+  showToast(lang==='ar'?`✓ تم قبول سحب $${amount} لـ ${name}`:`✓ $${amount} withdrawal approved for ${name}`);
+  await loadRealWithdrawals();
+}
+
+async function rejectWithdrawal(wdId, userId, amount, name) {
+  await sdb.from('withdrawals').update({ status: 'rejected' }).eq('id', wdId);
+  await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'❌ تم رفض طلب السحب':'❌ Withdrawal Rejected', body: lang==='ar'?`تم رفض طلب سحب $${amount}`:`Withdrawal request of $${amount} was rejected`, type: 'warning' });
+  showToast(lang==='ar'?`✗ تم رفض السحب`:`✗ Withdrawal rejected`);
+  await loadRealWithdrawals();
+}
+
+// ── تحميل المستخدمين الحقيقيين ──
+async function loadRealUsers() {
+  const { data } = await sdb.from('users').select('*').order('created_at', { ascending: false });
+  if (data) { window.realUsers = data; renderRealUsers(data); }
+}
+
+function renderRealUsers(data) {
+  const wrap = document.getElementById('users-table-wrap');
+  if (!wrap) return;
+  const search = (document.getElementById('user-search')||{}).value?.toLowerCase()||'';
+  const filter = currentFilter.users;
+  let filtered = data.filter(u => {
+    const matchFilter = filter==='all'||u.status===filter;
+    const matchSearch = !search||u.name?.toLowerCase().includes(search)||u.email?.toLowerCase().includes(search);
+    return matchFilter && matchSearch;
+  });
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>${lang==='ar'?'المستخدم':'User'}</th>
+      <th>${lang==='ar'?'البريد':'Email'}</th>
+      <th>${lang==='ar'?'الرصيد':'Balance'}</th>
+      <th>Memo</th>
+      <th>${lang==='ar'?'KYC':'KYC'}</th>
+      <th>${lang==='ar'?'الحالة':'Status'}</th>
+      <th>${lang==='ar'?'تاريخ التسجيل':'Joined'}</th>
+      <th>${lang==='ar'?'الإجراءات':'Actions'}</th>
+    </tr></thead>
+    <tbody>${filtered.map(u=>`
+      <tr>
+        <td><div style="display:flex;align-items:center;gap:10px">
+          <div class="u-av" style="background:var(--gold-dim);color:var(--gold)">${(u.name||'?')[0]}</div>
+          <span style="font-weight:600">${u.name||'—'}</span>
+        </div></td>
+        <td style="font-size:12px;color:var(--muted)">${u.email}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(u.balance||0).toLocaleString()}</td>
+        <td style="font-family:var(--mono);color:var(--blue);font-size:12px">${u.memo||'—'}</td>
+        <td>${kycBadge(u.kyc_status)}</td>
+        <td>${statusBadge(u.status)}</td>
+        <td style="font-size:11px;color:var(--muted)">${u.created_at?.slice(0,10)||'—'}</td>
+        <td><div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${u.status==='blocked'
+            ? `<button class="act-btn green" onclick="toggleUserBlock('${u.id}','active')">${t('unblock')}</button>`
+            : `<button class="act-btn red" onclick="toggleUserBlock('${u.id}','blocked')">${t('block')}</button>`}
+          <button class="act-btn blue" onclick="editUserBalance('${u.id}','${u.name}',${u.balance||0})">${lang==='ar'?'تعديل الرصيد':'Edit Balance'}</button>
+        </div></td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function toggleUserBlock(userId, newStatus) {
+  await sdb.from('users').update({ status: newStatus }).eq('id', userId);
+  showToast(newStatus==='blocked' ? (lang==='ar'?'تم حظر المستخدم':'User blocked') : (lang==='ar'?'تم رفع الحظر':'User unblocked'));
+  await loadRealUsers();
+}
+
+async function editUserBalance(userId, name, currentBal) {
+  const newBal = prompt(lang==='ar' ? `الرصيد الحالي لـ ${name}: $${currentBal}\nأدخل الرصيد الجديد:` : `Current balance for ${name}: $${currentBal}\nEnter new balance:`);
+  if (newBal === null || isNaN(parseFloat(newBal))) return;
+  await sdb.from('users').update({ balance: parseFloat(newBal) }).eq('id', userId);
+  showToast(lang==='ar'?`✓ تم تحديث رصيد ${name} إلى $${newBal}`:`✓ ${name} balance updated to $${newBal}`);
+  await loadRealUsers();
+}
+
+console.log('%cCrysanto Admin Panel — Loaded ✓', 'color:#C9A84C;font-size:16px;font-weight:bold;');
+</script>
