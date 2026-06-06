@@ -772,29 +772,32 @@ function switchDW(el, id) {
 
 // ── SUPABASE AUTH ──
 async function doLogin() {
-  const email=document.getElementById('login-email').value.trim();
-  const pass=document.getElementById('login-pass').value;
-  const errEl=document.getElementById('login-err');
-  errEl.style.display='none';
-  if(!email||!pass){showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'});return;}
-  
-  // زر الدخول
-  const btn = document.getElementById('login-btn-txt');
-  if(btn){ btn.textContent = '...'; btn.disabled = true; }
-  
-  let data, error;
-  try {
-    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 8000));
-    const loginReq = db.auth.signInWithPassword({email, password:pass});
-    const result = await Promise.race([loginReq, timeout]);
-    data = result.data; error = result.error;
-  } catch(e) {
-    if(btn){ btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[currentLang]; btn.disabled=false; }
-    showErr(errEl,{ar:'انتهى وقت الاتصال، تحقق من الإنترنت وحاول تاني',en:'Connection timeout, check internet and try again',tr:'Bağlantı zaman aşımı, internet bağlantınızı kontrol edin'});
+  const email = (document.getElementById('login-email').value||'').trim();
+  const pass  = (document.getElementById('login-pass').value||'');
+  const errEl = document.getElementById('login-err');
+  errEl.style.display = 'none';
+
+  if(!email||!pass){
+    showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'});
     return;
   }
-  
-  if(btn){ btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[currentLang]; btn.disabled=false; }
+
+  const btn = document.getElementById('login-btn-txt');
+  if(btn){ btn.textContent='⏳'; btn.disabled=true; }
+
+  let res;
+  try {
+    res = await Promise.race([
+      db.auth.signInWithPassword({email, password:pass}),
+      new Promise((_,r)=>setTimeout(()=>r({data:null,error:{message:'timeout'}}),10000))
+    ]);
+  } catch(e) {
+    res = {data:null, error:{message:e.message}};
+  }
+
+  if(btn){ btn.textContent={ar:'دخول',en:'Sign In',tr:'Giriş'}[currentLang]; btn.disabled=false; }
+
+  const {data, error} = res;
   if(error){
     console.log('Login error:', error.message, error.status);
     let msg = {ar:'بريد أو كلمة مرور غير صحيحة',en:'Invalid email or password',tr:'Geçersiz e-posta veya şifre'};
@@ -828,22 +831,22 @@ async function doRegister() {
   if(pass.length<8){showErr(errEl,{ar:'كلمة المرور 8 أحرف على الأقل',en:'Password min 8 chars',tr:'Şifre en az 8 karakter'});return;}
   if(!terms){showErr(errEl,{ar:'يجب الموافقة على الشروط',en:'Must agree to terms',tr:'Şartları kabul edin'});return;}
   const regBtn = document.getElementById('reg-btn-txt');
-  if(regBtn){ regBtn.textContent='...'; regBtn.disabled=true; }
-  
-  let data, error;
+  if(regBtn){ regBtn.textContent='⏳'; regBtn.disabled=true; }
+
+  let res2;
   try {
-    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 8000));
-    const regReq = db.auth.signUp({email,password:pass,options:{data:{name,ref_code:ref||null}}});
-    const result = await Promise.race([regReq, timeout]);
-    data = result.data; error = result.error;
+    res2 = await Promise.race([
+      db.auth.signUp({email,password:pass,options:{data:{name,ref_code:ref||null}}}),
+      new Promise((_,r)=>setTimeout(()=>r({data:null,error:{message:'timeout'}}),10000))
+    ]);
   } catch(e) {
-    if(regBtn){ regBtn.textContent={ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[currentLang]; regBtn.disabled=false; }
-    showErr(errEl,{ar:'انتهى وقت الاتصال، تحقق من الإنترنت وحاول تاني',en:'Connection timeout, check internet and try again',tr:'Bağlantı zaman aşımı'});
-    return;
+    res2 = {data:null,error:{message:e.message}};
   }
-  
+
   if(regBtn){ regBtn.textContent={ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[currentLang]; regBtn.disabled=false; }
-  if(error){showErr(errEl,{ar:error.message,en:error.message,tr:error.message});return;}
+  const {data,error} = res2;
+  if(error&&error.message!=='timeout'){showErr(errEl,{ar:'خطأ: '+error.message,en:'Error: '+error.message,tr:'Hata: '+error.message});return;}
+  if(error&&error.message==='timeout'){showErr(errEl,{ar:'انتهى وقت الاتصال، تحقق من الإنترنت',en:'Connection timeout, check internet',tr:'Bağlantı zaman aşımı'});return;}
   currentUser=data.user;
   await fetchProfile();
   closeModal('register');
@@ -1102,21 +1105,18 @@ function updatePrices(){
 
 // ── SESSION RESTORE ──
 async function restoreSession(){
-  // timeout احتياطي عشان مش يفضل loading للأبد
-  const timeout = setTimeout(() => showLoading(false), 4000);
   try {
-    showLoading(true,{ar:'جارٍ التحميل...',en:'Loading...',tr:'Yükleniyor...'});
-    const {data,error} = await db.auth.getSession();
+    const {data} = await Promise.race([
+      db.auth.getSession(),
+      new Promise(r=>setTimeout(()=>r({data:{session:null}}),5000))
+    ]);
     if(data?.session?.user){
       currentUser = data.session.user;
       await fetchProfile();
       if(userProfile && !isLoggedIn) afterLogin();
     }
   } catch(e) {
-    console.log('Session restore error:', e);
-  } finally {
-    clearTimeout(timeout);
-    showLoading(false);
+    console.log('Session restore skipped:', e);
   }
 }
 
@@ -1161,7 +1161,8 @@ function goToDeposit(rate) {
 async function init(){
   buildTicker();buildMarkets();buildLivePrices();
   buildFaq();buildFeatures();buildPlans();calcProfit();
-  await restoreSession();
+  // restore session في الخلفية بدون loading
+  restoreSession();
   setInterval(updatePrices,5000);
 }
 
