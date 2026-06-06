@@ -606,7 +606,32 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
 const SUPA_URL = 'https://pxcnolevnhbxmfarivon.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4Y25vbGV2bmhieG1mYXJpdm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTk3NzksImV4cCI6MjA5NTQ5NTc3OX0.Uj9hytWXYZupPDUSj3SaOWKLA6lOaZlVCKuywCfU5b8';
 const { createClient } = supabase;
-const db = createClient(SUPA_URL, SUPA_KEY);
+const db = createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage: window.localStorage
+  }
+});
+
+// مراقبة حالة الجلسة تلقائياً — يمنع الخروج التلقائي
+db.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' && session && !isLoggedIn) {
+    currentUser = session.user;
+    await fetchProfile();
+    if (userProfile) afterLogin();
+  } else if (event === 'SIGNED_OUT') {
+    isLoggedIn = false; currentUser = null; userProfile = null;
+    document.body.classList.remove('logged-in');
+    const btnL = document.getElementById('btnLogin');
+    const btnR = document.getElementById('btnRegister');
+    const menu = document.getElementById('user-menu');
+    if(btnL) btnL.style.display = '';
+    if(btnR) btnR.style.display = '';
+    if(menu) menu.style.display = 'none';
+  }
+});
 
 // ══════════════════════════════
 // STATE
@@ -807,8 +832,13 @@ function afterLogin() {
     const refEl=document.getElementById('ref-link-txt'); if(refEl) refEl.textContent='https://crysanto.io/ref/'+(userProfile.ref_code||'---');
   }
   showToast({ar:`مرحباً ${userProfile?.name||''} 👋`,en:`Welcome ${userProfile?.name||''} 👋`,tr:`Hoşgeldiniz ${userProfile?.name||''} 👋`}[currentLang]);
-  if(pendingPage){const p=pendingPage;pendingPage=null;setTimeout(()=>showPage(p.id,p.el),300);}
-  else showPage('dashboard',null);
+  if(pendingPage){
+    const p=pendingPage; pendingPage=null;
+    setTimeout(()=>{
+      showPage(p.id, p.el);
+      if(p.planRate) setTimeout(()=>goToDeposit(p.planRate), 400);
+    },300);
+  } else showPage('dashboard',null);
 }
 
 // ── DASHBOARD ──
@@ -977,7 +1007,7 @@ function buildPlans(){
     <div class="plan-roi">${p.roi}<span>/day</span></div>
     <div class="plan-dur">${p.dur[currentLang]||p.dur.en}</div>
     <ul class="plan-features">${(p.features[currentLang]||p.features.en).map(f=>`<li>${f}</li>`).join('')}</ul>
-    <button class="btn-primary" style="width:100%" onclick="openModal('register')">${invLbl[currentLang]}</button>
+    <button class="btn-primary" style="width:100%" onclick="handlePlanClick('${p.roi}')">${invLbl[currentLang]}</button>
   </div>`).join('');
 }
 
@@ -1021,8 +1051,49 @@ function updatePrices(){
 async function restoreSession(){
   showLoading(true,{ar:'جارٍ التحميل...',en:'Loading...',tr:'Yükleniyor...'});
   const {data:{session}}=await db.auth.getSession();
-  if(session){currentUser=session.user;await fetchProfile();if(userProfile)afterLogin();}
+  if(session && session.user){
+    currentUser=session.user;
+    await fetchProfile();
+    if(userProfile && !isLoggedIn) afterLogin();
+  }
   showLoading(false);
+}
+
+
+
+// ── معالجة الضغط على باقة ──
+function handlePlanClick(rate) {
+  if (isLoggedIn) {
+    goToDeposit(rate);
+  } else {
+    // حفظ الباقة المختارة وفتح تسجيل الدخول
+    pendingPage = { id: 'deposit', el: null, planRate: rate };
+    openModal('login');
+  }
+}
+
+// ── الذهاب لصفحة الإيداع مع تحديد الباقة ──
+function goToDeposit(rate) {
+  showPage('deposit', null);
+  // تمييز الباقة المختارة
+  const planInfo = {
+    '2.5': {ar:'الباقة الأساسية',en:'Starter Plan',tr:'Başlangıç'},
+    '4.8': {ar:'الباقة الذهبية',en:'Gold Plan',tr:'Altın Planı'},
+    '8.2': {ar:'باقة VIP',en:'VIP Plan',tr:'VIP Planı'},
+  };
+  const plan = planInfo[rate];
+  if(!plan) return;
+  // إظهار بانر الباقة المختارة
+  let banner = document.getElementById('selected-plan-banner');
+  if(!banner){
+    banner = document.createElement('div');
+    banner.id = 'selected-plan-banner';
+    banner.style.cssText = 'background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;padding:12px 18px;margin-bottom:16px;font-size:13px;font-weight:600;color:var(--gold);text-align:center;';
+    const depPanel = document.getElementById('dw-dep');
+    if(depPanel) depPanel.insertBefore(banner, depPanel.firstChild);
+  }
+  banner.textContent = '✦ ' + (plan[currentLang]||plan.en) + ' — ' + rate + '%/day';
+  banner.style.display = 'block';
 }
 
 // ── INIT ──
