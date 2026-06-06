@@ -773,7 +773,21 @@ async function doLogin() {
   showLoading(true,{ar:'جارٍ تسجيل الدخول...',en:'Signing in...',tr:'Giriş yapılıyor...'});
   const {data,error}=await db.auth.signInWithPassword({email,password:pass});
   showLoading(false);
-  if(error){showErr(errEl,{ar:'بريد أو كلمة مرور غير صحيحة',en:'Invalid email or password',tr:'Geçersiz e-posta veya şifre'});return;}
+  if(error){
+    console.log('Login error:', error.message, error.status);
+    let msg = {ar:'بريد أو كلمة مرور غير صحيحة',en:'Invalid email or password',tr:'Geçersiz e-posta veya şifre'};
+    if(error.message.includes('Email not confirmed')) {
+      msg = {ar:'يرجى تأكيد بريدك الإلكتروني أولاً',en:'Please confirm your email first',tr:'Lütfen önce e-postanızı onaylayın'};
+    } else if(error.message.includes('Invalid login')) {
+      msg = {ar:'بريد أو كلمة مرور غير صحيحة',en:'Invalid email or password',tr:'Geçersiz e-posta veya şifre'};
+    } else if(error.message.includes('rate limit') || error.status===429) {
+      msg = {ar:'محاولات كثيرة، انتظر دقيقة وحاول تاني',en:'Too many attempts, wait a minute',tr:'Çok fazla deneme, bir dakika bekleyin'};
+    } else {
+      msg = {ar:'خطأ: '+error.message, en:'Error: '+error.message, tr:'Hata: '+error.message};
+    }
+    showErr(errEl, msg);
+    return;
+  }
   currentUser=data.user;
   await fetchProfile();
   closeModal('login');
