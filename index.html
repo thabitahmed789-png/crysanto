@@ -777,9 +777,24 @@ async function doLogin() {
   const errEl=document.getElementById('login-err');
   errEl.style.display='none';
   if(!email||!pass){showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'});return;}
-  showLoading(true,{ar:'جارٍ تسجيل الدخول...',en:'Signing in...',tr:'Giriş yapılıyor...'});
-  const {data,error}=await db.auth.signInWithPassword({email,password:pass});
-  showLoading(false);
+  
+  // زر الدخول
+  const btn = document.getElementById('login-btn-txt');
+  if(btn){ btn.textContent = '...'; btn.disabled = true; }
+  
+  let data, error;
+  try {
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 8000));
+    const loginReq = db.auth.signInWithPassword({email, password:pass});
+    const result = await Promise.race([loginReq, timeout]);
+    data = result.data; error = result.error;
+  } catch(e) {
+    if(btn){ btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[currentLang]; btn.disabled=false; }
+    showErr(errEl,{ar:'انتهى وقت الاتصال، تحقق من الإنترنت وحاول تاني',en:'Connection timeout, check internet and try again',tr:'Bağlantı zaman aşımı, internet bağlantınızı kontrol edin'});
+    return;
+  }
+  
+  if(btn){ btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[currentLang]; btn.disabled=false; }
   if(error){
     console.log('Login error:', error.message, error.status);
     let msg = {ar:'بريد أو كلمة مرور غير صحيحة',en:'Invalid email or password',tr:'Geçersiz e-posta veya şifre'};
@@ -812,9 +827,22 @@ async function doRegister() {
   if(!name||!email||!pass){showErr(errEl,{ar:'أكمل جميع الحقول',en:'Fill all fields',tr:'Tüm alanları doldurun'});return;}
   if(pass.length<8){showErr(errEl,{ar:'كلمة المرور 8 أحرف على الأقل',en:'Password min 8 chars',tr:'Şifre en az 8 karakter'});return;}
   if(!terms){showErr(errEl,{ar:'يجب الموافقة على الشروط',en:'Must agree to terms',tr:'Şartları kabul edin'});return;}
-  showLoading(true,{ar:'جارٍ إنشاء الحساب...',en:'Creating account...',tr:'Hesap oluşturuluyor...'});
-  const {data,error}=await db.auth.signUp({email,password:pass,options:{data:{name,ref_code:ref||null}}});
-  showLoading(false);
+  const regBtn = document.getElementById('reg-btn-txt');
+  if(regBtn){ regBtn.textContent='...'; regBtn.disabled=true; }
+  
+  let data, error;
+  try {
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 8000));
+    const regReq = db.auth.signUp({email,password:pass,options:{data:{name,ref_code:ref||null}}});
+    const result = await Promise.race([regReq, timeout]);
+    data = result.data; error = result.error;
+  } catch(e) {
+    if(regBtn){ regBtn.textContent={ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[currentLang]; regBtn.disabled=false; }
+    showErr(errEl,{ar:'انتهى وقت الاتصال، تحقق من الإنترنت وحاول تاني',en:'Connection timeout, check internet and try again',tr:'Bağlantı zaman aşımı'});
+    return;
+  }
+  
+  if(regBtn){ regBtn.textContent={ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[currentLang]; regBtn.disabled=false; }
   if(error){showErr(errEl,{ar:error.message,en:error.message,tr:error.message});return;}
   currentUser=data.user;
   await fetchProfile();
