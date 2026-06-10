@@ -946,6 +946,8 @@ function renderCurrentSection(){
   if(currentSection==='s-deposits') { loadRealDeposits(); return; }
   if(currentSection==='s-withdrawals') { loadRealWithdrawals(); return; }
   if(currentSection==='s-users') { loadRealUsers(); return; }
+  if(currentSection==='s-kyc') { renderKYC(); return; }
+  if(currentSection==='s-overview') { renderOverview(); loadRealOverviewStats(); return; }
   const renders = {
     's-overview':renderOverview,'s-users':renderUsers,'s-deposits':renderDeposits,
     's-withdrawals':renderWithdrawals,'s-investments':renderInvestments,
@@ -960,6 +962,8 @@ function renderCurrentSection(){
 function initApp(){
   applyTranslations();
   renderOverview();
+  loadRealOverviewStats();
+  setupRealtime();
 }
 
 // ── OVERVIEW ──
@@ -2151,6 +2155,99 @@ async function editUserBalance(userId, name, currentBal) {
   showToast(lang==='ar'?`✓ تم تحديث رصيد ${name} إلى $${newBal}`:`✓ ${name} balance updated to $${newBal}`);
   await loadRealUsers();
 }
+
+
+// ── إحصائيات الـ Overview من Supabase ──
+async function loadRealOverviewStats() {
+  try {
+    // عدد المستخدمين
+    const {count: userCount} = await sdb.from('users').select('*', {count:'exact',head:true});
+    const sc2v = document.getElementById('sc2v'); if(sc2v) sc2v.textContent = (userCount||0).toLocaleString();
+
+    // إيداعات اليوم
+    const today = new Date().toISOString().slice(0,10);
+    const {data: todayDeps} = await sdb.from('deposits').select('amount').eq('status','approved').gte('created_at', today);
+    const todayTotal = (todayDeps||[]).reduce((s,d)=>s+parseFloat(d.amount||0),0);
+    const sc3v = document.getElementById('sc3v'); if(sc3v) sc3v.textContent = '$'+todayTotal.toLocaleString()+'K';
+
+    // سحوبات معلقة
+    const {count: wdCount} = await sdb.from('withdrawals').select('*',{count:'exact',head:true}).eq('status','pending');
+    const sc4v = document.getElementById('sc4v'); if(sc4v) sc4v.textContent = (wdCount||0).toString();
+
+    // طلبات KYC
+    const {count: kycCount} = await sdb.from('users').select('*',{count:'exact',head:true}).eq('kyc_status','pending').not('kyc_data','is',null);
+    const sc6v = document.getElementById('sc6v'); if(sc6v) sc6v.textContent = (kycCount||0).toString();
+
+    // تحديث الـ badges في السايدبار
+    const depBadge = document.getElementById('dep-badge');
+    const {count: depPending} = await sdb.from('deposits').select('*',{count:'exact',head:true}).eq('status','pending');
+    if(depBadge) depBadge.textContent = depPending||0;
+
+    const wdBadge = document.getElementById('wd-badge');
+    if(wdBadge) wdBadge.textContent = wdCount||0;
+
+    // آخر المعاملات
+    renderRecentTxFromSupabase();
+  } catch(e) { console.log('Stats error:', e); }
+}
+
+async function renderRecentTxFromSupabase() {
+  try {
+    const {data: deps} = await sdb.from('deposits').select('*,users(name,email)').order('created_at',{ascending:false}).limit(5);
+    const {data: wds} = await sdb.from('withdrawals').select('*,users(name,email)').order('created_at',{ascending:false}).limit(5);
+    
+    const all = [...(deps||[]).map(d=>({...d,txtype:'deposit'})), ...(wds||[]).map(w=>({...w,txtype:'withdrawal'}))]
+      .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,8);
+
+    const wrap = document.getElementById('recent-tx-wrap');
+    if(!wrap||!all.length) return;
+
+    wrap.innerHTML = `<table>
+      <thead><tr>
+        <th>${lang==='ar'?'النوع':'Type'}</th>
+        <th>${lang==='ar'?'المستخدم':'User'}</th>
+        <th>${lang==='ar'?'المبلغ':'Amount'}</th>
+        <th>${lang==='ar'?'العملة':'Coin'}</th>
+        <th>${lang==='ar'?'التاريخ':'Date'}</th>
+        <th>${lang==='ar'?'الحالة':'Status'}</th>
+      </tr></thead>
+      <tbody>${all.map(tx=>`
+        <tr>
+          <td>${tx.txtype==='deposit'?'📥':'📤'} ${tx.id?.slice(0,8)||'—'}</td>
+          <td style="font-weight:600">${tx.users?.name||'—'}</td>
+          <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(tx.amount||0).toLocaleString()}</td>
+          <td style="font-family:var(--mono)">${tx.coin||'—'}</td>
+          <td style="font-size:11px;color:var(--muted)">${tx.created_at?.slice(0,16)||'—'}</td>
+          <td>${statusBadge(tx.status)}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+  } catch(e) { console.log('Recent TX error:', e); }
+}
+
+
+
+// ── Realtime — تحديث الأدمن تلقائياً ──
+function setupRealtime() {
+  sdb.channel('admin-realtime')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'deposits'}, () => {
+      if(currentSection==='s-deposits') loadRealDeposits();
+      if(currentSection==='s-overview') loadRealOverviewStats();
+      loadRealOverviewStats(); // تحديث الـ badges دايماً
+    })
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'withdrawals'}, () => {
+      if(currentSection==='s-withdrawals') loadRealWithdrawals();
+      loadRealOverviewStats();
+    })
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'users'}, () => {
+      if(currentSection==='s-users') loadRealUsers();
+      if(currentSection==='s-kyc') renderKYC();
+    })
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'users'}, () => {
+      loadRealOverviewStats();
+    })
+    .subscribe();
+}
+
 
 console.log('%cCrysanto Admin Panel — Loaded ✓', 'color:#C9A84C;font-size:16px;font-weight:bold;');
 </script>
