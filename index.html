@@ -610,6 +610,17 @@ const db = createClient(SUPA_URL, SUPA_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, storageKey: 'crysanto-auth' }
 });
 
+// مراقبة الجلسة — يمنع الخروج عند الريفريش
+db.auth.onAuthStateChange(async (event, session) => {
+  if(event === 'SIGNED_IN' && session && !isLoggedIn) {
+    currentUser = session.user;
+    await fetchProfile();
+    if(userProfile) afterLogin();
+  } else if(event === 'TOKEN_REFRESHED' && session) {
+    currentUser = session.user;
+  }
+});
+
 // ══════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════
