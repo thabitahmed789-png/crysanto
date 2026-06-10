@@ -1088,8 +1088,7 @@ async function submitDeposit() {
   if(!amount||amount<100) { showToast({ar:'الحد الأدنى للإيداع $100',en:'Minimum deposit $100',tr:'Minimum yatırım $100'}[currentLang],'err'); return; }
   try {
     const coin = document.querySelector('#dw-dep .coin-btn.active');
-    const coinText = coin ? coin.textContent.trim().split('
-')[0] : 'USDT';
+    const coinText = coin ? coin.textContent.trim().split('\n')[0].trim() : 'USDT';
     const network = document.getElementById('net-name').textContent;
     await db.from('deposits').insert({
       user_id: userProfile.id, amount, coin: coinText, network,
