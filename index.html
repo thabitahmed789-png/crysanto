@@ -600,59 +600,29 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
 </div>
 
 <script>
-// ══════════════════════════════
-// SUPABASE INIT
-// ══════════════════════════════
+// ══════════════════════════════════════════
+// SUPABASE
+// ══════════════════════════════════════════
 const SUPA_URL = 'https://pxcnolevnhbxmfarivon.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4Y25vbGV2bmhieG1mYXJpdm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTk3NzksImV4cCI6MjA5NTQ5NTc3OX0.Uj9hytWXYZupPDUSj3SaOWKLA6lOaZlVCKuywCfU5b8';
 const { createClient } = supabase;
-// Custom storage يتجاوز Tracking Prevention
-const customStorage = {
-  getItem: (key) => { try { return localStorage.getItem(key); } catch(e) { return sessionStorage.getItem(key); } },
-  setItem: (key, val) => { try { localStorage.setItem(key, val); } catch(e) { try { sessionStorage.setItem(key, val); } catch(e2) {} } },
-  removeItem: (key) => { try { localStorage.removeItem(key); } catch(e) { try { sessionStorage.removeItem(key); } catch(e2) {} } }
-};
-
 const db = createClient(SUPA_URL, SUPA_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: false,
-    storage: customStorage
-  }
+  auth: { persistSession: true, autoRefreshToken: true, storageKey: 'crysanto-auth' }
 });
 
-// مراقبة حالة الجلسة تلقائياً — يمنع الخروج التلقائي
-db.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session && !isLoggedIn) {
-    currentUser = session.user;
-    await fetchProfile();
-    if (userProfile) afterLogin();
-  } else if (event === 'SIGNED_OUT') {
-    isLoggedIn = false; currentUser = null; userProfile = null;
-    document.body.classList.remove('logged-in');
-    const btnL = document.getElementById('btnLogin');
-    const btnR = document.getElementById('btnRegister');
-    const menu = document.getElementById('user-menu');
-    if(btnL) btnL.style.display = '';
-    if(btnR) btnR.style.display = '';
-    if(menu) menu.style.display = 'none';
-  }
-});
-
-// ══════════════════════════════
+// ══════════════════════════════════════════
 // STATE
-// ══════════════════════════════
+// ══════════════════════════════════════════
 let currentLang = 'ar';
 let isLoggedIn = false;
-let currentUser = null;   // auth user
-let userProfile = null;   // من جدول users
+let currentUser = null;
+let userProfile = null;
 let pendingPage = null;
 const PROTECTED = ['dashboard','deposit','referral'];
 
-// ══════════════════════════════
-// COINS DATA
-// ══════════════════════════════
+// ══════════════════════════════════════════
+// COINS
+// ══════════════════════════════════════════
 const coins = [
   {sym:'BTC',name:'Bitcoin',price:67420,change:2.4,cap:'$1.32T',vol:'$38B',icon:'₿',color:'#f7931a'},
   {sym:'ETH',name:'Ethereum',price:3842,change:-1.2,cap:'$461B',vol:'$18B',icon:'Ξ',color:'#627eea'},
@@ -674,7 +644,7 @@ const faqs = {
     {q:'كيف أبدأ الاستثمار؟',a:'سجل حساباً، قم بإيداع رأس المال (الحد الأدنى $100)، اختر الخطة المناسبة، وابدأ في تحقيق الأرباح.'},
     {q:'هل الاستثمار آمن؟',a:'نعم، نستخدم أعلى معايير الأمان والتشفير لحماية أموالك وبياناتك الشخصية.'},
     {q:'كيف أسحب أرباحي؟',a:'يمكنك السحب في أي وقت من صفحة الإيداع/السحب. تتم المعالجة خلال 24 ساعة.'},
-    {q:'ما هي العملات المقبولة؟',a:'ندعم USDT (TRC-20 و BEP-20)، ETH، BNB. سنضيف المزيد قريباً.'},
+    {q:'ما هي العملات المقبولة؟',a:'ندعم USDT (TRC-20 و BEP-20)، ETH، BNB.'},
     {q:'ما هو الحد الأدنى للإيداع؟',a:'الحد الأدنى للإيداع هو $100 والحد الأدنى للسحب هو $50.'},
   ],
   en:[
@@ -682,16 +652,16 @@ const faqs = {
     {q:'How do I start investing?',a:'Register, deposit funds (minimum $100), choose your plan, and start earning daily profits.'},
     {q:'Is the investment safe?',a:'Yes, we use the highest security and encryption standards to protect your funds and personal data.'},
     {q:'How do I withdraw profits?',a:'You can withdraw anytime from the Deposit/Withdraw page. Processing takes up to 24 hours.'},
-    {q:'Which currencies are accepted?',a:'We support USDT (TRC-20 & BEP-20), ETH, BNB. More coming soon.'},
+    {q:'Which currencies are accepted?',a:'We support USDT (TRC-20 & BEP-20), ETH, BNB.'},
     {q:'What is the minimum deposit?',a:'The minimum deposit is $100 and the minimum withdrawal is $50.'},
   ],
   tr:[
     {q:'Crysanto nedir?',a:'Crysanto, kripto paranızı yatırmanıza ve garantili günlük getiri elde etmenize olanak tanıyan önde gelen bir platformdur.'},
     {q:'Yatırıma nasıl başlarım?',a:'Kayıt olun, fon yatırın (minimum $100), planınızı seçin ve günlük kar elde etmeye başlayın.'},
-    {q:'Yatırım güvenli mi?',a:'Evet, fonlarınızı ve kişisel verilerinizi korumak için en yüksek güvenlik standartlarını kullanıyoruz.'},
-    {q:'Kârımı nasıl çekerim?',a:'İstediğiniz zaman Yatırım/Çekim sayfasından para çekebilirsiniz. İşlem 24 saat içinde tamamlanır.'},
-    {q:'Hangi para birimleri kabul edilir?',a:'USDT (TRC-20 ve BEP-20), ETH, BNB destekliyoruz. Yakında daha fazlası.'},
-    {q:'Minimum yatırım nedir?',a:'Minimum yatırım $100, minimum çekim ise $50\'dir.'},
+    {q:'Yatırım güvenli mi?',a:'Evet, en yüksek güvenlik standartlarını kullanıyoruz.'},
+    {q:'Kârımı nasıl çekerim?',a:'İstediğiniz zaman Yatırım/Çekim sayfasından para çekebilirsiniz.'},
+    {q:'Hangi para birimleri kabul edilir?',a:'USDT (TRC-20 ve BEP-20), ETH, BNB destekliyoruz.'},
+    {q:'Minimum yatırım nedir?',a:'Minimum yatırım $100, minimum çekim ise $50 dir.'},
   ]
 };
 
@@ -713,42 +683,45 @@ const featuresData = {
     {icon:'🤝',t:'24/7 Support',d:'Support team available around the clock'},
   ],
   tr:[
-    {icon:'🔐',t:'256-bit Şifreleme',d:'Fonlarınız ve verileriniz için en yüksek güvenlik'},
+    {icon:'🔐',t:'256-bit Şifreleme',d:'Fonlarınız için en yüksek güvenlik'},
     {icon:'⚡',t:'Hızlı Yatırım/Çekim',d:'7/24 5-30 dakika içinde işlem'},
     {icon:'📊',t:'Günlük Getiri',d:'Karlar her gün otomatik olarak hesabınıza eklenir'},
-    {icon:'🌍',t:'50+ Ülke',d:'Elli\'den fazla ülkeden yatırımcılara hizmet'},
+    {icon:'🌍',t:'50+ Ülke',d:'Elli den fazla ülkeden yatırımcılara hizmet'},
     {icon:'🛡️',t:'Sermaye Koruması',d:'Yatırımlarınızı korumak için gelişmiş sistem'},
     {icon:'🤝',t:'7/24 Destek',d:'Destek ekibi günün her saati mevcut'},
   ]
 };
 
-// ══════════════════════════════
+// ══════════════════════════════════════════
 // NAV & PAGES
-// ══════════════════════════════
+// ══════════════════════════════════════════
 function showPage(id, el) {
-  if (PROTECTED.includes(id) && !isLoggedIn) {
+  if(PROTECTED.includes(id) && !isLoggedIn) {
     pendingPage = {id, el};
     openModal('login');
     return;
   }
   pendingPage = null;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const pg = document.getElementById('page-' + id);
-  if (pg) pg.classList.add('active');
+  const pg = document.getElementById('page-'+id);
+  if(pg) pg.classList.add('active');
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-  if (el) el.classList.add('active');
-  window.scrollTo(0, 0);
-  if (id === 'dashboard' && userProfile) loadDashboard();
-  if (id === 'referral' && userProfile) loadReferral();
+  if(el) el.classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='dashboard' && userProfile) loadDashboard();
+  if(id==='referral' && userProfile) loadReferral();
+  if(id==='deposit' && userProfile) {
+    const memo = document.getElementById('user-memo');
+    if(memo) memo.textContent = userProfile.memo || '---';
+  }
 }
 
-function openModal(type) { document.getElementById('modal-' + type).classList.add('open'); }
+function openModal(type) { document.getElementById('modal-'+type).classList.add('open'); }
 function closeModal(type) {
-  document.getElementById('modal-' + type).classList.remove('open');
-  const err = document.getElementById(type === 'login' ? 'login-err' : 'reg-err');
-  if (err) err.style.display = 'none';
+  document.getElementById('modal-'+type).classList.remove('open');
+  const err = document.getElementById(type==='login'?'login-err':'reg-err');
+  if(err) err.style.display='none';
 }
-
 document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
 
 function switchDash(el, id) {
@@ -761,96 +734,80 @@ function switchDash(el, id) {
   if(id==='d-history') loadTransactions();
   if(id==='d-notif') loadNotifications();
   if(id==='d-invest') loadInvestments();
+  if(id==='d-kyc') renderKYC();
 }
 
 function switchDW(el, id) {
-  document.querySelectorAll('.dw-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.dw-tab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
-  ['dw-dep','dw-wd'].forEach(d=>{const e=document.getElementById(d);if(e)e.style.display='none';});
-  const p=document.getElementById(id); if(p) p.style.display='';
+  ['dw-dep','dw-wd'].forEach(d => { const e = document.getElementById(d); if(e) e.style.display='none'; });
+  const p = document.getElementById(id); if(p) p.style.display='';
 }
 
-// ── SUPABASE AUTH ──
+// ══════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════
 async function doLogin() {
-  const email = (document.getElementById('login-email').value||'').trim();
-  const pass  = (document.getElementById('login-pass').value||'');
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-err');
   errEl.style.display = 'none';
 
-  if(!email||!pass){
-    showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'});
-    return;
-  }
+  if(!email||!pass) { showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'}); return; }
 
   const btn = document.getElementById('login-btn-txt');
-  if(btn){ btn.textContent='⏳'; btn.disabled=true; }
+  if(btn) { btn.textContent='⏳'; btn.disabled=true; }
 
-  let res;
   try {
-    res = await Promise.race([
-      db.auth.signInWithPassword({email, password:pass}),
-      new Promise((_,r)=>setTimeout(()=>r({data:null,error:{message:'timeout'}}),10000))
-    ]);
-  } catch(e) {
-    res = {data:null, error:{message:e.message}};
-  }
-
-  if(btn){ btn.textContent={ar:'دخول',en:'Sign In',tr:'Giriş'}[currentLang]; btn.disabled=false; }
-
-  const {data, error} = res;
-  if(error){
-    console.log('Login error:', error.message, error.status);
-    let msg = {ar:'بريد أو كلمة مرور غير صحيحة',en:'Invalid email or password',tr:'Geçersiz e-posta veya şifre'};
-    if(error.message.includes('Email not confirmed')) {
-      msg = {ar:'يرجى تأكيد بريدك الإلكتروني أولاً',en:'Please confirm your email first',tr:'Lütfen önce e-postanızı onaylayın'};
-    } else if(error.message.includes('Invalid login')) {
-      msg = {ar:'بريد أو كلمة مرور غير صحيحة',en:'Invalid email or password',tr:'Geçersiz e-posta veya şifre'};
-    } else if(error.message.includes('rate limit') || error.status===429) {
-      msg = {ar:'محاولات كثيرة، انتظر دقيقة وحاول تاني',en:'Too many attempts, wait a minute',tr:'Çok fazla deneme, bir dakika bekleyin'};
-    } else {
-      msg = {ar:'خطأ: '+error.message, en:'Error: '+error.message, tr:'Hata: '+error.message};
+    const {data, error} = await db.auth.signInWithPassword({email, password:pass});
+    if(btn) { btn.textContent={ar:'دخول',en:'Sign In',tr:'Giriş'}[currentLang]; btn.disabled=false; }
+    if(error) {
+      showErr(errEl,{ar:'بريد أو كلمة مرور غير صحيحة',en:'Invalid email or password',tr:'Geçersiz bilgiler'});
+      return;
     }
-    showErr(errEl, msg);
-    return;
+    currentUser = data.user;
+    await fetchProfile();
+    closeModal('login');
+    afterLogin();
+  } catch(e) {
+    if(btn) { btn.textContent={ar:'دخول',en:'Sign In',tr:'Giriş'}[currentLang]; btn.disabled=false; }
+    showErr(errEl,{ar:'تحقق من الإنترنت وحاول تاني',en:'Check internet and retry',tr:'İnternet bağlantısını kontrol edin'});
   }
-  currentUser=data.user;
-  await fetchProfile();
-  closeModal('login');
-  afterLogin();
 }
 
 async function doRegister() {
-  const name=document.getElementById('reg-name').value.trim();
-  const email=document.getElementById('reg-email').value.trim();
-  const pass=document.getElementById('reg-pass').value;
-  const ref=document.getElementById('reg-ref').value.trim();
-  const terms=document.getElementById('reg-terms').checked;
-  const errEl=document.getElementById('reg-err');
-  errEl.style.display='none';
-  if(!name||!email||!pass){showErr(errEl,{ar:'أكمل جميع الحقول',en:'Fill all fields',tr:'Tüm alanları doldurun'});return;}
-  if(pass.length<8){showErr(errEl,{ar:'كلمة المرور 8 أحرف على الأقل',en:'Password min 8 chars',tr:'Şifre en az 8 karakter'});return;}
-  if(!terms){showErr(errEl,{ar:'يجب الموافقة على الشروط',en:'Must agree to terms',tr:'Şartları kabul edin'});return;}
-  const regBtn = document.getElementById('reg-btn-txt');
-  if(regBtn){ regBtn.textContent='⏳'; regBtn.disabled=true; }
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+  const ref   = document.getElementById('reg-ref').value.trim();
+  const terms = document.getElementById('reg-terms').checked;
+  const errEl = document.getElementById('reg-err');
+  errEl.style.display = 'none';
 
-  let res2;
+  if(!name||!email||!pass) { showErr(errEl,{ar:'أكمل جميع الحقول',en:'Fill all fields',tr:'Tüm alanları doldurun'}); return; }
+  if(pass.length<8) { showErr(errEl,{ar:'كلمة المرور 8 أحرف على الأقل',en:'Password min 8 chars',tr:'Şifre en az 8 karakter'}); return; }
+  if(!terms) { showErr(errEl,{ar:'يجب الموافقة على الشروط',en:'Must agree to terms',tr:'Şartları kabul edin'}); return; }
+
+  const btn = document.getElementById('reg-btn-txt');
+  if(btn) { btn.textContent='⏳'; btn.disabled=true; }
+
   try {
-    res2 = await Promise.race([
-      db.auth.signUp({email,password:pass,options:{data:{name,ref_code:ref||null}}}),
-      new Promise((_,r)=>setTimeout(()=>r({data:null,error:{message:'timeout'}}),10000))
-    ]);
+    const {data, error} = await db.auth.signUp({
+      email, password: pass,
+      options: { data: { name, ref_code: ref||null } }
+    });
+    if(btn) { btn.textContent={ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[currentLang]; btn.disabled=false; }
+    if(error) { showErr(errEl,{ar:'خطأ: '+error.message,en:'Error: '+error.message,tr:'Hata: '+error.message}); return; }
+    // انتظر الـ trigger
+    await new Promise(r=>setTimeout(r,2000));
+    currentUser = data.user;
+    await fetchProfile();
+    closeModal('register');
+    afterLogin();
   } catch(e) {
-    res2 = {data:null,error:{message:e.message}};
+    if(btn) { btn.textContent={ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[currentLang]; btn.disabled=false; }
+    showErr(errEl,{ar:'تحقق من الإنترنت وحاول تاني',en:'Check internet and retry',tr:'İnternet bağlantısını kontrol edin'});
   }
-
-  if(regBtn){ regBtn.textContent={ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[currentLang]; regBtn.disabled=false; }
-  const {data,error} = res2;
-  if(error&&error.message!=='timeout'){showErr(errEl,{ar:'خطأ: '+error.message,en:'Error: '+error.message,tr:'Hata: '+error.message});return;}
-  if(error&&error.message==='timeout'){showErr(errEl,{ar:'انتهى وقت الاتصال، تحقق من الإنترنت',en:'Connection timeout, check internet',tr:'Bağlantı zaman aşımı'});return;}
-  currentUser=data.user;
-  await fetchProfile();
-  closeModal('register');
-  afterLogin();
 }
 
 async function doLogout() {
@@ -860,313 +817,526 @@ async function doLogout() {
   document.getElementById('btnLogin').style.display='';
   document.getElementById('btnRegister').style.display='';
   document.getElementById('user-menu').style.display='none';
-  showPage('home',document.querySelector('.nav-links a'));
+  showPage('home', document.querySelector('.nav-links a'));
   showToast({ar:'تم تسجيل الخروج',en:'Logged out',tr:'Çıkış yapıldı'}[currentLang]);
 }
 
 async function fetchProfile() {
   if(!currentUser) return;
   try {
-    const {data,error}=await db.from('users').select('*').eq('auth_id',currentUser.id).single();
-    if(data && !error) userProfile=data;
-  } catch(e) {
-    console.log('Profile fetch error:', e);
-  }
+    const {data} = await db.from('users').select('*').eq('auth_id',currentUser.id).single();
+    if(data) userProfile = data;
+  } catch(e) { console.log('fetchProfile error:', e); }
 }
 
 function afterLogin() {
-  isLoggedIn=true;
+  isLoggedIn = true;
   document.body.classList.add('logged-in');
   document.getElementById('btnLogin').style.display='none';
   document.getElementById('btnRegister').style.display='none';
   document.getElementById('user-menu').style.display='flex';
-  if(userProfile){
-    document.getElementById('user-av').textContent=userProfile.name[0].toUpperCase();
-    document.getElementById('user-name-nav').textContent=userProfile.name.split(' ')[0];
-    const memo=userProfile.memo||'---';
-    const memoEl=document.getElementById('user-memo'); if(memoEl) memoEl.textContent=memo;
-    const refEl=document.getElementById('ref-link-txt'); if(refEl) refEl.textContent='https://crysanto.io/ref/'+(userProfile.ref_code||'---');
+  if(userProfile) {
+    document.getElementById('user-av').textContent = userProfile.name[0].toUpperCase();
+    document.getElementById('user-name-nav').textContent = userProfile.name.split(' ')[0];
+    const memo = document.getElementById('user-memo');
+    if(memo) memo.textContent = userProfile.memo||'---';
+    const refLink = document.getElementById('ref-link-txt');
+    if(refLink) refLink.textContent = 'https://crysanto.io/ref/'+(userProfile.ref_code||'---');
   }
-  showToast({ar:`مرحباً ${userProfile?.name||''} 👋`,en:`Welcome ${userProfile?.name||''} 👋`,tr:`Hoşgeldiniz ${userProfile?.name||''} 👋`}[currentLang]);
-  if(pendingPage){
-    const p=pendingPage; pendingPage=null;
-    setTimeout(()=>{
-      showPage(p.id, p.el);
-      if(p.planRate) setTimeout(()=>goToDeposit(p.planRate), 400);
-    },300);
-  } else showPage('dashboard',null);
+  showToast({ar:'مرحباً '+(userProfile?.name||'')+' 👋',en:'Welcome '+(userProfile?.name||'')+' 👋',tr:'Hoşgeldiniz '+(userProfile?.name||'')+' 👋'}[currentLang]);
+  if(pendingPage) { const p=pendingPage; pendingPage=null; setTimeout(()=>showPage(p.id,p.el),300); }
+  else showPage('dashboard',null);
 }
 
-// ── DASHBOARD ──
+// استعادة الجلسة
+async function restoreSession() {
+  try {
+    const {data:{session}} = await db.auth.getSession();
+    if(session?.user) {
+      currentUser = session.user;
+      await fetchProfile();
+      if(userProfile) afterLogin();
+    }
+  } catch(e) { console.log('No session'); }
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
 async function loadDashboard() {
   if(!userProfile) return;
-  document.getElementById('d-bal').textContent='$'+(userProfile.balance||0).toLocaleString();
-  document.getElementById('d-invested').textContent='$'+(userProfile.invested||0).toLocaleString();
-  document.getElementById('d-ref-earn').textContent='$'+(userProfile.ref_earnings||0).toLocaleString();
-  const {data:invs}=await db.from('investments').select('*').eq('user_id',userProfile.id).eq('status','active');
-  if(invs&&invs.length>0){
-    const daily=invs.reduce((s,i)=>s+parseFloat(i.daily_profit||0),0);
-    document.getElementById('d-profit').textContent='$'+daily.toFixed(2);
-    document.getElementById('d-active-inv').innerHTML='<div class="wallet-list">'+invs.map(inv=>`
-      <div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:var(--gold-dim);color:var(--gold)">💹</div>
-      <div><div class="w-name">${inv.plan_name}</div><div class="w-addr">${inv.daily_rate}%/day</div></div></div>
-      <div class="w-bal">$${parseFloat(inv.amount).toLocaleString()}</div></div>`).join('')+'</div>';
-  }
+  document.getElementById('d-bal').textContent = '$'+(userProfile.balance||0).toLocaleString();
+  document.getElementById('d-invested').textContent = '$'+(userProfile.invested||0).toLocaleString();
+  document.getElementById('d-ref-earn').textContent = '$'+(userProfile.ref_earnings||0).toLocaleString();
+  try {
+    const {data:invs} = await db.from('investments').select('*').eq('user_id',userProfile.id).eq('status','active');
+    if(invs&&invs.length>0) {
+      const daily = invs.reduce((s,i)=>s+parseFloat(i.daily_profit||0),0);
+      document.getElementById('d-profit').textContent = '$'+daily.toFixed(2);
+      document.getElementById('d-active-inv').innerHTML = '<div class="wallet-list">'+invs.map(inv=>`
+        <div class="wallet-item">
+          <div class="w-left">
+            <div class="w-icon" style="background:var(--gold-dim);color:var(--gold)">💹</div>
+            <div><div class="w-name">${inv.plan_name}</div><div class="w-addr">${inv.daily_rate}%/day</div></div>
+          </div>
+          <div class="w-bal">$${parseFloat(inv.amount).toLocaleString()}</div>
+        </div>`).join('')+'</div>';
+    }
+  } catch(e){}
 }
 
 async function loadTransactions() {
   if(!userProfile) return;
-  const {data}=await db.from('transactions').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(20);
-  const el=document.getElementById('tx-list');
-  if(!data||!data.length){el.innerHTML=`<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">${{ar:'لا توجد معاملات بعد',en:'No transactions yet',tr:'Henüz işlem yok'}[currentLang]}</div>`;return;}
-  const icons={deposit:'📥',withdrawal:'📤',profit:'💰',referral:'🎁',bonus:'⭐'};
-  const colors={deposit:'var(--green)',withdrawal:'var(--red)',profit:'var(--gold)',referral:'var(--gold)',bonus:'var(--blue)'};
-  el.innerHTML=data.map(tx=>`<div class="tx-item"><div class="tx-left"><span style="font-size:18px">${icons[tx.type]||'💱'}</span><div><div class="tx-type">${tx.description||tx.type}</div><div class="tx-date">${tx.created_at?.slice(0,10)}</div></div></div><div class="tx-amt" style="color:${colors[tx.type]||'var(--text)'}">${tx.type==='withdrawal'?'-':'+'} $${parseFloat(tx.amount).toLocaleString()}</div></div>`).join('');
+  try {
+    const {data} = await db.from('transactions').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(20);
+    const el = document.getElementById('tx-list');
+    if(!data||!data.length) { el.innerHTML=`<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">${{ar:'لا توجد معاملات بعد',en:'No transactions yet',tr:'Henüz işlem yok'}[currentLang]}</div>`; return; }
+    const icons={deposit:'📥',withdrawal:'📤',profit:'💰',referral:'🎁',bonus:'⭐'};
+    const colors={deposit:'var(--green)',withdrawal:'var(--red)',profit:'var(--gold)',referral:'var(--gold)',bonus:'var(--blue)'};
+    el.innerHTML = data.map(tx=>`
+      <div class="tx-item">
+        <div class="tx-left">
+          <span style="font-size:18px">${icons[tx.type]||'💱'}</span>
+          <div><div class="tx-type">${tx.description||tx.type}</div><div class="tx-date">${tx.created_at?.slice(0,10)}</div></div>
+        </div>
+        <div class="tx-amt" style="color:${colors[tx.type]||'var(--text)'}">${tx.type==='withdrawal'?'-':'+'} $${parseFloat(tx.amount).toLocaleString()}</div>
+      </div>`).join('');
+  } catch(e){}
 }
 
 async function loadNotifications() {
   if(!userProfile) return;
-  const {data}=await db.from('notifications').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(15);
-  const el=document.getElementById('notif-list');
-  if(!data||!data.length){el.innerHTML=`<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">${{ar:'لا توجد إشعارات',en:'No notifications',tr:'Bildirim yok'}[currentLang]}</div>`;return;}
-  const icons={info:'💬',success:'✅',warning:'⚠️',profit:'💰',system:'🔔'};
-  el.innerHTML=data.map(n=>`<div style="display:flex;gap:12px;padding:14px;background:var(--dark3);border-radius:10px;border:1px solid var(--border);margin-bottom:8px"><span style="font-size:20px;flex-shrink:0">${icons[n.type]||'🔔'}</span><div><div style="font-weight:600;font-size:13px;margin-bottom:3px">${n.title}</div><div style="font-size:12px;color:var(--muted)">${n.body||''}</div></div></div>`).join('');
+  try {
+    const {data} = await db.from('notifications').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(15);
+    const el = document.getElementById('notif-list');
+    if(!data||!data.length) { el.innerHTML=`<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">${{ar:'لا توجد إشعارات',en:'No notifications',tr:'Bildirim yok'}[currentLang]}</div>`; return; }
+    const icons={info:'💬',success:'✅',warning:'⚠️',profit:'💰',system:'🔔'};
+    el.innerHTML = data.map(n=>`
+      <div style="display:flex;gap:12px;padding:14px;background:var(--dark3);border-radius:10px;border:1px solid var(--border);margin-bottom:8px">
+        <span style="font-size:20px;flex-shrink:0">${icons[n.type]||'🔔'}</span>
+        <div><div style="font-weight:600;font-size:13px;margin-bottom:3px">${n.title}</div><div style="font-size:12px;color:var(--muted)">${n.body||''}</div></div>
+        <div style="font-size:10px;color:var(--muted);margin-right:auto;flex-shrink:0">${n.created_at?.slice(0,10)}</div>
+      </div>`).join('');
+  } catch(e){}
 }
 
 async function loadInvestments() {
   if(!userProfile) return;
-  const {data}=await db.from('investments').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false});
-  const el=document.getElementById('inv-list');
-  if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">—</div>';return;}
-  el.innerHTML=data.map(inv=>{
-    const pct=Math.min(100,Math.round(((new Date()-new Date(inv.start_date))/(1000*60*60*24))/inv.duration_days*100));
-    return `<div style="background:var(--dark3);border-radius:10px;padding:14px;margin-bottom:10px;border:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:700">${inv.plan_name}</span><span style="font-family:var(--mono);color:var(--gold)">$${parseFloat(inv.amount).toLocaleString()}</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px"><span>${inv.daily_rate}%/day</span><span>${inv.start_date} → ${inv.end_date}</span></div>
-      <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--gold),var(--green))"></div></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:5px">${pct}%</div></div>`;
-  }).join('');
+  try {
+    const {data} = await db.from('investments').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false});
+    const el = document.getElementById('inv-list');
+    if(!data||!data.length) { el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">—</div>'; return; }
+    el.innerHTML = data.map(inv=>{
+      const pct = Math.min(100,Math.round(((new Date()-new Date(inv.start_date))/(1000*60*60*24))/inv.duration_days*100));
+      return `<div style="background:var(--dark3);border-radius:10px;padding:14px;margin-bottom:10px;border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-weight:700">${inv.plan_name}</span>
+          <span style="font-family:var(--mono);color:var(--gold)">$${parseFloat(inv.amount).toLocaleString()}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px">
+          <span>${inv.daily_rate}%/day</span><span>${inv.start_date} → ${inv.end_date}</span>
+        </div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--gold),var(--green))"></div></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:5px">${pct}%</div>
+      </div>`;
+    }).join('');
+  } catch(e){}
 }
 
 function loadReferral() {
   if(!userProfile) return;
-  const refEl=document.getElementById('d-ref-count'); if(refEl) refEl.textContent=userProfile.ref_count||0;
-  const refTotal=document.getElementById('d-ref-total'); if(refTotal) refTotal.textContent='$'+(userProfile.ref_earnings||0).toLocaleString();
-  const refLink=document.getElementById('ref-link-txt'); if(refLink) refLink.textContent='https://crysanto.io/ref/'+(userProfile.ref_code||'---');
+  const rc = document.getElementById('d-ref-count'); if(rc) rc.textContent=userProfile.ref_count||0;
+  const rt = document.getElementById('d-ref-total'); if(rt) rt.textContent='$'+(userProfile.ref_earnings||0).toLocaleString();
+  const rl = document.getElementById('ref-link-txt'); if(rl) rl.textContent='https://crysanto.io/ref/'+(userProfile.ref_code||'---');
 }
 
-// ── DEPOSIT & WITHDRAW ──
+// ══════════════════════════════════════════
+// KYC
+// ══════════════════════════════════════════
+function renderKYC() {
+  const box = document.getElementById('kyc-status-box');
+  const btn = document.getElementById('kyc-btn');
+  if(!userProfile) return;
+  const status = userProfile.kyc_status || 'pending';
+  const step2 = document.getElementById('kyc-step2-num');
+
+  if(status === 'verified') {
+    if(step2) { step2.textContent='✓'; step2.className='step-num step-done'; }
+    if(box) box.innerHTML='<div style="background:rgba(34,211,160,0.1);border:1px solid var(--green);border-radius:10px;padding:12px 16px;color:var(--green);font-size:13px;font-weight:600;margin-top:12px">✅ تم التحقق من هويتك بنجاح</div>';
+    if(btn) btn.style.display='none';
+  } else if(status === 'rejected') {
+    if(box) box.innerHTML='<div style="background:rgba(255,77,106,0.1);border:1px solid var(--red);border-radius:10px;padding:12px 16px;color:var(--red);font-size:13px;font-weight:600;margin-top:12px">❌ تم رفض طلبك، يرجى إعادة الرفع</div>';
+  } else {
+    if(box) box.innerHTML='<div style="background:rgba(249,115,22,0.1);border:1px solid var(--orange);border-radius:10px;padding:12px 16px;color:var(--orange);font-size:13px;margin-top:12px">⏳ طلبك قيد المراجعة</div>';
+  }
+}
+
+// رفع مستندات KYC
+document.addEventListener('click', e => {
+  if(e.target && e.target.id === 'kyc-btn') {
+    openKYCModal();
+  }
+});
+
+function openKYCModal() {
+  // إنشاء modal KYC
+  let modal = document.getElementById('kyc-modal');
+  if(!modal) {
+    modal = document.createElement('div');
+    modal.id = 'kyc-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal" style="max-width:500px">
+        <button class="modal-close" onclick="document.getElementById('kyc-modal').classList.remove('open')">✕</button>
+        <h3 style="font-size:18px;font-weight:800;margin-bottom:20px" id="kyc-modal-title">🪪 رفع مستندات KYC</h3>
+        <div class="form-group">
+          <label>نوع المستند</label>
+          <select id="kyc-doc-type" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;font-family:inherit">
+            <option value="passport">جواز سفر</option>
+            <option value="national_id">بطاقة هوية وطنية</option>
+            <option value="driving_license">رخصة قيادة</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>صورة المستند (الوجه الأمامي)</label>
+          <input type="file" id="kyc-front" accept="image/*,application/pdf" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px">
+        </div>
+        <div class="form-group">
+          <label>صورة المستند (الوجه الخلفي)</label>
+          <input type="file" id="kyc-back" accept="image/*,application/pdf" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px">
+        </div>
+        <div class="form-group">
+          <label>صورة سيلفي مع المستند</label>
+          <input type="file" id="kyc-selfie" accept="image/*" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px">
+        </div>
+        <div id="kyc-upload-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px"></div>
+        <button class="btn-primary" style="width:100%" onclick="submitKYC()" id="kyc-submit-btn">📤 رفع المستندات</button>
+      </div>`;
+    modal.addEventListener('click', e => { if(e.target===modal) modal.classList.remove('open'); });
+    document.body.appendChild(modal);
+  }
+  modal.classList.add('open');
+}
+
+async function submitKYC() {
+  if(!userProfile) return;
+  const front = document.getElementById('kyc-front').files[0];
+  const back = document.getElementById('kyc-back').files[0];
+  const selfie = document.getElementById('kyc-selfie').files[0];
+  const docType = document.getElementById('kyc-doc-type').value;
+  const errEl = document.getElementById('kyc-upload-err');
+  const btn = document.getElementById('kyc-submit-btn');
+
+  if(!front) { errEl.textContent='يرجى رفع صورة الوجه الأمامي'; errEl.style.display='block'; return; }
+
+  btn.textContent='⏳ جارٍ الرفع...'; btn.disabled=true; errEl.style.display='none';
+
+  try {
+    const userId = userProfile.id;
+    const timestamp = Date.now();
+    const uploads = [];
+
+    // رفع الملفات لـ Supabase Storage
+    for(const [file, name] of [[front,'front'],[back,'back'],[selfie,'selfie']]) {
+      if(!file) continue;
+      const ext = file.name.split('.').pop();
+      const path = `${userId}/${timestamp}_${name}.${ext}`;
+      const {error} = await db.storage.from('kyc-documents').upload(path, file, {upsert:true});
+      if(!error) uploads.push({name, path});
+    }
+
+    // حفظ بيانات KYC في قاعدة البيانات
+    await db.from('users').update({
+      kyc_status: 'pending',
+      kyc_data: JSON.stringify({
+        doc_type: docType,
+        files: uploads,
+        submitted_at: new Date().toISOString()
+      })
+    }).eq('id', userId);
+
+    // إشعار للعميل
+    await db.from('notifications').insert({
+      user_id: userId,
+      title: '✅ تم استلام مستندات KYC',
+      body: 'سيتم مراجعة مستنداتك خلال 24 ساعة',
+      type: 'info'
+    });
+
+    // تحديث userProfile
+    userProfile.kyc_status = 'pending';
+    document.getElementById('kyc-modal').classList.remove('open');
+    renderKYC();
+    showToast('✓ تم رفع مستنداتك بنجاح، سيتم المراجعة خلال 24 ساعة');
+
+  } catch(e) {
+    errEl.textContent = 'حدث خطأ أثناء الرفع: '+e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.textContent='📤 رفع المستندات'; btn.disabled=false;
+  }
+}
+
+// ══════════════════════════════════════════
+// DEPOSIT & WITHDRAW
+// ══════════════════════════════════════════
 async function submitDeposit() {
-  if(!userProfile){openModal('login');return;}
-  const hash=document.getElementById('dep-hash').value.trim();
-  const amount=parseFloat(document.getElementById('dep-amount').value);
-  if(!hash){showToast({ar:'أدخل رقم التحويل TX Hash',en:'Enter TX Hash',tr:'TX Hash girin'}[currentLang],'err');return;}
-  if(!amount||amount<100){showToast({ar:'الحد الأدنى $100',en:'Minimum $100',tr:'Minimum $100'}[currentLang],'err');return;}
-  showLoading(true,{ar:'جارٍ إرسال الطلب...',en:'Submitting...',tr:'Gönderiliyor...'});
-  const {error}=await db.from('deposits').insert({user_id:userProfile.id,amount,coin:'USDT',network:document.getElementById('net-name').textContent,tx_hash:hash,memo:userProfile.memo,status:'pending'});
-  showLoading(false);
-  if(error){showToast({ar:'حدث خطأ',en:'Error occurred',tr:'Hata oluştu'}[currentLang],'err');return;}
-  showToast({ar:'✓ تم إرسال طلب الإيداع بنجاح',en:'✓ Deposit request submitted',tr:'✓ Yatırım talebi gönderildi'}[currentLang]);
-  document.getElementById('dep-hash').value='';
-  document.getElementById('dep-amount').value='';
+  if(!userProfile) { openModal('login'); return; }
+  const hash   = document.getElementById('dep-hash').value.trim();
+  const amount = parseFloat(document.getElementById('dep-amount').value);
+  if(!hash) { showToast({ar:'أدخل رقم التحويل TX Hash',en:'Enter TX Hash',tr:'TX Hash girin'}[currentLang],'err'); return; }
+  if(!amount||amount<100) { showToast({ar:'الحد الأدنى للإيداع $100',en:'Minimum deposit $100',tr:'Minimum yatırım $100'}[currentLang],'err'); return; }
+  try {
+    const coin = document.querySelector('#dw-dep .coin-btn.active');
+    const coinText = coin ? coin.textContent.trim().split('
+')[0] : 'USDT';
+    const network = document.getElementById('net-name').textContent;
+    await db.from('deposits').insert({
+      user_id: userProfile.id, amount, coin: coinText, network,
+      tx_hash: hash, memo: userProfile.memo, status:'pending'
+    });
+    await db.from('notifications').insert({
+      user_id: userProfile.id,
+      title: '📥 تم استلام طلب إيداعك',
+      body: `طلب إيداع $${amount} قيد المراجعة`,
+      type: 'info'
+    });
+    showToast({ar:'✓ تم إرسال طلب الإيداع، سيتم مراجعته خلال 30 دقيقة',en:'✓ Deposit request submitted',tr:'✓ Yatırım talebi gönderildi'}[currentLang]);
+    document.getElementById('dep-hash').value='';
+    document.getElementById('dep-amount').value='';
+  } catch(e) { showToast({ar:'حدث خطأ',en:'Error',tr:'Hata'}[currentLang],'err'); }
 }
 
 async function submitWithdrawal() {
-  if(!userProfile){openModal('login');return;}
-  const addr=document.getElementById('wd-addr').value.trim();
-  const amount=parseFloat(document.getElementById('wd-amount').value);
-  if(!addr){showToast({ar:'أدخل عنوان محفظتك',en:'Enter wallet address',tr:'Cüzdan adresi girin'}[currentLang],'err');return;}
-  if(!amount||amount<50){showToast({ar:'الحد الأدنى $50',en:'Minimum $50',tr:'Minimum $50'}[currentLang],'err');return;}
-  if(amount>(userProfile.balance||0)){showToast({ar:'الرصيد غير كافٍ',en:'Insufficient balance',tr:'Yetersiz bakiye'}[currentLang],'err');return;}
-  showLoading(true,{ar:'جارٍ إرسال الطلب...',en:'Submitting...',tr:'Gönderiliyor...'});
-  const {error}=await db.from('withdrawals').insert({user_id:userProfile.id,amount,coin:document.getElementById('wd-coin').value.split('-')[0],network:document.getElementById('wd-coin').value,wallet_address:addr,status:'pending'});
-  showLoading(false);
-  if(error){showToast({ar:'حدث خطأ',en:'Error',tr:'Hata'}[currentLang],'err');return;}
-  showToast({ar:'✓ تم إرسال طلب السحب',en:'✓ Withdrawal request sent',tr:'✓ Çekim talebi gönderildi'}[currentLang]);
-  document.getElementById('wd-addr').value='';
-  document.getElementById('wd-amount').value='';
+  if(!userProfile) { openModal('login'); return; }
+  const addr   = document.getElementById('wd-addr').value.trim();
+  const amount = parseFloat(document.getElementById('wd-amount').value);
+  if(!addr) { showToast({ar:'أدخل عنوان محفظتك',en:'Enter wallet address',tr:'Cüzdan adresi girin'}[currentLang],'err'); return; }
+  if(!amount||amount<50) { showToast({ar:'الحد الأدنى للسحب $50',en:'Minimum withdrawal $50',tr:'Minimum çekim $50'}[currentLang],'err'); return; }
+  if(amount>(userProfile.balance||0)) { showToast({ar:'الرصيد غير كافٍ',en:'Insufficient balance',tr:'Yetersiz bakiye'}[currentLang],'err'); return; }
+  try {
+    const coin = document.getElementById('wd-coin').value;
+    await db.from('withdrawals').insert({
+      user_id: userProfile.id, amount,
+      coin: coin.split('-')[0], network: coin,
+      wallet_address: addr, status:'pending'
+    });
+    await db.from('notifications').insert({
+      user_id: userProfile.id,
+      title: '📤 تم استلام طلب سحبك',
+      body: `طلب سحب $${amount} قيد المراجعة`,
+      type: 'info'
+    });
+    showToast({ar:'✓ تم إرسال طلب السحب',en:'✓ Withdrawal request sent',tr:'✓ Çekim talebi gönderildi'}[currentLang]);
+    document.getElementById('wd-addr').value='';
+    document.getElementById('wd-amount').value='';
+  } catch(e) { showToast({ar:'حدث خطأ',en:'Error',tr:'Hata'}[currentLang],'err'); }
 }
 
-// ── COIN SELECTOR ──
-const realWallets2={
-  'USDT-TRC20':{addr:'TTU9KEnVvjKFj7pAbtk3hGZcepAbYzuVeq',icon:'₮',iconColor:'#26a17b',network:'TRON (TRC-20)',confirm:'1-3 min',label:'USDT — TRC-20'},
-  'USDT-BEP20':{addr:'0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335',icon:'₮',iconColor:'#26a17b',network:'BNB Smart Chain (BEP-20)',confirm:'1-5 min',label:'USDT — BEP-20'},
-  'ETH':{addr:'0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335',icon:'Ξ',iconColor:'#627eea',network:'Ethereum (ERC-20)',confirm:'2-10 min',label:'ETH — ERC-20'},
-  'BNB':{addr:'0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335',icon:'B',iconColor:'#f0b90b',network:'BNB Smart Chain (BEP-20)',confirm:'1-5 min',label:'BNB — BEP-20'},
-};
-function setCoin(el,coin){
-  document.querySelectorAll('#dw-dep .coin-btn').forEach(b=>b.classList.remove('active'));
+// ══════════════════════════════════════════
+// COIN SELECTOR
+// ══════════════════════════════════════════
+function setCoin(el, coin) {
+  document.querySelectorAll('#dw-dep .coin-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
-  const w=realWallets2[coin];if(!w)return;
-  const chunks=w.addr.match(/.{1,10}/g)||[w.addr];
-  document.getElementById('qr-display').innerHTML=chunks.join('<br>');
-  document.getElementById('dep-addr').textContent=w.addr;
-  document.getElementById('dep-coin-icon').textContent=w.icon;
-  document.getElementById('dep-coin-icon').style.color=w.iconColor;
-  document.getElementById('dep-addr-label').textContent=w.label;
-  document.getElementById('net-name').textContent=w.network;
-  document.getElementById('net-confirm').textContent=w.confirm;
+  const w = realWallets[coin]; if(!w) return;
+  const chunks = w.addr.match(/.{1,10}/g)||[w.addr];
+  document.getElementById('qr-display').innerHTML = chunks.join('<br>');
+  document.getElementById('dep-addr').textContent = w.addr;
+  document.getElementById('dep-coin-icon').textContent = w.icon;
+  document.getElementById('dep-coin-icon').style.color = w.iconColor;
+  document.getElementById('dep-addr-label').textContent = w.label;
+  document.getElementById('net-name').textContent = w.network;
+  document.getElementById('net-confirm').textContent = w.confirm;
 }
-function copyDepAddr(){
-  const addr=document.getElementById('dep-addr').textContent;
+
+function copyDepAddr() {
+  const addr = document.getElementById('dep-addr').textContent;
   navigator.clipboard.writeText(addr).catch(()=>{});
   showToast({ar:'✓ تم نسخ العنوان',en:'✓ Copied',tr:'✓ Kopyalandı'}[currentLang]);
 }
-function copyRef(){
-  const txt=document.getElementById('ref-link-txt').textContent;
+
+function copyRef() {
+  const txt = document.getElementById('ref-link-txt').textContent;
   navigator.clipboard.writeText(txt).catch(()=>{});
   showToast({ar:'✓ تم نسخ الرابط',en:'✓ Link copied',tr:'✓ Kopyalandı'}[currentLang]);
 }
 
-// ── LANG ──
-function setLang(l){
-  currentLang=l;
-  document.querySelectorAll('.lb').forEach(b=>b.classList.remove('on'));
-  document.querySelectorAll(`.lb[onclick="setLang('${l}')"]`).forEach(b=>b.classList.add('on'));
-  document.body.classList.toggle('ltr',l!=='ar');
-  document.documentElement.setAttribute('dir',l==='ar'?'rtl':'ltr');
-  document.querySelectorAll(`[data-${l}]`).forEach(el=>{
-    const v=el.getAttribute(`data-${l}`);
-    if(el.tagName==='INPUT') el.placeholder=v; else el.textContent=v;
-  });
-  buildFaq();buildFeatures();buildPlans();
-}
-
-// ── BUILDERS ──
-function buildTicker(){
-  const t=document.getElementById('ticker');
-  t.innerHTML=[...coins,...coins].map(c=>`<span class="tick-item"><span style="color:var(--muted)">${c.sym}</span><span>$${c.price.toLocaleString()}</span><span class="${c.change>=0?'tick-up':'tick-down'}">${c.change>=0?'▲':'▼'}${Math.abs(c.change)}%</span></span>`).join('');
-}
-function buildMarkets(){
-  document.getElementById('markets-body').innerHTML=coins.map(c=>`<tr><td><div class="m-coin"><div class="m-icon" style="background:${c.color}22;color:${c.color}">${c.icon}</div><div><div style="font-weight:600">${c.name}</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">${c.sym}</div></div></div></td><td style="font-family:var(--mono)">$${c.price.toLocaleString()}</td><td class="${c.change>=0?'tick-up':'tick-down'}" style="font-family:var(--mono)">${c.change>=0?'+':''}${c.change}%</td><td style="color:var(--muted)">${c.cap}</td><td style="color:var(--muted)">${c.vol}</td></tr>`).join('');
-}
-function buildLivePrices(){
-  document.getElementById('live-prices').innerHTML=coins.slice(0,5).map(c=>`<div class="price-row"><div class="p-coin"><div class="m-icon" style="width:28px;height:28px;background:${c.color}22;color:${c.color};border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;font-family:var(--mono)">${c.icon}</div><div><div class="p-sym">${c.sym}</div><div class="p-name">${c.name}</div></div></div><div style="text-align:left"><div style="font-family:var(--mono);font-size:13px">$${c.price.toLocaleString()}</div><div class="p-ch ${c.change>=0?'tick-up':'tick-down'}">${c.change>=0?'+':''}${c.change}%</div></div></div>`).join('');
-}
-function buildFaq(){
-  document.getElementById('faq-list').innerHTML=(faqs[currentLang]||faqs.ar).map(f=>`<div class="faq-item" onclick="this.classList.toggle('open')"><div class="faq-q">${f.q}<span class="faq-arrow">▼</span></div><div class="faq-a">${f.a}</div></div>`).join('');
-}
-function buildFeatures(){
-  document.getElementById('features-grid').innerHTML=(featuresData[currentLang]||featuresData.ar).map(f=>`<div style="background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:24px;transition:.3s" onmouseover="this.style.borderColor='var(--gold)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform=''"><div style="font-size:28px;margin-bottom:12px">${f.icon}</div><h4 style="font-size:14px;font-weight:700;margin-bottom:6px">${f.t}</h4><p style="font-size:12px;color:var(--muted);line-height:1.8">${f.d}</p></div>`).join('');
-}
-function buildPlans(){
-  const plans=[
-    {name:{ar:'الباقة الأساسية',en:'Starter Plan',tr:'Başlangıç'},roi:'2.5',dur:{ar:'30 يوم · من $100',en:'30 days · Min $100',tr:'30 gün · Min $100'},features:{ar:['ربح يومي مضمون','سحب فوري','دعم 24/7'],en:['Daily profit','Instant withdrawal','24/7 Support'],tr:['Günlük kar','Anında çekim','7/24 Destek']}},
-    {name:{ar:'الباقة الذهبية',en:'Gold Plan',tr:'Altın Planı'},roi:'4.8',featured:true,dur:{ar:'60 يوم · من $500',en:'60 days · Min $500',tr:'60 gün · Min $500'},features:{ar:['ربح يومي مضمون','سحب فوري','مدير حساب خاص','تقارير أسبوعية'],en:['Daily profit','Instant withdrawal','Account manager','Weekly reports'],tr:['Günlük kar','Anında çekim','Hesap yöneticisi','Haftalık raporlar']}},
-    {name:{ar:'باقة VIP',en:'VIP Plan',tr:'VIP Planı'},roi:'8.2',dur:{ar:'90 يوم · من $5,000',en:'90 days · Min $5,000',tr:'90 gün · Min $5.000'},features:{ar:['عوائد يومية عالية','سحب بلا حدود','فريق VIP','تحليلات مخصصة','أولوية الدعم'],en:['High daily returns','Unlimited withdrawal','VIP team','Custom analytics','Priority support'],tr:['Yüksek getiri','Sınırsız çekim','VIP ekibi','Özel analizler','Öncelikli destek']}},
-  ];
-  const popLbl={ar:'الأكثر شعبية',en:'Most Popular',tr:'En Popüler'};
-  const invLbl={ar:'استثمر الآن',en:'Invest Now',tr:'Şimdi Yatır'};
-  document.getElementById('plans-grid').innerHTML=plans.map(p=>`<div class="plan-card ${p.featured?'featured':''}">
-    ${p.featured?`<div class="plan-badge-tag">${popLbl[currentLang]}</div>`:''}
-    <div class="plan-name">${p.name[currentLang]||p.name.en}</div>
-    <div class="plan-roi">${p.roi}<span>/day</span></div>
-    <div class="plan-dur">${p.dur[currentLang]||p.dur.en}</div>
-    <ul class="plan-features">${(p.features[currentLang]||p.features.en).map(f=>`<li>${f}</li>`).join('')}</ul>
-    <button class="btn-primary" style="width:100%" onclick="handlePlanClick('${p.roi}')">${invLbl[currentLang]}</button>
-  </div>`).join('');
-}
-
-// ── CALCULATOR ──
-function calcProfit(){
-  const amt=parseFloat(document.getElementById('calc-amt').value)||0;
-  const [rate,days]=document.getElementById('calc-plan').value.split(',').map(Number);
-  const daily=amt*rate/100,total=daily*days,ret=amt+total;
-  document.getElementById('c-daily').textContent='$'+daily.toFixed(2);
-  document.getElementById('c-total').textContent='$'+total.toFixed(0);
-  document.getElementById('c-return').textContent='$'+ret.toFixed(0);
-}
-
-// ── HELPERS ──
-function showToast(msg,type='ok'){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className='toast'+(type==='err'?' err':'');
-  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000);
-}
-function showErr(el,msgs){el.textContent='❌ '+(msgs[currentLang]||msgs.ar);el.style.display='block';}
-function showLoading(show,msgs){
-  const el=document.getElementById('loading');
-  if(show){document.getElementById('loading-txt').textContent=(msgs||{})[currentLang]||'';el.classList.add('show');}
-  else el.classList.remove('show');
-}
-function checkPassStrength(v){
-  const fill=document.getElementById('pass-strength-fill');
-  const txt=document.getElementById('pass-strength-txt');
-  const score=[v.length>=8,/[A-Z]/.test(v),/[0-9]/.test(v),/[^A-Za-z0-9]/.test(v)].filter(Boolean).length;
-  const cfg=[{w:'25%',c:'var(--red)',t:{ar:'ضعيفة',en:'Weak',tr:'Zayıf'}},{w:'50%',c:'var(--orange)',t:{ar:'متوسطة',en:'Fair',tr:'Orta'}},{w:'75%',c:'var(--gold)',t:{ar:'جيدة',en:'Good',tr:'İyi'}},{w:'100%',c:'var(--green)',t:{ar:'قوية',en:'Strong',tr:'Güçlü'}}];
-  if(!v){fill.style.width='0';txt.textContent='';return;}
-  const c=cfg[score-1]||cfg[0];
-  fill.style.width=c.w;fill.style.background=c.c;txt.textContent=c.t[currentLang];txt.style.color=c.c;
-}
-function updatePrices(){
-  coins.forEach(c=>{c.price=Math.max(0.001,c.price*(1+(Math.random()-.49)*.003));c.change=parseFloat((c.change+(Math.random()-.5)*.15).toFixed(2));});
-  buildTicker();buildLivePrices();buildMarkets();
-}
-
-// ── SESSION RESTORE ──
-async function restoreSession(){
-  try {
-    const {data} = await Promise.race([
-      db.auth.getSession(),
-      new Promise(r=>setTimeout(()=>r({data:{session:null}}),5000))
-    ]);
-    if(data?.session?.user){
-      currentUser = data.session.user;
-      await fetchProfile();
-      if(userProfile && !isLoggedIn) afterLogin();
-    }
-  } catch(e) {
-    console.log('Session restore skipped:', e);
-  }
-}
-
-
-
-// ── معالجة الضغط على باقة ──
+// ══════════════════════════════════════════
+// PLAN BUTTONS
+// ══════════════════════════════════════════
 function handlePlanClick(rate) {
-  if (isLoggedIn) {
-    goToDeposit(rate);
-  } else {
-    // حفظ الباقة المختارة وفتح تسجيل الدخول
-    pendingPage = { id: 'deposit', el: null, planRate: rate };
-    openModal('login');
-  }
+  if(isLoggedIn) goToDeposit(rate);
+  else { pendingPage={id:'deposit',el:null,planRate:rate}; openModal('login'); }
 }
 
-// ── الذهاب لصفحة الإيداع مع تحديد الباقة ──
 function goToDeposit(rate) {
   showPage('deposit', null);
-  // تمييز الباقة المختارة
-  const planInfo = {
-    '2.5': {ar:'الباقة الأساسية',en:'Starter Plan',tr:'Başlangıç'},
-    '4.8': {ar:'الباقة الذهبية',en:'Gold Plan',tr:'Altın Planı'},
-    '8.2': {ar:'باقة VIP',en:'VIP Plan',tr:'VIP Planı'},
-  };
-  const plan = planInfo[rate];
-  if(!plan) return;
-  // إظهار بانر الباقة المختارة
+  const planInfo = {'2.5':{ar:'الباقة الأساسية',en:'Starter Plan',tr:'Başlangıç'},'4.8':{ar:'الباقة الذهبية',en:'Gold Plan',tr:'Altın Planı'},'8.2':{ar:'باقة VIP',en:'VIP Plan',tr:'VIP Planı'}};
+  const plan = planInfo[rate]; if(!plan) return;
   let banner = document.getElementById('selected-plan-banner');
-  if(!banner){
+  if(!banner) {
     banner = document.createElement('div');
     banner.id = 'selected-plan-banner';
     banner.style.cssText = 'background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;padding:12px 18px;margin-bottom:16px;font-size:13px;font-weight:600;color:var(--gold);text-align:center;';
     const depPanel = document.getElementById('dw-dep');
     if(depPanel) depPanel.insertBefore(banner, depPanel.firstChild);
   }
-  banner.textContent = '✦ ' + (plan[currentLang]||plan.en) + ' — ' + rate + '%/day';
+  banner.textContent = '✦ '+(plan[currentLang]||plan.en)+' — '+rate+'%/day';
   banner.style.display = 'block';
 }
 
-// ── INIT ──
-async function init(){
-  buildTicker();buildMarkets();buildLivePrices();
-  buildFaq();buildFeatures();buildPlans();calcProfit();
-  // restore session في الخلفية بدون loading
-  restoreSession();
-  setInterval(updatePrices,5000);
+// ══════════════════════════════════════════
+// LANG
+// ══════════════════════════════════════════
+function setLang(l) {
+  currentLang = l;
+  document.querySelectorAll('.lb').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll(`.lb[onclick="setLang('${l}')"]`).forEach(b => b.classList.add('on'));
+  document.body.classList.toggle('ltr', l!=='ar');
+  document.documentElement.setAttribute('dir', l==='ar'?'rtl':'ltr');
+  document.querySelectorAll(`[data-${l}]`).forEach(el => {
+    const v = el.getAttribute(`data-${l}`);
+    if(el.tagName==='INPUT') el.placeholder=v; else el.textContent=v;
+  });
+  buildFaq(); buildFeatures(); buildPlans();
+}
+
+// ══════════════════════════════════════════
+// BUILDERS
+// ══════════════════════════════════════════
+function buildTicker() {
+  const t = document.getElementById('ticker');
+  t.innerHTML = [...coins,...coins].map(c=>`<span class="tick-item"><span style="color:var(--muted)">${c.sym}</span><span>$${c.price.toLocaleString()}</span><span class="${c.change>=0?'tick-up':'tick-down'}">${c.change>=0?'▲':'▼'}${Math.abs(c.change)}%</span></span>`).join('');
+}
+
+function buildMarkets() {
+  document.getElementById('markets-body').innerHTML = coins.map(c=>`
+    <tr>
+      <td><div class="m-coin"><div class="m-icon" style="background:${c.color}22;color:${c.color}">${c.icon}</div><div><div style="font-weight:600">${c.name}</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">${c.sym}</div></div></div></td>
+      <td style="font-family:var(--mono)">$${c.price.toLocaleString()}</td>
+      <td class="${c.change>=0?'tick-up':'tick-down'}" style="font-family:var(--mono)">${c.change>=0?'+':''}${c.change}%</td>
+      <td style="color:var(--muted)">${c.cap}</td>
+      <td style="color:var(--muted)">${c.vol}</td>
+    </tr>`).join('');
+}
+
+function buildLivePrices() {
+  document.getElementById('live-prices').innerHTML = coins.slice(0,5).map(c=>`
+    <div class="price-row">
+      <div class="p-coin">
+        <div class="m-icon" style="width:28px;height:28px;background:${c.color}22;color:${c.color};border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;font-family:var(--mono)">${c.icon}</div>
+        <div><div class="p-sym">${c.sym}</div><div class="p-name">${c.name}</div></div>
+      </div>
+      <div style="text-align:left">
+        <div style="font-family:var(--mono);font-size:13px">$${c.price.toLocaleString()}</div>
+        <div class="${c.change>=0?'tick-up':'tick-down'}" style="font-size:11px;font-weight:600">${c.change>=0?'+':''}${c.change}%</div>
+      </div>
+    </div>`).join('');
+}
+
+function buildFaq() {
+  document.getElementById('faq-list').innerHTML = (faqs[currentLang]||faqs.ar).map(f=>`
+    <div class="faq-item" onclick="this.classList.toggle('open')">
+      <div class="faq-q">${f.q}<span class="faq-arrow">▼</span></div>
+      <div class="faq-a">${f.a}</div>
+    </div>`).join('');
+}
+
+function buildFeatures() {
+  document.getElementById('features-grid').innerHTML = (featuresData[currentLang]||featuresData.ar).map(f=>`
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:24px;transition:.3s"
+         onmouseover="this.style.borderColor='var(--gold)';this.style.transform='translateY(-3px)'"
+         onmouseout="this.style.borderColor='var(--border)';this.style.transform=''">
+      <div style="font-size:28px;margin-bottom:12px">${f.icon}</div>
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:6px">${f.t}</h4>
+      <p style="font-size:12px;color:var(--muted);line-height:1.8">${f.d}</p>
+    </div>`).join('');
+}
+
+function buildPlans() {
+  const plans = [
+    {name:{ar:'الباقة الأساسية',en:'Starter Plan',tr:'Başlangıç Planı'},roi:'2.5',dur:{ar:'30 يوم · من $100',en:'30 days · Min $100',tr:'30 gün · Min $100'},features:{ar:['ربح يومي مضمون','سحب فوري','دعم 24/7'],en:['Daily profit','Instant withdrawal','24/7 Support'],tr:['Günlük kar','Anında çekim','7/24 Destek']}},
+    {name:{ar:'الباقة الذهبية',en:'Gold Plan',tr:'Altın Planı'},roi:'4.8',featured:true,dur:{ar:'60 يوم · من $500',en:'60 days · Min $500',tr:'60 gün · Min $500'},features:{ar:['ربح يومي مضمون','سحب فوري','مدير حساب خاص','تقارير أسبوعية'],en:['Daily profit','Instant withdrawal','Account manager','Weekly reports'],tr:['Günlük kar','Anında çekim','Hesap yöneticisi','Haftalık raporlar']}},
+    {name:{ar:'باقة VIP',en:'VIP Plan',tr:'VIP Planı'},roi:'8.2',dur:{ar:'90 يوم · من $5,000',en:'90 days · Min $5,000',tr:'90 gün · Min $5.000'},features:{ar:['عوائد يومية عالية','سحب بلا حدود','فريق VIP','تحليلات مخصصة','أولوية الدعم'],en:['High daily returns','Unlimited withdrawal','VIP team','Custom analytics','Priority support'],tr:['Yüksek getiri','Sınırsız çekim','VIP ekibi','Özel analizler','Öncelikli destek']}},
+  ];
+  const popLbl={ar:'الأكثر شعبية',en:'Most Popular',tr:'En Popüler'};
+  const invLbl={ar:'استثمر الآن',en:'Invest Now',tr:'Şimdi Yatır'};
+  document.getElementById('plans-grid').innerHTML = plans.map(p=>`
+    <div class="plan-card ${p.featured?'featured':''}">
+      ${p.featured?`<div class="plan-badge-tag">${popLbl[currentLang]}</div>`:''}
+      <div class="plan-name">${p.name[currentLang]||p.name.en}</div>
+      <div class="plan-roi">${p.roi}<span>/day</span></div>
+      <div class="plan-dur">${p.dur[currentLang]||p.dur.en}</div>
+      <ul class="plan-features">${(p.features[currentLang]||p.features.en).map(f=>`<li>${f}</li>`).join('')}</ul>
+      <button class="btn-primary" style="width:100%" onclick="handlePlanClick('${p.roi}')">${invLbl[currentLang]}</button>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// CALCULATOR
+// ══════════════════════════════════════════
+function calcProfit() {
+  const amt = parseFloat(document.getElementById('calc-amt').value)||0;
+  const [rate,days] = document.getElementById('calc-plan').value.split(',').map(Number);
+  const daily=amt*rate/100, total=daily*days, ret=amt+total;
+  document.getElementById('c-daily').textContent = '$'+daily.toFixed(2);
+  document.getElementById('c-total').textContent = '$'+total.toFixed(0);
+  document.getElementById('c-return').textContent = '$'+ret.toFixed(0);
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast'+(type==='err'?' err':'');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+function showErr(el, msgs) {
+  el.textContent = '❌ '+(msgs[currentLang]||msgs.ar);
+  el.style.display = 'block';
+}
+
+function checkPassStrength(v) {
+  const fill = document.getElementById('pass-strength-fill');
+  const txt  = document.getElementById('pass-strength-txt');
+  const score = [v.length>=8,/[A-Z]/.test(v),/[0-9]/.test(v),/[^A-Za-z0-9]/.test(v)].filter(Boolean).length;
+  const cfg = [
+    {w:'25%',c:'var(--red)',t:{ar:'ضعيفة',en:'Weak',tr:'Zayıf'}},
+    {w:'50%',c:'var(--orange)',t:{ar:'متوسطة',en:'Fair',tr:'Orta'}},
+    {w:'75%',c:'var(--gold)',t:{ar:'جيدة',en:'Good',tr:'İyi'}},
+    {w:'100%',c:'var(--green)',t:{ar:'قوية',en:'Strong',tr:'Güçlü'}},
+  ];
+  if(!v){if(fill)fill.style.width='0';if(txt)txt.textContent='';return;}
+  const c = cfg[score-1]||cfg[0];
+  if(fill){fill.style.width=c.w;fill.style.background=c.c;}
+  if(txt){txt.textContent=c.t[currentLang];txt.style.color=c.c;}
+}
+
+function updatePrices() {
+  coins.forEach(c=>{
+    c.price = Math.max(0.001, c.price*(1+(Math.random()-.49)*.003));
+    c.change = parseFloat((c.change+(Math.random()-.5)*.15).toFixed(2));
+  });
+  buildTicker(); buildLivePrices(); buildMarkets();
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+async function init() {
+  buildTicker(); buildMarkets(); buildLivePrices();
+  buildFaq(); buildFeatures(); buildPlans(); calcProfit();
+  await restoreSession();
+  setInterval(updatePrices, 5000);
 }
 
 init();
+
 </script>
 </body>
 </html>
