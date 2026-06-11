@@ -205,6 +205,8 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
   .nav-links{display:none;}
   .section,.dashboard-wrap{padding:40px 16px;}
   .stats-strip{margin:0 16px 40px;}
+  #page-about [style*="grid-template-columns:repeat(4"]{grid-template-columns:1fr 1fr!important;}
+  #page-home [style*="grid-template-columns:repeat(3"]{grid-template-columns:1fr!important;}
 }
 </style>
 </head>
@@ -255,6 +257,23 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
     </div>
   </div>
   <div class="ticker-wrap"><div class="ticker" id="ticker"></div></div>
+  <!-- LIVE STATS BAR -->
+  <div style="background:var(--dark2);border-bottom:1px solid var(--border);padding:12px 40px;display:flex;justify-content:center;gap:40px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+      <span class="badge-dot" style="width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0"></span>
+      <span style="color:var(--muted)" id="ls1" data-ar="مستخدمون نشطون الآن:" data-en="Active users now:" data-tr="Şu an aktif kullanıcı:">Active users now:</span>
+      <span style="color:var(--green);font-weight:700;font-family:var(--mono)" id="ls1v">1,247</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+      <span style="color:var(--muted)" id="ls2" data-ar="إيداعات اليوم:" data-en="Today's deposits:" data-tr="Bugünkü yatırımlar:">Today's deposits:</span>
+      <span style="color:var(--gold);font-weight:700;font-family:var(--mono)" id="ls2v">$284,320</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+      <span style="color:var(--muted)" id="ls3" data-ar="آخر ربح وُزّع:" data-en="Last profit paid:" data-tr="Son ödenen kar:">Last profit paid:</span>
+      <span style="color:var(--gold);font-weight:700;font-family:var(--mono)">$4,820</span>
+      <span style="color:var(--muted);font-size:11px" id="ls3t" data-ar="منذ دقيقتين" data-en="2 mins ago" data-tr="2 dakika önce">2 mins ago</span>
+    </div>
+  </div>
   <div class="stats-strip">
     <div class="stat-box"><div class="val">$142M+</div><div class="lbl" id="s1" data-ar="إجمالي الأرباح" data-en="Total Profits" data-tr="Toplam Kar">إجمالي الأرباح</div></div>
     <div class="stat-box"><div class="val">48K+</div><div class="lbl" id="s2" data-ar="مستثمر نشط" data-en="Active Investors" data-tr="Aktif Yatırımcı">مستثمر نشط</div></div>
@@ -262,27 +281,205 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
     <div class="stat-box"><div class="val">5+</div><div class="lbl" id="s4" data-ar="سنوات خبرة" data-en="Years Experience" data-tr="Yıl Deneyim">سنوات خبرة</div></div>
   </div>
   <div class="section" style="padding-top:0">
-    <div class="section-head"><div class="gold-line"></div><h2 id="feat-h" data-ar="لماذا Crysanto؟" data-en="Why Crysanto?" data-tr="Neden Crysanto?">لماذا Crysanto؟</h2></div>
+    <div class="section-head"><div class="gold-line"></div><h2 id="feat-h" data-ar="لماذا Crysanto؟" data-en="Why Crysanto?" data-tr="Neden Crysanto?">Why Crysanto?</h2></div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1000px;margin:0 auto" id="features-grid"></div>
+  </div>
+
+  <!-- TESTIMONIALS -->
+  <div class="section" style="padding-bottom:0">
+    <div class="section-head">
+      <div class="gold-line"></div>
+      <h2 style="font-size:clamp(24px,3.5vw,40px);font-weight:800;letter-spacing:-1px;margin-bottom:10px" id="test-h" data-ar="ماذا يقول عملاؤنا" data-en="What Our Clients Say" data-tr="Müşterilerimiz Ne Diyor">What Our Clients Say</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto" id="testimonials-grid">
+      <div style="background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:24px">
+        <div style="display:flex;gap:4px;margin-bottom:12px">⭐⭐⭐⭐⭐</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.9;margin-bottom:16px" id="test1p" data-ar="&quot;منصة رائعة! أرباحي اليومية تصل لحسابي بانتظام. أنصح بها بشدة لكل من يريد الاستثمار الآمن.&quot;" data-en="&quot;Amazing platform! My daily profits arrive regularly. I highly recommend it to everyone who wants safe investment.&quot;" data-tr="&quot;Harika platform! Günlük karlarım düzenli olarak hesabıma geliyor. Güvenli yatırım isteyen herkese tavsiye ederim.&quot;">"Amazing platform! My daily profits arrive regularly. I highly recommend it to everyone who wants safe investment."</p>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--gold-dim);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:800">A</div>
+          <div><div style="font-size:13px;font-weight:700">Ahmed K.</div><div style="font-size:11px;color:var(--muted)" id="test1loc" data-ar="السعودية" data-en="Saudi Arabia" data-tr="Suudi Arabistan">Saudi Arabia</div></div>
+        </div>
+      </div>
+      <div style="background:var(--dark2);border:1px solid var(--gold);border-radius:16px;padding:24px;position:relative">
+        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;font-size:11px;font-weight:700;padding:3px 14px;border-radius:100px" id="featured-review" data-ar="مميز" data-en="Featured" data-tr="Öne Çıkan">Featured</div>
+        <div style="display:flex;gap:4px;margin-bottom:12px">⭐⭐⭐⭐⭐</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.9;margin-bottom:16px" id="test2p" data-ar="&quot;كنت خائفاً في البداية لكن بعد أول سحب ناجح أصبحت أثق بالمنصة 100%. فريق الدعم رائع جداً.&quot;" data-en="&quot;I was scared at first but after the first successful withdrawal I trust the platform 100%. Support team is amazing.&quot;" data-tr="&quot;İlk başta korktum ama ilk başarılı çekimin ardından platforma %100 güveniyorum. Destek ekibi harika.&quot;">"I was scared at first but after the first successful withdrawal I trust the platform 100%. Support team is amazing."</p>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--gold-dim);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:800">S</div>
+          <div><div style="font-size:13px;font-weight:700">Sara M.</div><div style="font-size:11px;color:var(--muted)" id="test2loc" data-ar="تركيا" data-en="Turkey" data-tr="Türkiye">Turkey</div></div>
+        </div>
+      </div>
+      <div style="background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:24px">
+        <div style="display:flex;gap:4px;margin-bottom:12px">⭐⭐⭐⭐⭐</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.9;margin-bottom:16px" id="test3p" data-ar="&quot;استثمرت في باقة VIP وأرباحي اليومية تجاوزت توقعاتي. منصة احترافية بكل المقاييس.&quot;" data-en="&quot;I invested in the VIP plan and my daily profits exceeded my expectations. A professional platform by all standards.&quot;" data-tr="&quot;VIP planına yatırım yaptım ve günlük karlarım beklentilerimi aştı. Her anlamda profesyonel bir platform.&quot;">"I invested in the VIP plan and my daily profits exceeded my expectations. A professional platform by all standards."</p>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--gold-dim);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:800">M</div>
+          <div><div style="font-size:13px;font-weight:700">Mohamed R.</div><div style="font-size:11px;color:var(--muted)" id="test3loc" data-ar="مصر" data-en="Egypt" data-tr="Mısır">Egypt</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div style="background:var(--dark2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:70px 40px;">
+    <div style="text-align:center;margin-bottom:50px">
+      <div class="gold-line"></div>
+      <h2 style="font-size:clamp(24px,3.5vw,40px);font-weight:800;letter-spacing:-1px;margin-bottom:10px" id="how-h" data-ar="كيف يعمل؟" data-en="How It Works?" data-tr="Nasıl Çalışır?">How It Works?</h2>
+      <p style="color:var(--muted);font-size:14px" id="how-sub" data-ar="ابدأ في 3 خطوات بسيطة" data-en="Get started in 3 simple steps" data-tr="3 basit adımda başlayın">Get started in 3 simple steps</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:30px;max-width:900px;margin:0 auto">
+      <div style="text-align:center">
+        <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#000;font-size:28px;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-family:var(--mono)">1</div>
+        <h4 style="font-size:16px;font-weight:700;margin-bottom:10px" id="hw1h" data-ar="أنشئ حسابك" data-en="Create Account" data-tr="Hesap Oluştur">Create Account</h4>
+        <p style="font-size:13px;color:var(--muted);line-height:1.8" id="hw1p" data-ar="سجّل مجاناً في دقيقة واحدة بدون أي رسوم" data-en="Register for free in one minute with no fees" data-tr="Ücret ödemeden bir dakikada ücretsiz kayıt olun">Register for free in one minute with no fees</p>
+      </div>
+      <div style="text-align:center">
+        <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#000;font-size:28px;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-family:var(--mono)">2</div>
+        <h4 style="font-size:16px;font-weight:700;margin-bottom:10px" id="hw2h" data-ar="أودع واختر خطتك" data-en="Deposit & Choose Plan" data-tr="Yatır ve Plan Seç">Deposit & Choose Plan</h4>
+        <p style="font-size:13px;color:var(--muted);line-height:1.8" id="hw2p" data-ar="أودع بالعملة الرقمية واختر الخطة المناسبة لك" data-en="Deposit crypto and select the plan that suits you" data-tr="Kripto yatırın ve size uygun planı seçin">Deposit crypto and select the plan that suits you</p>
+      </div>
+      <div style="text-align:center">
+        <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#000;font-size:28px;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-family:var(--mono)">3</div>
+        <h4 style="font-size:16px;font-weight:700;margin-bottom:10px" id="hw3h" data-ar="احصل على أرباحك" data-en="Earn Daily Profits" data-tr="Günlük Kar Kazan">Earn Daily Profits</h4>
+        <p style="font-size:13px;color:var(--muted);line-height:1.8" id="hw3p" data-ar="تُضاف أرباحك يومياً تلقائياً لحسابك" data-en="Your profits are added automatically to your account daily" data-tr="Karlarınız her gün otomatik olarak hesabınıza eklenir">Your profits are added automatically to your account daily</p>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:40px">
+      <button class="btn-primary" onclick="openModal('register')" id="how-cta" data-ar="ابدأ الآن مجاناً" data-en="Start Now for Free" data-tr="Şimdi Ücretsiz Başla">Start Now for Free</button>
+    </div>
   </div>
 </div>
 
 <!-- ABOUT -->
 <div class="page" id="page-about">
+  <!-- HERO -->
+  <div style="background:linear-gradient(135deg,var(--dark2),rgba(201,168,76,0.05));border-bottom:1px solid var(--border);padding:80px 40px;text-align:center;">
+    <div class="gold-line"></div>
+    <h1 style="font-size:clamp(32px,5vw,56px);font-weight:900;letter-spacing:-2px;margin-bottom:16px" id="ab-hero-h" data-ar="نحن Crysanto" data-en="We are Crysanto" data-tr="Biz Crysanto'yuz">We are Crysanto</h1>
+    <p style="font-size:16px;color:var(--muted);max-width:600px;margin:0 auto;line-height:1.9" id="ab-hero-sub" data-ar="منصة استثمار رقمي رائدة تجمع بين التكنولوجيا المتقدمة وخبرة المحللين الماليين لتقديم أفضل عوائد آمنة." data-en="A leading digital investment platform combining advanced technology and expert financial analysts to deliver the best safe returns." data-tr="Gelişmiş teknolojiyi uzman finansal analistlerle birleştiren önde gelen dijital yatırım platformu.">A leading digital investment platform combining advanced technology and expert financial analysts to deliver the best safe returns.</p>
+  </div>
+
+  <!-- STORY -->
   <div class="section">
     <div class="about-grid">
-      <div class="about-visual">🏛️</div>
+      <div class="about-visual" style="background:linear-gradient(135deg,var(--dark2),rgba(201,168,76,0.08));">
+        <div style="position:relative;z-index:1;text-align:center">
+          <div style="font-size:64px;margin-bottom:12px">🏛️</div>
+          <div style="font-family:var(--en);font-size:18px;font-weight:800;color:var(--gold)">Since 2019</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px" id="ab-since" data-ar="5 سنوات من الثقة والنجاح" data-en="5 years of trust and success" data-tr="5 yıllık güven ve başarı">5 years of trust and success</div>
+        </div>
+      </div>
       <div>
         <div class="gold-line"></div>
-        <h2 style="font-size:36px;font-weight:800;margin-bottom:16px;letter-spacing:-1px" id="ab-h" data-ar="نحن Crysanto" data-en="We are Crysanto" data-tr="Biz Crysanto'yuz">نحن Crysanto</h2>
-        <p style="color:var(--muted);font-size:14px;line-height:2;margin-bottom:14px" id="ab-p1" data-ar="Crysanto منصة استثمار رقمي رائدة تأسست عام 2019." data-en="Crysanto is a leading digital investment platform founded in 2019." data-tr="Crysanto, 2019'da kurulan önde gelen bir dijital yatırım platformudur.">Crysanto منصة استثمار رقمي رائدة تأسست عام 2019.</p>
-        <p style="color:var(--muted);font-size:14px;line-height:2" id="ab-p2" data-ar="نؤمن بالشفافية الكاملة وأمان رأس المال." data-en="We believe in full transparency and capital security." data-tr="Tam şeffaflığa ve sermaye güvenliğine inanıyoruz.">نؤمن بالشفافية الكاملة وأمان رأس المال.</p>
+        <h2 style="font-size:32px;font-weight:800;margin-bottom:16px;letter-spacing:-1px" id="ab-h" data-ar="قصتنا" data-en="Our Story" data-tr="Hikayemiz">Our Story</h2>
+        <p style="color:var(--muted);font-size:14px;line-height:2;margin-bottom:16px" id="ab-p1" data-ar="تأسست Crysanto عام 2019 بهدف واحد: جعل الاستثمار في العملات الرقمية متاحاً وآمناً للجميع. بدأنا بفريق صغير من المحللين الماليين والمطورين المتخصصين، ونمونا لنصبح واحدة من أكثر منصات الاستثمار الرقمي ثقة في العالم." data-en="Crysanto was founded in 2019 with one goal: making crypto investment accessible and safe for everyone. We started with a small team of financial analysts and specialized developers, growing to become one of the most trusted digital investment platforms in the world." data-tr="Crysanto, 2019 yılında tek bir hedefle kuruldu: kripto yatırımını herkes için erişilebilir ve güvenli kılmak. Küçük bir finansal analist ve uzman geliştirici ekibiyle başladık ve dünyanın en güvenilir dijital yatırım platformlarından biri haline geldik.">Crysanto was founded in 2019 with one goal: making crypto investment accessible and safe for everyone. We started with a small team of financial analysts and specialized developers, growing to become one of the most trusted digital investment platforms in the world.</p>
+        <p style="color:var(--muted);font-size:14px;line-height:2" id="ab-p2" data-ar="نؤمن بالشفافية الكاملة وأمان رأس المال. كل قرار نتخذه يضع مصلحة عملائنا في المقام الأول." data-en="We believe in full transparency and capital security. Every decision we make puts our clients' interests first." data-tr="Tam şeffaflığa ve sermaye güvenliğine inanıyoruz. Aldığımız her kararda müşterilerimizin çıkarları ön plandadır.">We believe in full transparency and capital security. Every decision we make puts our clients' interests first.</p>
+        <!-- Stats Row -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px">
+          <div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:28px;font-weight:900;color:var(--gold);font-family:var(--mono)">48K+</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px" id="ab-s1" data-ar="مستثمر نشط" data-en="Active Investors" data-tr="Aktif Yatırımcı">Active Investors</div>
+          </div>
+          <div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:28px;font-weight:900;color:var(--gold);font-family:var(--mono)">50+</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px" id="ab-s2" data-ar="دولة" data-en="Countries" data-tr="Ülke">Countries</div>
+          </div>
+          <div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:28px;font-weight:900;color:var(--gold);font-family:var(--mono)">$142M+</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px" id="ab-s3" data-ar="أرباح موزعة" data-en="Profits Paid" data-tr="Ödenen Kar">Profits Paid</div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="team-grid" style="max-width:960px;margin:50px auto 0">
-      <div class="team-card"><div class="team-av">👨‍💼</div><div style="font-size:13px;font-weight:600">Ahmed Al-Rashid</div><div style="font-size:11px;color:var(--muted)">CEO</div></div>
-      <div class="team-card"><div class="team-av">👩‍💻</div><div style="font-size:13px;font-weight:600">Sara Kaya</div><div style="font-size:11px;color:var(--muted)">CTO</div></div>
-      <div class="team-card"><div class="team-av">👨‍📊</div><div style="font-size:13px;font-weight:600">James Walker</div><div style="font-size:11px;color:var(--muted)">Lead Analyst</div></div>
+  </div>
+
+  <!-- VALUES -->
+  <div style="background:var(--dark2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:70px 40px;">
+    <div style="text-align:center;margin-bottom:50px">
+      <div class="gold-line"></div>
+      <h2 style="font-size:clamp(24px,3.5vw,40px);font-weight:800;letter-spacing:-1px;margin-bottom:10px" id="ab-val-h" data-ar="قيمنا" data-en="Our Values" data-tr="Değerlerimiz">Our Values</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1000px;margin:0 auto">
+      <div style="text-align:center;padding:28px 20px;background:var(--dark);border-radius:16px;border:1px solid var(--border)">
+        <div style="font-size:36px;margin-bottom:12px">🔐</div>
+        <h4 style="font-size:14px;font-weight:700;margin-bottom:8px;color:var(--gold)" id="av1h" data-ar="الأمان" data-en="Security" data-tr="Güvenlik">Security</h4>
+        <p style="font-size:12px;color:var(--muted);line-height:1.8" id="av1p" data-ar="أمان أموالك هو أولويتنا القصوى دائماً" data-en="Your funds' security is always our top priority" data-tr="Fonlarınızın güvenliği her zaman önceliğimizdir">Your funds' security is always our top priority</p>
+      </div>
+      <div style="text-align:center;padding:28px 20px;background:var(--dark);border-radius:16px;border:1px solid var(--border)">
+        <div style="font-size:36px;margin-bottom:12px">🔍</div>
+        <h4 style="font-size:14px;font-weight:700;margin-bottom:8px;color:var(--gold)" id="av2h" data-ar="الشفافية" data-en="Transparency" data-tr="Şeffaflık">Transparency</h4>
+        <p style="font-size:12px;color:var(--muted);line-height:1.8" id="av2p" data-ar="نؤمن بالوضوح التام في جميع عملياتنا" data-en="We believe in full clarity in all our operations" data-tr="Tüm operasyonlarımızda tam şeffaflığa inanıyoruz">We believe in full clarity in all our operations</p>
+      </div>
+      <div style="text-align:center;padding:28px 20px;background:var(--dark);border-radius:16px;border:1px solid var(--border)">
+        <div style="font-size:36px;margin-bottom:12px">📈</div>
+        <h4 style="font-size:14px;font-weight:700;margin-bottom:8px;color:var(--gold)" id="av3h" data-ar="النمو" data-en="Growth" data-tr="Büyüme">Growth</h4>
+        <p style="font-size:12px;color:var(--muted);line-height:1.8" id="av3p" data-ar="نسعى دائماً لتحقيق أفضل العوائد لعملائنا" data-en="We always strive for the best returns for our clients" data-tr="Müşterilerimiz için her zaman en iyi getirileri hedefliyoruz">We always strive for the best returns for our clients</p>
+      </div>
+      <div style="text-align:center;padding:28px 20px;background:var(--dark);border-radius:16px;border:1px solid var(--border)">
+        <div style="font-size:36px;margin-bottom:12px">🤝</div>
+        <h4 style="font-size:14px;font-weight:700;margin-bottom:8px;color:var(--gold)" id="av4h" data-ar="الشراكة" data-en="Partnership" data-tr="Ortaklık">Partnership</h4>
+        <p style="font-size:12px;color:var(--muted);line-height:1.8" id="av4p" data-ar="نبني علاقات طويلة الأمد مع عملائنا" data-en="We build long-term relationships with our clients" data-tr="Müşterilerimizle uzun vadeli ilişkiler kuruyoruz">We build long-term relationships with our clients</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEAM -->
+  <div class="section">
+    <div style="text-align:center;margin-bottom:50px">
+      <div class="gold-line"></div>
+      <h2 style="font-size:clamp(24px,3.5vw,40px);font-weight:800;letter-spacing:-1px;margin-bottom:10px" id="ab-team-h" data-ar="فريقنا" data-en="Our Team" data-tr="Ekibimiz">Our Team</h2>
+      <p style="color:var(--muted);font-size:14px" id="ab-team-sub" data-ar="فريق من الخبراء يعمل من أجل نجاحك" data-en="A team of experts working for your success" data-tr="Başarınız için çalışan uzmanlar ekibi">A team of experts working for your success</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1000px;margin:0 auto">
+      <div class="team-card">
+        <div class="team-av">👨‍💼</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">Ahmed Al-Rashid</div>
+        <div style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:8px" id="tr1" data-ar="المدير التنفيذي" data-en="CEO & Founder" data-tr="CEO ve Kurucu">CEO & Founder</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.7" id="td1" data-ar="خبرة 15 عاماً في الاستثمار المالي" data-en="15 years of financial investment experience" data-tr="15 yıl finans yatırım deneyimi">15 years of financial investment experience</div>
+      </div>
+      <div class="team-card">
+        <div class="team-av">👩‍💻</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">Sara Kaya</div>
+        <div style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:8px" id="tr2" data-ar="مدير التقنية" data-en="CTO" data-tr="CTO">CTO</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.7" id="td2" data-ar="متخصصة في أمان البلوكتشين" data-en="Blockchain security specialist" data-tr="Blockchain güvenlik uzmanı">Blockchain security specialist</div>
+      </div>
+      <div class="team-card">
+        <div class="team-av">👨‍📊</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">James Walker</div>
+        <div style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:8px" id="tr3" data-ar="محلل مالي أول" data-en="Lead Analyst" data-tr="Baş Analist">Lead Analyst</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.7" id="td3" data-ar="خبير في تحليل الأسواق الرقمية" data-en="Crypto market analysis expert" data-tr="Kripto piyasa analiz uzmanı">Crypto market analysis expert</div>
+      </div>
+      <div class="team-card">
+        <div class="team-av">👩‍⚖️</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">Layla Hassan</div>
+        <div style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:8px" id="tr4" data-ar="مدير الامتثال" data-en="Compliance Director" data-tr="Uyum Direktörü">Compliance Director</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.7" id="td4" data-ar="متخصصة في اللوائح المالية الدولية" data-en="International financial regulations specialist" data-tr="Uluslararası finans düzenlemeleri uzmanı">International financial regulations specialist</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LICENSES -->
+  <div style="background:var(--dark2);border-top:1px solid var(--border);padding:60px 40px;text-align:center">
+    <div class="gold-line"></div>
+    <h2 style="font-size:28px;font-weight:800;margin-bottom:12px" id="ab-lic-h" data-ar="التراخيص والامتثال" data-en="Licenses & Compliance" data-tr="Lisanslar ve Uyumluluk">Licenses & Compliance</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:36px;max-width:500px;margin-left:auto;margin-right:auto" id="ab-lic-sub" data-ar="نعمل وفق أعلى معايير الامتثال المالي الدولي" data-en="We operate under the highest international financial compliance standards" data-tr="En yüksek uluslararası finansal uyum standartlarında çalışıyoruz">We operate under the highest international financial compliance standards</p>
+    <div style="display:flex;gap:20px;justify-content:center;flex-wrap:wrap">
+      <div style="background:var(--dark);border:1px solid var(--border);border-radius:12px;padding:20px 30px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">🏅</span>
+        <div style="text-align:left"><div style="font-size:13px;font-weight:700">ISO 27001</div><div style="font-size:11px;color:var(--muted)" id="lic1" data-ar="أمان المعلومات" data-en="Information Security" data-tr="Bilgi Güvenliği">Information Security</div></div>
+      </div>
+      <div style="background:var(--dark);border:1px solid var(--border);border-radius:12px;padding:20px 30px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">🛡️</span>
+        <div style="text-align:left"><div style="font-size:13px;font-weight:700">SSL 256-bit</div><div style="font-size:11px;color:var(--muted)" id="lic2" data-ar="تشفير البيانات" data-en="Data Encryption" data-tr="Veri Şifreleme">Data Encryption</div></div>
+      </div>
+      <div style="background:var(--dark);border:1px solid var(--border);border-radius:12px;padding:20px 30px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">✅</span>
+        <div style="text-align:left"><div style="font-size:13px;font-weight:700">AML/KYC</div><div style="font-size:11px;color:var(--muted)" id="lic3" data-ar="منع غسيل الأموال" data-en="Anti-Money Laundering" data-tr="Kara Para Aklamayla Mücadele">Anti-Money Laundering</div></div>
+      </div>
+      <div style="background:var(--dark);border:1px solid var(--border);border-radius:12px;padding:20px 30px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">🌐</span>
+        <div style="text-align:left"><div style="font-size:13px;font-weight:700">GDPR</div><div style="font-size:11px;color:var(--muted)" id="lic4" data-ar="حماية البيانات" data-en="Data Protection" data-tr="Veri Koruma">Data Protection</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -336,6 +533,13 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
       </div>
       <div class="dash-main">
         <div id="d-overview">
+          <!-- Quick Actions -->
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
+            <button onclick="showPage('deposit',null)" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--gold);background:var(--gold-dim);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.background='var(--gold)';this.style.color='#000'" onmouseout="this.style.background='var(--gold-dim)';this.style.color='var(--gold)'" id="qa1" data-ar="📥 إيداع" data-en="📥 Deposit" data-tr="📥 Yatırım">📥 Deposit</button>
+            <button onclick="switchDW(document.querySelector('.dw-tab:last-child'),'dw-wd');showPage('deposit',null)" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" id="qa2" data-ar="📤 سحب" data-en="📤 Withdraw" data-tr="📤 Çekim">📤 Withdraw</button>
+            <button onclick="showPage('plans',null)" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" id="qa3" data-ar="💹 استثمر" data-en="💹 Invest" data-tr="💹 Yatır">💹 Invest</button>
+            <button onclick="showPage('referral',null)" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" id="qa4" data-ar="🎁 الإحالة" data-en="🎁 Referral" data-tr="🎁 Referans">🎁 Referral</button>
+          </div>
           <div class="stat-cards">
             <div class="stat-card"><div class="sc-label" id="dc1" data-ar="الرصيد الكلي" data-en="Total Balance" data-tr="Toplam Bakiye">الرصيد الكلي</div><div class="sc-val" id="d-bal">$0</div></div>
             <div class="stat-card"><div class="sc-label" id="dc2" data-ar="ربح اليوم" data-en="Daily Profit" data-tr="Günlük Kar">ربح اليوم</div><div class="sc-val" id="d-profit">$0</div></div>
@@ -456,38 +660,140 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
         <div class="stat-card"><div class="sc-label" id="re2" data-ar="مكتسبات" data-en="Earned" data-tr="Kazanılan">مكتسبات</div><div class="sc-val" id="d-ref-total">$0</div></div>
         <div class="stat-card"><div class="sc-label" id="re3" data-ar="قيد المراجعة" data-en="Pending" data-tr="Beklemede">قيد المراجعة</div><div class="sc-val">$0</div></div>
       </div>
+      <!-- Referral Steps -->
+      <div style="background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:28px;margin-top:20px">
+        <h4 style="font-size:15px;font-weight:700;margin-bottom:20px" id="ref-how-h" data-ar="كيف تعمل الإحالة؟" data-en="How does referral work?" data-tr="Referans nasıl çalışır?">How does referral work?</h4>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:14px;align-items:flex-start">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:#000;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:3px" id="rs1h" data-ar="شارك رابطك الخاص" data-en="Share your unique link" data-tr="Benzersiz bağlantınızı paylaşın">Share your unique link</div><div style="font-size:12px;color:var(--muted)" id="rs1p" data-ar="شارك الرابط مع أصدقائك عبر أي وسيلة" data-en="Share the link with friends through any channel" data-tr="Bağlantıyı herhangi bir kanal aracılığıyla arkadaşlarınızla paylaşın">Share the link with friends through any channel</div></div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:flex-start">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:#000;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:3px" id="rs2h" data-ar="يسجل صديقك ويودع" data-en="Friend registers and deposits" data-tr="Arkadaşınız kaydolur ve yatırım yapar">Friend registers and deposits</div><div style="font-size:12px;color:var(--muted)" id="rs2p" data-ar="لما يسجل صديقك ويودع أول مبلغ" data-en="When your friend registers and makes first deposit" data-tr="Arkadaşınız kaydolup ilk yatırımı yaptığında">When your friend registers and makes first deposit</div></div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:flex-start">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:#000;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+            <div><div style="font-size:13px;font-weight:600;margin-bottom:3px" id="rs3h" data-ar="احصل على عمولتك فوراً" data-en="Get your commission instantly" data-tr="Komisyonunuzu anında alın">Get your commission instantly</div><div style="font-size:12px;color:var(--muted)" id="rs3p" data-ar="تحصل على 5% من كل إيداع يقوم به صديقك" data-en="You earn 5% from every deposit your friend makes" data-tr="Arkadaşınızın yaptığı her yatırımdan %5 kazanırsınız">You earn 5% from every deposit your friend makes</div></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- FAQ -->
 <div class="page" id="page-faq">
-  <div class="section"><div class="section-head"><div class="gold-line"></div><h2 id="faq-h" data-ar="الأسئلة الشائعة" data-en="FAQ" data-tr="SSS">الأسئلة الشائعة</h2></div><div class="faq-list" id="faq-list"></div></div>
+  <div class="section">
+    <div class="section-head">
+      <div class="gold-line"></div>
+      <h2 id="faq-h" data-ar="الأسئلة الشائعة" data-en="Frequently Asked Questions" data-tr="Sık Sorulan Sorular">Frequently Asked Questions</h2>
+      <p id="faq-sub" data-ar="كل ما تحتاج معرفته عن Crysanto" data-en="Everything you need to know about Crysanto" data-tr="Crysanto hakkında bilmeniz gereken her şey">Everything you need to know about Crysanto</p>
+    </div>
+    <!-- FAQ Categories -->
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:36px" id="faq-cats">
+      <button onclick="filterFaq(this,'all')" class="faq-cat-btn active" style="padding:8px 18px;border-radius:100px;border:1px solid var(--gold);background:var(--gold-dim);color:var(--gold);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" id="fcat-all" data-ar="الكل" data-en="All" data-tr="Hepsi">All</button>
+      <button onclick="filterFaq(this,'general')" class="faq-cat-btn" style="padding:8px 18px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" id="fcat-gen" data-ar="عام" data-en="General" data-tr="Genel">General</button>
+      <button onclick="filterFaq(this,'deposit')" class="faq-cat-btn" style="padding:8px 18px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" id="fcat-dep" data-ar="الإيداع" data-en="Deposits" data-tr="Yatırımlar">Deposits</button>
+      <button onclick="filterFaq(this,'withdraw')" class="faq-cat-btn" style="padding:8px 18px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" id="fcat-wd" data-ar="السحب" data-en="Withdrawals" data-tr="Çekimler">Withdrawals</button>
+      <button onclick="filterFaq(this,'security')" class="faq-cat-btn" style="padding:8px 18px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" id="fcat-sec" data-ar="الأمان" data-en="Security" data-tr="Güvenlik">Security</button>
+    </div>
+    <div class="faq-list" id="faq-list"></div>
+    <!-- Still have questions -->
+    <div style="text-align:center;margin-top:60px;padding:40px;background:var(--dark2);border:1px solid var(--border);border-radius:20px;max-width:600px;margin-left:auto;margin-right:auto">
+      <div style="font-size:40px;margin-bottom:16px">💬</div>
+      <h3 style="font-size:20px;font-weight:700;margin-bottom:8px" id="faq-still-h" data-ar="لم تجد إجابتك؟" data-en="Didn't find your answer?" data-tr="Cevabınızı bulamadınız mı?">Didn't find your answer?</h3>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:20px" id="faq-still-sub" data-ar="تواصل مع فريق الدعم وسنساعدك فوراً" data-en="Contact our support team and we'll help you immediately" data-tr="Destek ekibimizle iletişime geçin, hemen yardımcı olalım">Contact our support team and we'll help you immediately</p>
+      <button class="btn-primary" onclick="showPage('contact',null)" id="faq-contact-btn" data-ar="تواصل معنا" data-en="Contact Us" data-tr="Bize Ulaşın">Contact Us</button>
+    </div>
+  </div>
 </div>
 
 <!-- CONTACT -->
 <div class="page" id="page-contact">
   <div class="section">
-    <div class="section-head"><div class="gold-line"></div><h2 id="ct-h" data-ar="تواصل معنا" data-en="Contact Us" data-tr="Bize Ulaşın">تواصل معنا</h2></div>
+    <div class="section-head"><div class="gold-line"></div><h2 id="ct-h" data-ar="تواصل معنا" data-en="Contact Us" data-tr="Bize Ulaşın">Contact Us</h2><p id="ct-sub" data-ar="نحن هنا للمساعدة في أي وقت" data-en="We are here to help anytime" data-tr="Her zaman yardıma hazırız">We are here to help anytime</p></div>
     <div class="contact-grid">
       <div>
-        <div class="ci-item"><div class="ci-icon">📧</div><div><h5 style="font-size:13px;font-weight:700;margin-bottom:3px">Email</h5><p style="font-size:12px;color:var(--muted)">support@crysanto.io</p></div></div>
+        <div class="ci-item"><div class="ci-icon">📧</div><div><h5 style="font-size:13px;font-weight:700;margin-bottom:3px" id="cti1" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">Email</h5><p style="font-size:12px;color:var(--muted)">support@crysanto.io</p></div></div>
         <div class="ci-item"><div class="ci-icon">💬</div><div><h5 style="font-size:13px;font-weight:700;margin-bottom:3px">Telegram</h5><p style="font-size:12px;color:var(--muted)">@CrysantoSupport</p></div></div>
-        <div class="ci-item"><div class="ci-icon">🌐</div><div><h5 style="font-size:13px;font-weight:700;margin-bottom:3px" id="live-chat-lbl" data-ar="دعم مباشر" data-en="Live Chat" data-tr="Canlı Destek">دعم مباشر</h5><p style="font-size:12px;color:var(--muted)" id="available-txt" data-ar="متاح 24/7" data-en="Available 24/7" data-tr="7/24 Mevcut">متاح 24/7</p></div></div>
+        <div class="ci-item"><div class="ci-icon">🌐</div><div><h5 style="font-size:13px;font-weight:700;margin-bottom:3px" id="live-chat-lbl" data-ar="دعم مباشر" data-en="Live Chat" data-tr="Canlı Destek">Live Chat</h5><p style="font-size:12px;color:var(--muted)" id="available-txt" data-ar="متاح 24/7" data-en="Available 24/7" data-tr="7/24 Mevcut">Available 24/7</p></div></div>
+        <div class="ci-item"><div class="ci-icon">🏢</div><div><h5 style="font-size:13px;font-weight:700;margin-bottom:3px" id="cti4" data-ar="المقر الرئيسي" data-en="Headquarters" data-tr="Genel Merkez">Headquarters</h5><p style="font-size:12px;color:var(--muted)">Dubai, UAE</p></div></div>
+        <!-- Response Time -->
+        <div style="background:var(--gold-dim);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:20px">
+          <div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:8px" id="ct-resp-h" data-ar="وقت الاستجابة" data-en="Response Time" data-tr="Yanıt Süresi">Response Time</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--muted)" id="ct-email-lbl" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">Email</span><span style="color:var(--green);font-weight:600" id="ct-email-time" data-ar="خلال ساعة" data-en="Within 1 hour" data-tr="1 saat içinde">Within 1 hour</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--muted)">Telegram</span><span style="color:var(--green);font-weight:600" id="ct-tg-time" data-ar="فوري" data-en="Instant" data-tr="Anında">Instant</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--muted)" id="ct-chat-lbl" data-ar="الدعم المباشر" data-en="Live Chat" data-tr="Canlı Destek">Live Chat</span><span style="color:var(--green);font-weight:600" id="ct-chat-time" data-ar="دقائق" data-en="Minutes" data-tr="Dakikalar">Minutes</span></div>
+          </div>
+        </div>
       </div>
       <div style="background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:26px">
-        <div class="form-group"><label id="cf1" data-ar="الاسم" data-en="Name" data-tr="Ad">الاسم</label><input type="text"></div>
-        <div class="form-group"><label id="cf2" data-ar="البريد" data-en="Email" data-tr="E-posta">البريد</label><input type="email"></div>
-        <div class="form-group"><label id="cf3" data-ar="الرسالة" data-en="Message" data-tr="Mesaj">الرسالة</label><textarea style="min-height:100px;resize:vertical"></textarea></div>
-        <button class="btn-primary" style="width:100%" id="cf-btn" data-ar="إرسال" data-en="Send" data-tr="Gönder">إرسال</button>
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:20px" id="ct-form-h" data-ar="أرسل رسالة" data-en="Send a Message" data-tr="Mesaj Gönder">Send a Message</h3>
+        <div class="form-group"><label id="cf1" data-ar="الاسم الكامل" data-en="Full Name" data-tr="Ad Soyad">Full Name</label><input type="text" id="cf-name" data-ar="أدخل اسمك" data-en="Enter your name" data-tr="Adınızı girin" placeholder="Enter your name"></div>
+        <div class="form-group"><label id="cf2" data-ar="البريد الإلكتروني" data-en="Email Address" data-tr="E-posta Adresi">Email Address</label><input type="email" id="cf-email" data-ar="أدخل بريدك" data-en="Enter your email" data-tr="E-postanızı girin" placeholder="Enter your email"></div>
+        <div class="form-group"><label id="cf2b" data-ar="الموضوع" data-en="Subject" data-tr="Konu">Subject</label>
+          <select id="cf-subject" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;font-family:inherit;cursor:pointer">
+            <option id="cfs1" data-ar="سؤال عام" data-en="General Question" data-tr="Genel Soru">General Question</option>
+            <option id="cfs2" data-ar="مشكلة في الإيداع" data-en="Deposit Issue" data-tr="Yatırım Sorunu">Deposit Issue</option>
+            <option id="cfs3" data-ar="مشكلة في السحب" data-en="Withdrawal Issue" data-tr="Çekim Sorunu">Withdrawal Issue</option>
+            <option id="cfs4" data-ar="التحقق KYC" data-en="KYC Verification" data-tr="KYC Doğrulama">KYC Verification</option>
+            <option id="cfs5" data-ar="شكوى" data-en="Complaint" data-tr="Şikayet">Complaint</option>
+          </select>
+        </div>
+        <div class="form-group"><label id="cf3" data-ar="الرسالة" data-en="Message" data-tr="Mesaj">Message</label><textarea id="cf-message" style="min-height:120px;resize:vertical" data-ar="اكتب رسالتك هنا..." data-en="Write your message here..." data-tr="Mesajınızı buraya yazın..." placeholder="Write your message here..."></textarea></div>
+        <button class="btn-primary" style="width:100%" onclick="submitContact()" id="cf-btn" data-ar="إرسال الرسالة" data-en="Send Message" data-tr="Mesaj Gönder">Send Message</button>
       </div>
     </div>
   </div>
 </div>
 
-<footer>
-  <div class="footer-logo">Crysanto</div>
-  <p class="footer-copy" id="footer-txt" data-ar="© 2025 Crysanto. جميع الحقوق محفوظة." data-en="© 2025 Crysanto. All rights reserved." data-tr="© 2025 Crysanto. Tüm hakları saklıdır.">© 2025 Crysanto. جميع الحقوق محفوظة.</p>
+<footer style="padding:50px 40px 30px">
+  <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;max-width:1100px;margin:0 auto 40px">
+    <div>
+      <div class="footer-logo" style="margin-bottom:12px;text-align:left">Crysanto</div>
+      <p style="font-size:12px;color:var(--muted);line-height:1.9;max-width:280px" id="footer-desc" data-ar="منصة استثمار رقمي رائدة توفر عوائد يومية مضمونة لعملاء في أكثر من 50 دولة." data-en="A leading digital investment platform providing guaranteed daily returns for clients in 50+ countries." data-tr="50'den fazla ülkede müşterilere garantili günlük getiri sunan önde gelen dijital yatırım platformu.">A leading digital investment platform providing guaranteed daily returns for clients in 50+ countries.</p>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <a href="#" style="width:34px;height:34px;border-radius:8px;background:var(--dark3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;text-decoration:none">💬</a>
+        <a href="#" style="width:34px;height:34px;border-radius:8px;background:var(--dark3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;text-decoration:none">📧</a>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text)" id="footer-company" data-ar="الشركة" data-en="Company" data-tr="Şirket">Company</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <a href="#" onclick="showPage('about',null)" style="font-size:12px;color:var(--muted);text-decoration:none;transition:.2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'" id="fl-about" data-ar="من نحن" data-en="About Us" data-tr="Hakkımızda">About Us</a>
+        <a href="#" onclick="showPage('plans',null)" style="font-size:12px;color:var(--muted);text-decoration:none;transition:.2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'" id="fl-plans" data-ar="الباقات" data-en="Plans" data-tr="Planlar">Plans</a>
+        <a href="#" onclick="showPage('contact',null)" style="font-size:12px;color:var(--muted);text-decoration:none;transition:.2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'" id="fl-contact" data-ar="تواصل معنا" data-en="Contact" data-tr="İletişim">Contact</a>
+        <a href="#" onclick="showPage('faq',null)" style="font-size:12px;color:var(--muted);text-decoration:none;transition:.2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'" id="fl-faq" data-ar="الأسئلة الشائعة" data-en="FAQ" data-tr="SSS">FAQ</a>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text)" id="footer-legal" data-ar="قانوني" data-en="Legal" data-tr="Yasal">Legal</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <a href="#" style="font-size:12px;color:var(--muted);text-decoration:none" id="fl-terms" data-ar="شروط الاستخدام" data-en="Terms of Service" data-tr="Kullanım Şartları">Terms of Service</a>
+        <a href="#" style="font-size:12px;color:var(--muted);text-decoration:none" id="fl-privacy" data-ar="سياسة الخصوصية" data-en="Privacy Policy" data-tr="Gizlilik Politikası">Privacy Policy</a>
+        <a href="#" style="font-size:12px;color:var(--muted);text-decoration:none" id="fl-aml" data-ar="سياسة AML" data-en="AML Policy" data-tr="AML Politikası">AML Policy</a>
+        <a href="#" style="font-size:12px;color:var(--muted);text-decoration:none" id="fl-risk" data-ar="إفصاح المخاطر" data-en="Risk Disclosure" data-tr="Risk Açıklaması">Risk Disclosure</a>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text)" id="footer-support" data-ar="الدعم" data-en="Support" data-tr="Destek">Support</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font-size:12px;color:var(--muted)">support@crysanto.io</span>
+        <span style="font-size:12px;color:var(--muted)">@CrysantoSupport</span>
+        <span style="font-size:12px;color:var(--green);font-weight:600" id="footer-online" data-ar="● متصل الآن" data-en="● Online Now" data-tr="● Şu An Çevrimiçi">● Online Now</span>
+      </div>
+    </div>
+  </div>
+  <div style="border-top:1px solid var(--border);padding-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;max-width:1100px;margin:0 auto">
+    <p class="footer-copy" id="footer-txt" data-ar="© 2025 Crysanto. جميع الحقوق محفوظة. الاستثمار في العملات الرقمية ينطوي على مخاطر." data-en="© 2025 Crysanto. All rights reserved. Cryptocurrency investment involves risk." data-tr="© 2025 Crysanto. Tüm hakları saklıdır. Kripto para yatırımı risk içerir.">© 2025 Crysanto. All rights reserved. Cryptocurrency investment involves risk.</p>
+    <div style="display:flex;gap:6px">
+      <span style="font-size:11px;background:var(--dark3);border:1px solid var(--border);padding:3px 8px;border-radius:4px;color:var(--muted)">SSL 256</span>
+      <span style="font-size:11px;background:var(--dark3);border:1px solid var(--border);padding:3px 8px;border-radius:4px;color:var(--muted)">KYC/AML</span>
+      <span style="font-size:11px;background:var(--dark3);border:1px solid var(--border);padding:3px 8px;border-radius:4px;color:var(--muted)">GDPR</span>
+    </div>
+  </div>
 </footer>
 
 <!-- LOGIN MODAL -->
@@ -600,10 +906,64 @@ const wallets = {
 };
 
 const faqs = {
-  ar:[{q:'ما هي Crysanto؟',a:'منصة استثمار رقمي رائدة تتيح عوائد يومية مضمونة.'},{q:'كيف أبدأ؟',a:'سجل حساباً، أودع (الحد الأدنى $100)، اختر خطتك، وابدأ الربح.'},{q:'هل الاستثمار آمن؟',a:'نعم، نستخدم أعلى معايير الأمان والتشفير.'},{q:'كيف أسحب؟',a:'من صفحة الإيداع/السحب. تتم المعالجة خلال 24 ساعة.'},{q:'ما الحد الأدنى للإيداع؟',a:'$100 للإيداع و$50 للسحب.'}],
-  en:[{q:'What is Crysanto?',a:'A leading digital investment platform with guaranteed daily returns.'},{q:'How do I start?',a:'Register, deposit (min $100), choose your plan, and start earning.'},{q:'Is it safe?',a:'Yes, we use highest security standards.'},{q:'How do I withdraw?',a:'From Deposit/Withdraw page. Processing within 24 hours.'},{q:'Minimum deposit?',a:'$100 deposit and $50 withdrawal.'}],
-  tr:[{q:'Crysanto nedir?',a:'Garantili günlük getiri sunan önde gelen dijital yatırım platformu.'},{q:'Nasıl başlarım?',a:'Kayıt olun, yatırım yapın (min $100), planınızı seçin.'},{q:'Güvenli mi?',a:'Evet, en yüksek güvenlik standartlarını kullanıyoruz.'},{q:'Nasıl çekerim?',a:'Yatırım/Çekim sayfasından. 24 saat içinde işlenir.'},{q:'Minimum yatırım?',a:'$100 yatırım ve $50 çekim.'}]
+  ar:[
+    {q:'ما هي Crysanto؟',a:'Crysanto منصة استثمار رقمي رائدة تتيح لك استثمار عملاتك الرقمية والحصول على عوائد يومية مضمونة.',cat:'general'},
+    {q:'كيف أبدأ الاستثمار؟',a:'سجل حساباً، قم بإيداع رأس المال (الحد الأدنى $100)، اختر الخطة المناسبة، وابدأ في تحقيق الأرباح.',cat:'general'},
+    {q:'هل أحتاج خبرة سابقة؟',a:'لا، المنصة مصممة لتكون سهلة للجميع سواء كنت مبتدئاً أو خبيراً.',cat:'general'},
+    {q:'ما الحد الأدنى للإيداع؟',a:'الحد الأدنى للإيداع هو $100.',cat:'deposit'},
+    {q:'ما هي طرق الإيداع المقبولة؟',a:'نقبل USDT (TRC-20 و BEP-20)، ETH، BNB. سيتم إضافة المزيد قريباً.',cat:'deposit'},
+    {q:'كم يستغرق تأكيد الإيداع؟',a:'يتم مراجعة الإيداع وإضافته لحسابك خلال 5-30 دقيقة بعد تأكيد الشبكة.',cat:'deposit'},
+    {q:'ما الحد الأدنى للسحب؟',a:'الحد الأدنى للسحب هو $50.',cat:'withdraw'},
+    {q:'كم يستغرق تنفيذ السحب؟',a:'تتم معالجة طلبات السحب خلال 24 ساعة كحد أقصى.',cat:'withdraw'},
+    {q:'هل يمكنني السحب في أي وقت؟',a:'نعم، يمكنك تقديم طلب سحب في أي وقت طالما رصيدك يتجاوز الحد الأدنى.',cat:'withdraw'},
+    {q:'هل الاستثمار آمن؟',a:'نعم، نستخدم تشفير SSL 256-bit وأعلى معايير الأمان لحماية أموالك وبياناتك.',cat:'security'},
+    {q:'ما هو نظام KYC؟',a:'KYC هو التحقق من الهوية، وهو إجراء أمني لحمايتك وضمان سلامة المنصة.',cat:'security'},
+    {q:'هل بياناتي محمية؟',a:'نعم، نلتزم بمعايير GDPR وحماية البيانات الدولية. لن نشارك بياناتك مع أي طرف ثالث.',cat:'security'},
+  ],
+  en:[
+    {q:'What is Crysanto?',a:'Crysanto is a leading digital investment platform that allows you to invest crypto and earn guaranteed daily returns.',cat:'general'},
+    {q:'How do I start investing?',a:'Register, deposit funds (minimum $100), choose your plan, and start earning daily profits.',cat:'general'},
+    {q:'Do I need prior experience?',a:'No, the platform is designed to be easy for everyone, whether you are a beginner or expert.',cat:'general'},
+    {q:'What is the minimum deposit?',a:'The minimum deposit is $100.',cat:'deposit'},
+    {q:'What deposit methods are accepted?',a:'We accept USDT (TRC-20 & BEP-20), ETH, BNB. More currencies coming soon.',cat:'deposit'},
+    {q:'How long does deposit confirmation take?',a:'Deposits are reviewed and added to your account within 5-30 minutes after network confirmation.',cat:'deposit'},
+    {q:'What is the minimum withdrawal?',a:'The minimum withdrawal is $50.',cat:'withdraw'},
+    {q:'How long does withdrawal take?',a:'Withdrawal requests are processed within 24 hours maximum.',cat:'withdraw'},
+    {q:'Can I withdraw anytime?',a:'Yes, you can submit a withdrawal request at any time as long as your balance exceeds the minimum.',cat:'withdraw'},
+    {q:'Is the investment safe?',a:'Yes, we use SSL 256-bit encryption and the highest security standards to protect your funds and data.',cat:'security'},
+    {q:'What is KYC?',a:'KYC is identity verification — a security measure to protect you and ensure platform integrity.',cat:'security'},
+    {q:'Is my data protected?',a:'Yes, we comply with GDPR and international data protection standards. We never share your data with third parties.',cat:'security'},
+  ],
+  tr:[
+    {q:'Crysanto nedir?',a:'Crysanto, kripto paranızı yatırmanıza ve garantili günlük getiri elde etmenize olanak tanıyan önde gelen bir platformdur.',cat:'general'},
+    {q:'Yatırıma nasıl başlarım?',a:'Kayıt olun, fon yatırın (minimum $100), planınızı seçin ve günlük kar elde etmeye başlayın.',cat:'general'},
+    {q:'Önceden deneyim gerekli mi?',a:'Hayır, platform hem yeni başlayanlar hem de uzmanlar için kolay tasarlanmıştır.',cat:'general'},
+    {q:'Minimum yatırım nedir?',a:'Minimum yatırım $100\'dır.',cat:'deposit'},
+    {q:'Hangi yatırım yöntemleri kabul ediliyor?',a:'USDT (TRC-20 ve BEP-20), ETH, BNB kabul ediyoruz. Yakında daha fazlası.',cat:'deposit'},
+    {q:'Yatırım onayı ne kadar sürer?',a:'Yatırımlar ağ onayından sonra 5-30 dakika içinde hesabınıza eklenir.',cat:'deposit'},
+    {q:'Minimum çekim nedir?',a:'Minimum çekim $50\'dir.',cat:'withdraw'},
+    {q:'Çekim ne kadar sürer?',a:'Çekim talepleri maksimum 24 saat içinde işlenir.',cat:'withdraw'},
+    {q:'İstediğim zaman çekebilir miyim?',a:'Evet, bakiyeniz minimumu aştığı sürece istediğiniz zaman çekim talebi gönderebilirsiniz.',cat:'withdraw'},
+    {q:'Yatırım güvenli mi?',a:'Evet, SSL 256-bit şifreleme ve en yüksek güvenlik standartlarını kullanıyoruz.',cat:'security'},
+    {q:'KYC nedir?',a:'KYC kimlik doğrulamadır — sizi ve platformu korumak için bir güvenlik önlemidir.',cat:'security'},
+    {q:'Verilerim korunuyor mu?',a:'Evet, GDPR ve uluslararası veri koruma standartlarına uyuyoruz. Verilerinizi üçüncü taraflarla paylaşmıyoruz.',cat:'security'},
+  ]
 };
+
+let currentFaqCat = 'all';
+
+function filterFaq(el, cat) {
+  currentFaqCat = cat;
+  document.querySelectorAll('.faq-cat-btn').forEach(b => {
+    b.style.background = 'transparent';
+    b.style.borderColor = 'var(--border)';
+    b.style.color = 'var(--muted)';
+  });
+  el.style.background = 'var(--gold-dim)';
+  el.style.borderColor = 'var(--gold)';
+  el.style.color = 'var(--gold)';
+  buildFaq();
+}
 
 const features = {
   ar:[{icon:'🔐',t:'تشفير 256-bit',d:'أعلى معايير الأمان'},{icon:'⚡',t:'سحب سريع',d:'معالجة خلال 30 دقيقة'},{icon:'📊',t:'عوائد يومية',d:'أرباح تضاف تلقائياً'},{icon:'🌍',t:'+50 دولة',d:'خدمة عالمية'},{icon:'🛡️',t:'حماية رأس المال',d:'نظام متقدم للحماية'},{icon:'🤝',t:'دعم 24/7',d:'فريق دعم متاح دائماً'}],
@@ -940,7 +1300,10 @@ function setLang(l) {
 function buildTicker(){const t=document.getElementById('ticker');t.innerHTML=[...coins,...coins].map(c=>'<span class="tick-item"><span style="color:var(--muted)">'+c.sym+'</span><span>$'+c.price.toLocaleString()+'</span><span class="'+(c.change>=0?'tick-up':'tick-down')+'">'+(c.change>=0?'▲':'▼')+Math.abs(c.change)+'%</span></span>').join('');}
 function buildMarkets(){document.getElementById('markets-body').innerHTML=coins.map(c=>'<tr><td><div class="m-coin"><div class="m-icon" style="background:'+c.color+'22;color:'+c.color+'">'+c.icon+'</div><div><div style="font-weight:600">'+c.name+'</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">'+c.sym+'</div></div></div></td><td style="font-family:var(--mono)">$'+c.price.toLocaleString()+'</td><td class="'+(c.change>=0?'tick-up':'tick-down')+'" style="font-family:var(--mono)">'+(c.change>=0?'+':'')+c.change+'%</td><td style="color:var(--muted)">'+c.cap+'</td><td style="color:var(--muted)">'+c.vol+'</td></tr>').join('');}
 function buildLivePrices(){document.getElementById('live-prices').innerHTML=coins.slice(0,5).map(c=>'<div class="price-row"><div class="p-coin"><div class="m-icon" style="width:28px;height:28px;background:'+c.color+'22;color:'+c.color+';border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;font-family:var(--mono)">'+c.icon+'</div><div><div class="p-sym">'+c.sym+'</div><div class="p-name">'+c.name+'</div></div></div><div style="text-align:left"><div style="font-family:var(--mono);font-size:13px">$'+c.price.toLocaleString()+'</div><div class="'+(c.change>=0?'tick-up':'tick-down')+'" style="font-size:11px;font-weight:600">'+(c.change>=0?'+':'')+c.change+'%</div></div></div>').join('');}
-function buildFaq(){document.getElementById('faq-list').innerHTML=(faqs[lang]||faqs.ar).map(f=>'<div class="faq-item" onclick="this.classList.toggle(\'open\')"><div class="faq-q">'+f.q+'<span class="faq-arrow">▼</span></div><div class="faq-a">'+f.a+'</div></div>').join('');}
+function buildFaq(){
+  const data = (faqs[lang]||faqs.en).filter(f => currentFaqCat==='all' || f.cat===currentFaqCat);
+  document.getElementById('faq-list').innerHTML = data.map(f=>'<div class="faq-item" onclick="this.classList.toggle(\'open\')"><div class="faq-q">'+f.q+'<span class="faq-arrow">▼</span></div><div class="faq-a">'+f.a+'</div></div>').join('');
+}
 function buildFeatures(){document.getElementById('features-grid').innerHTML=(features[lang]||features.ar).map(f=>'<div style="background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:24px;transition:.3s" onmouseover="this.style.borderColor=\'var(--gold)\';this.style.transform=\'translateY(-3px)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.transform=\'\'"><div style="font-size:28px;margin-bottom:12px">'+f.icon+'</div><h4 style="font-size:14px;font-weight:700;margin-bottom:6px">'+f.t+'</h4><p style="font-size:12px;color:var(--muted);line-height:1.8">'+f.d+'</p></div>').join('');}
 function buildPlans(){
   const pl=[
@@ -955,6 +1318,17 @@ function buildPlans(){
 
 function calcProfit(){const a=parseFloat(document.getElementById('calc-amt').value)||0;const [r,d]=document.getElementById('calc-plan').value.split(',').map(Number);const dl=a*r/100,tot=dl*d,ret=a+tot;document.getElementById('c-daily').textContent='$'+dl.toFixed(2);document.getElementById('c-total').textContent='$'+tot.toFixed(0);document.getElementById('c-return').textContent='$'+ret.toFixed(0);}
 
+function submitContact() {
+  const name = document.getElementById('cf-name').value.trim();
+  const email = document.getElementById('cf-email').value.trim();
+  const msg = document.getElementById('cf-message').value.trim();
+  if(!name||!email||!msg) { showToast(lang==='ar'?'أكمل جميع الحقول':'Fill all fields','err'); return; }
+  showToast(lang==='ar'?'✓ تم إرسال رسالتك بنجاح، سنرد عليك قريباً':'✓ Message sent successfully, we will reply soon');
+  document.getElementById('cf-name').value='';
+  document.getElementById('cf-email').value='';
+  document.getElementById('cf-message').value='';
+}
+
 // ── HELPERS ──
 function showToast(msg,type='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type==='err'?' err':'');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 function showErr(el,msgs){el.textContent='❌ '+(msgs[lang]||msgs.ar);el.style.display='block';}
@@ -962,7 +1336,18 @@ function checkPassStrength(v){const fill=document.getElementById('pass-strength-
 function updatePrices(){coins.forEach(c=>{c.price=Math.max(0.001,c.price*(1+(Math.random()-.49)*.003));c.change=parseFloat((c.change+(Math.random()-.5)*.15).toFixed(2));});buildTicker();buildLivePrices();buildMarkets();}
 
 // ── INIT ──
-function init(){ setLang("en");buildTicker();buildMarkets();buildLivePrices();buildFaq();buildFeatures();buildPlans();calcProfit();setInterval(updatePrices,5000);}
+function init(){
+  setLang("en");
+  buildTicker();buildMarkets();buildLivePrices();buildFaq();buildFeatures();buildPlans();calcProfit();
+  setInterval(updatePrices,5000);
+  // Animate live stats
+  setInterval(()=>{
+    const v1=document.getElementById('ls1v');
+    const v2=document.getElementById('ls2v');
+    if(v1){const n=1200+Math.floor(Math.random()*200);v1.textContent=n.toLocaleString();}
+    if(v2){const base=284320+Math.floor(Math.random()*5000);v2.textContent='$'+base.toLocaleString();}
+  },4000);
+}
 init();
 </script>
 </body>
