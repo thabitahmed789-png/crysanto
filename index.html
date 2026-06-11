@@ -743,7 +743,7 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
           </select>
         </div>
         <div class="form-group"><label id="cf3" data-ar="الرسالة" data-en="Message" data-tr="Mesaj">Message</label><textarea id="cf-message" style="min-height:120px;resize:vertical" data-ar="اكتب رسالتك هنا..." data-en="Write your message here..." data-tr="Mesajınızı buraya yazın..." placeholder="Write your message here..."></textarea></div>
-        <button class="btn-primary" style="width:100%" onclick="submitContact()" id="cf-btn" data-ar="إرسال الرسالة" data-en="Send Message" data-tr="Mesaj Gönder">Send Message</button>
+        <button class="btn-primary" style="width:100%" onclick="submitContact()" id="cf-submit-btn" data-ar="📤 إرسال الرسالة" data-en="📤 Send Message" data-tr="📤 Mesaj Gönder">📤 Send Message</button>
       </div>
     </div>
   </div>
@@ -872,7 +872,7 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const { createClient } = supabase;
 const db = createClient(SUPA_URL, SUPA_KEY);
 
-let lang = "en", isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
+let lang = localStorage.getItem('crysanto_lang') || "en", isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
 const PROTECTED = ['dashboard','deposit','referral'];
 
 // مراقبة الجلسة تلقائياً - يمنع الخروج عند الريفريش
@@ -1288,6 +1288,7 @@ function goToDeposit(rate) {
 // ── LANG ──
 function setLang(l) {
   lang=l;
+  localStorage.setItem('crysanto_lang', l); // حفظ اللغة
   document.querySelectorAll('.lb').forEach(b=>b.classList.remove('on'));
   document.querySelectorAll('.lb[onclick="setLang(\''+l+'\')"]').forEach(b=>b.classList.add('on'));
   document.body.classList.toggle('ltr',l!=='ar');
@@ -1318,15 +1319,32 @@ function buildPlans(){
 
 function calcProfit(){const a=parseFloat(document.getElementById('calc-amt').value)||0;const [r,d]=document.getElementById('calc-plan').value.split(',').map(Number);const dl=a*r/100,tot=dl*d,ret=a+tot;document.getElementById('c-daily').textContent='$'+dl.toFixed(2);document.getElementById('c-total').textContent='$'+tot.toFixed(0);document.getElementById('c-return').textContent='$'+ret.toFixed(0);}
 
-function submitContact() {
+async function submitContact() {
   const name = document.getElementById('cf-name').value.trim();
   const email = document.getElementById('cf-email').value.trim();
   const msg = document.getElementById('cf-message').value.trim();
-  if(!name||!email||!msg) { showToast(lang==='ar'?'أكمل جميع الحقول':'Fill all fields','err'); return; }
-  showToast(lang==='ar'?'✓ تم إرسال رسالتك بنجاح، سنرد عليك قريباً':'✓ Message sent successfully, we will reply soon');
-  document.getElementById('cf-name').value='';
-  document.getElementById('cf-email').value='';
-  document.getElementById('cf-message').value='';
+  if(!name||!email||!msg) { showToast(lang==='ar'?'أكمل جميع الحقول':'Fill all fields'); return; }
+
+  const btn = document.getElementById('cf-submit-btn');
+  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
+
+  try {
+    // حفظ الرسالة في Supabase
+    const { error } = await db.from('contact_messages').insert({
+      name, email, message: msg,
+      lang,
+      user_id: currentUser?.id || null
+    });
+    if(error) throw error;
+    showToast(lang==='ar'?'✓ تم إرسال رسالتك، سنرد قريباً':'✓ Message sent, we will reply soon');
+    document.getElementById('cf-name').value='';
+    document.getElementById('cf-email').value='';
+    document.getElementById('cf-message').value='';
+  } catch(e) {
+    showToast(lang==='ar'?'حدث خطأ، حاول مرة أخرى':'Error sending message, try again');
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent={ar:'📤 إرسال الرسالة',en:'📤 Send Message',tr:'📤 Mesaj Gönder'}[lang]; }
+  }
 }
 
 // ── HELPERS ──
@@ -1337,7 +1355,7 @@ function updatePrices(){coins.forEach(c=>{c.price=Math.max(0.001,c.price*(1+(Mat
 
 // ── INIT ──
 function init(){
-  setLang("en");
+  setLang(lang); // يستخدم الـ lang المحفوظة في localStorage
   buildTicker();buildMarkets();buildLivePrices();buildFaq();buildFeatures();buildPlans();calcProfit();
   setInterval(updatePrices,5000);
   // Animate live stats
