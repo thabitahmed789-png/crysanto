@@ -914,6 +914,10 @@ async function doLogin(){
       .eq('user_id', data.user.id)
       .single();
 
+    console.log('🔍 Admin check — user_id:', data.user.id);
+    console.log('🔍 Admin data:', adminData);
+    console.log('🔍 Admin error:', adminErr);
+
     if(adminErr || !adminData){
       // مش أدمن — اطلع منه فوراً
       await sdb.auth.signOut();
@@ -1973,14 +1977,6 @@ window.doLogin = function(){
   if(fabTrigger) fabTrigger.style.display = 'block';
 };
 
-
-// ══════════════════════════════
-// SUPABASE — ADMIN
-// ══════════════════════════════
-const SUPA_URL = 'https://pxcnolevnhbxmfarivon.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4Y25vbGV2bmhieG1mYXJpdm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTk3NzksImV4cCI6MjA5NTQ5NTc3OX0.Uj9hytWXYZupPDUSj3SaOWKLA6lOaZlVCKuywCfU5b8';
-const { createClient } = supabase;
-const sdb = createClient(SUPA_URL, SUPA_KEY);
 
 // ── LOADING SKELETON ──
 function showTableSkeleton(wrapperId, cols = 5) {
