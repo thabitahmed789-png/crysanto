@@ -316,15 +316,15 @@ body.ltr .toast{left:auto;right:24px;}
     <div class="login-sub" id="ls-sub">لوحة إدارة النظام — دخول مقيد</div>
     <div class="login-badge">🔐 <span id="ls-warn">منطقة محمية — المسؤولون فقط</span></div>
     <div class="form-g">
-      <label id="ll-user">اسم المستخدم</label>
-      <input type="text" id="li-user" placeholder="admin">
+      <label id="ll-user">البريد الإلكتروني</label>
+      <input type="email" id="li-user" placeholder="admin@crysanto.io">
     </div>
     <div class="form-g">
       <label id="ll-pass">كلمة المرور</label>
       <input type="password" id="li-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
       <div class="err-msg" id="li-err">❌ بيانات خاطئة، حاول مجدداً</div>
     </div>
-    <button class="btn-login-main" onclick="doLogin()" id="ll-btn">دخول لوحة الإدارة</button>
+    <button class="btn-login-main" onclick="doLogin()" id="ll-btn"><span id="ll-btn-el">دخول لوحة الإدارة</span></button>
     <div style="margin-top:16px;text-align:center">
       <div class="lang-sw" style="display:inline-flex">
         <button class="lb on" onclick="setLang('ar')">عر</button>
@@ -448,7 +448,7 @@ body.ltr .toast{left:auto;right:24px;}
       </div>
       <div class="search-bar">
         <span>🔍</span>
-        <input type="text" id="user-search" placeholder="ابحث بالاسم أو البريد..." oninput="renderUsers()">
+        <input type="text" id="user-search" placeholder="ابحث بالاسم أو البريد..." oninput="window.realUsers ? renderRealUsers(window.realUsers) : renderUsers()">
       </div>
       <div class="panel">
         <div class="tbl-wrap" id="users-table-wrap"></div>
@@ -704,11 +704,16 @@ body.ltr .toast{left:auto;right:24px;}
 <div class="toast" id="toast">✓ <span id="toast-msg">تم التنفيذ</span></div>
 
 <script>
-// ── CREDENTIALS ──
-const CREDS = { user:'admin', pass:'crysanto2025' };
+// ── SUPABASE INIT ──
+// ⚠️ SECURITY: انقل هذه القيم لـ .env أو Netlify/Vercel environment variables في Production
+// الـ anon key مش سر — الأمان الحقيقي هو Supabase RLS على الجداول
+const SUPA_URL = 'https://pxcnolevnhbxmfarivon.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4Y25vbGV2bmhieG1mYXJpdm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTk3NzksImV4cCI6MjA5NTQ5NTc3OX0.Uj9hytWXYZupPDUSj3SaOWKLA6lOaZlVCKuywCfU5b8';
+const { createClient } = supabase;
+const sdb = createClient(SUPA_URL, SUPA_KEY);
 
 // ── STATE ──
-let lang = 'ar';
+let lang = localStorage.getItem('crysanto_admin_lang') || 'ar';
 let currentFilter = { users:'all', dep:'all', wd:'all' };
 let notifType = 'info';
 let profitLog = [];
@@ -870,31 +875,102 @@ const T = {
 
 function t(key){ return (T[lang]||T.ar)[key] || key; }
 
-// ── LOGIN ──
-function doLogin(){
-  const u = document.getElementById('li-user').value.trim();
-  const p = document.getElementById('li-pass').value;
+// ── LOGIN — Supabase Auth + Admin Role Check ──
+// لازم تعمل جدول admins في Supabase أو column is_admin=true في users
+// أو تستخدم Supabase custom claims عشان تفحص الدور server-side
+let adminSession = null;
+
+async function doLogin(){
+  const email = document.getElementById('li-user').value.trim();
+  const pass = document.getElementById('li-pass').value;
   const err = document.getElementById('li-err');
-  if(u===CREDS.user && p===CREDS.pass){
+  const btn = document.getElementById('ll-btn-el');
+  err.style.display='none';
+
+  if(!email||!pass){
+    err.style.display='block';
+    err.textContent='أدخل البريد وكلمة المرور';
+    return;
+  }
+
+  if(btn){ btn.textContent='⏳ جارٍ التحقق...'; btn.disabled=true; }
+
+  try {
+    // 1. تسجيل دخول عبر Supabase Auth
+    const { data, error } = await sdb.auth.signInWithPassword({ email, password: pass });
+
+    if(error){
+      err.style.display='block';
+      err.textContent = t('liErr');
+      document.getElementById('li-pass').value='';
+      if(btn){ btn.textContent=t('llBtn'); btn.disabled=false; }
+      return;
+    }
+
+    // 2. التحقق من صلاحية الأدمن — يفحص جدول admins في Supabase
+    const { data: adminData, error: adminErr } = await sdb
+      .from('admins')
+      .select('id, role')
+      .eq('user_id', data.user.id)
+      .single();
+
+    if(adminErr || !adminData){
+      // مش أدمن — اطلع منه فوراً
+      await sdb.auth.signOut();
+      err.style.display='block';
+      err.textContent = lang==='ar' ? 'ليس لديك صلاحيات الدخول' : 'Access denied — not an admin';
+      if(btn){ btn.textContent=t('llBtn'); btn.disabled=false; }
+      return;
+    }
+
+    // 3. أدمن مؤكد ✓
+    adminSession = data.session;
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
+    if(btn){ btn.textContent=t('llBtn'); btn.disabled=false; }
     initApp();
-  } else {
+
+  } catch(e){
     err.style.display='block';
-    err.textContent = t('liErr');
-    document.getElementById('li-pass').value='';
+    err.textContent = 'خطأ في الاتصال، تحقق من الإنترنت';
+    if(btn){ btn.textContent=t('llBtn'); btn.disabled=false; }
   }
 }
-function doLogout(){
+
+async function doLogout(){
+  await sdb.auth.signOut();
+  adminSession = null;
   document.getElementById('app').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('li-user').value='';
   document.getElementById('li-pass').value='';
 }
 
+// ── Auto-restore session on page reload ──
+(async function checkExistingSession(){
+  const { data: { session } } = await sdb.auth.getSession();
+  if(!session) return;
+
+  const { data: adminData } = await sdb
+    .from('admins')
+    .select('id')
+    .eq('user_id', session.user.id)
+    .single();
+
+  if(adminData){
+    adminSession = session;
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    initApp();
+  } else {
+    await sdb.auth.signOut();
+  }
+})();
+
 // ── LANG ──
 function setLang(l){
   lang = l;
+  localStorage.setItem('crysanto_admin_lang', l); // حفظ اللغة
   document.querySelectorAll('.lb').forEach(b=>b.classList.remove('on'));
   document.querySelectorAll(`.lb[onclick="setLang('${l}')"]`).forEach(b=>b.classList.add('on'));
   const isRtl = l==='ar';
@@ -1906,8 +1982,22 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const { createClient } = supabase;
 const sdb = createClient(SUPA_URL, SUPA_KEY);
 
+// ── LOADING SKELETON ──
+function showTableSkeleton(wrapperId, cols = 5) {
+  const wrap = document.getElementById(wrapperId);
+  if (!wrap) return;
+  const rows = Array(4).fill(0).map(()=>`
+    <tr>${Array(cols).fill(0).map(()=>`
+      <td><div style="height:14px;background:linear-gradient(90deg,var(--dark3) 25%,var(--dark4) 50%,var(--dark3) 75%);background-size:200% 100%;border-radius:6px;animation:shimmer 1.5s infinite"></div></td>`).join('')}
+    </tr>`).join('');
+  wrap.innerHTML = `
+    <style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style>
+    <table><tbody>${rows}</tbody></table>`;
+}
+
 // ── تحميل الإيداعات الحقيقية من Supabase ──
 async function loadRealDeposits() {
+  showTableSkeleton('dep-table-wrap', 10);
   const { data, error } = await sdb
     .from('deposits')
     .select('*, users(name, email, memo)')
@@ -2022,6 +2112,7 @@ async function sendEmailNotification(email, name, amount, status, reason='') {
 
 // ── تحميل السحوبات الحقيقية ──
 async function loadRealWithdrawals() {
+  showTableSkeleton('wd-table-wrap', 8);
   const { data } = await sdb
     .from('withdrawals')
     .select('*, users(name, email)')
@@ -2095,6 +2186,7 @@ async function rejectWithdrawal(wdId, userId, amount, name) {
 
 // ── تحميل المستخدمين الحقيقيين ──
 async function loadRealUsers() {
+  showTableSkeleton('users-table-wrap', 8);
   const { data } = await sdb.from('users').select('*').order('created_at', { ascending: false });
   if (data) { window.realUsers = data; renderRealUsers(data); }
 }
@@ -2149,10 +2241,50 @@ async function toggleUserBlock(userId, newStatus) {
 }
 
 async function editUserBalance(userId, name, currentBal) {
-  const newBal = prompt(lang==='ar' ? `الرصيد الحالي لـ ${name}: $${currentBal}\nأدخل الرصيد الجديد:` : `Current balance for ${name}: $${currentBal}\nEnter new balance:`);
-  if (newBal === null || isNaN(parseFloat(newBal))) return;
-  await sdb.from('users').update({ balance: parseFloat(newBal) }).eq('id', userId);
-  showToast(lang==='ar'?`✓ تم تحديث رصيد ${name} إلى $${newBal}`:`✓ ${name} balance updated to $${newBal}`);
+  // إنشاء modal احترافي بدل prompt()
+  let existing = document.getElementById('balance-modal-bg');
+  if(existing) existing.remove();
+
+  const modalHtml = `
+    <div id="balance-modal-bg" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:600;display:flex;align-items:center;justify-content:center;">
+      <div style="background:var(--dark2);border:1px solid var(--border);border-radius:20px;padding:32px;width:380px;max-width:90vw;position:relative">
+        <button onclick="document.getElementById('balance-modal-bg').remove()" style="position:absolute;top:14px;left:14px;background:var(--dark3);border:1px solid var(--border2);color:var(--muted);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px">✕</button>
+        <h3 style="font-size:18px;font-weight:800;margin-bottom:6px">${lang==='ar'?'تعديل الرصيد':'Edit Balance'}</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:20px">${name}</p>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;font-weight:600">${lang==='ar'?'الرصيد الحالي':'Current Balance'}</label>
+        <div style="background:var(--dark);border-radius:8px;padding:10px 14px;font-family:var(--mono);color:var(--gold);font-size:14px;margin-bottom:16px">$${parseFloat(currentBal).toLocaleString()}</div>
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;font-weight:600">${lang==='ar'?'الرصيد الجديد ($)':'New Balance ($)'}</label>
+        <input type="number" id="new-balance-input" value="${currentBal}" min="0" step="0.01"
+          style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:11px 14px;color:var(--text);font-size:14px;font-family:var(--mono);margin-bottom:20px;outline:none"
+          onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border2)'"
+          onkeydown="if(event.key==='Enter')confirmBalanceEdit('${userId}','${name}')">
+        <div style="display:flex;gap:10px">
+          <button onclick="document.getElementById('balance-modal-bg').remove()"
+            style="flex:1;padding:11px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">
+            ${lang==='ar'?'إلغاء':'Cancel'}
+          </button>
+          <button onclick="confirmBalanceEdit('${userId}','${name}')"
+            style="flex:2;padding:11px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">
+            ${lang==='ar'?'💾 حفظ الرصيد':'💾 Save Balance'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  setTimeout(()=>document.getElementById('new-balance-input')?.focus(), 50);
+}
+
+async function confirmBalanceEdit(userId, name) {
+  const input = document.getElementById('new-balance-input');
+  const newBal = parseFloat(input?.value);
+  if(!input || isNaN(newBal) || newBal < 0) {
+    input.style.borderColor='var(--red)';
+    return;
+  }
+  document.getElementById('balance-modal-bg')?.remove();
+  await sdb.from('users').update({ balance: newBal }).eq('id', userId);
+  showToast(lang==='ar'?`✓ تم تحديث رصيد ${name} إلى $${newBal.toLocaleString()}`:`✓ ${name} balance updated to $${newBal.toLocaleString()}`);
   await loadRealUsers();
 }
 
@@ -2168,7 +2300,11 @@ async function loadRealOverviewStats() {
     const today = new Date().toISOString().slice(0,10);
     const {data: todayDeps} = await sdb.from('deposits').select('amount').eq('status','approved').gte('created_at', today);
     const todayTotal = (todayDeps||[]).reduce((s,d)=>s+parseFloat(d.amount||0),0);
-    const sc3v = document.getElementById('sc3v'); if(sc3v) sc3v.textContent = '$'+todayTotal.toLocaleString()+'K';
+    const sc3v = document.getElementById('sc3v');
+    if(sc3v) {
+      if(todayTotal >= 1000) sc3v.textContent = '$'+(todayTotal/1000).toFixed(1)+'K';
+      else sc3v.textContent = '$'+todayTotal.toLocaleString();
+    }
 
     // سحوبات معلقة
     const {count: wdCount} = await sdb.from('withdrawals').select('*',{count:'exact',head:true}).eq('status','pending');
@@ -2230,13 +2366,12 @@ async function renderRecentTxFromSupabase() {
 function setupRealtime() {
   sdb.channel('admin-realtime')
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'deposits'}, () => {
+      loadRealOverviewStats(); // يحدّث الـ badges دايماً
       if(currentSection==='s-deposits') loadRealDeposits();
-      if(currentSection==='s-overview') loadRealOverviewStats();
-      loadRealOverviewStats(); // تحديث الـ badges دايماً
     })
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'withdrawals'}, () => {
-      if(currentSection==='s-withdrawals') loadRealWithdrawals();
       loadRealOverviewStats();
+      if(currentSection==='s-withdrawals') loadRealWithdrawals();
     })
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'users'}, () => {
       if(currentSection==='s-users') loadRealUsers();
