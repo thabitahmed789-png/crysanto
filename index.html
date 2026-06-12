@@ -1074,12 +1074,16 @@ async function doLogout() {
   showToast({ar:'تم تسجيل الخروج',en:'Logged out',tr:'Çıkış yapıldı'}[lang]);
 }
 
-async function fetchProfile() {
+async function fetchProfile(retries = 5) {
   if(!currentUser) return;
-  try {
-    const {data} = await db.from('users').select('*').eq('auth_id',currentUser.id).single();
-    if(data) userProfile=data;
-  } catch(e){}
+  for(let i = 0; i < retries; i++) {
+    try {
+      const {data} = await db.from('users').select('*').eq('auth_id',currentUser.id).single();
+      if(data) { userProfile=data; return; }
+    } catch(e){}
+    // انتظر 800ms وجرب تاني (الـ trigger محتاج وقت)
+    await new Promise(r => setTimeout(r, 800));
+  }
 }
 
 function afterLogin() {
