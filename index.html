@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Crysanto — منصة الاستثمار الرقمي</title>
+<title>Crysanto — Digital Investment Platform</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -208,6 +208,21 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
   #page-about [style*="grid-template-columns:repeat(4"]{grid-template-columns:1fr 1fr!important;}
   #page-home [style*="grid-template-columns:repeat(3"]{grid-template-columns:1fr!important;}
 }
+
+/* ── MOBILE MENU ── */
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;border-radius:6px;background:transparent;border:none;}
+.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:.3s;}
+.hamburger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px);}
+.hamburger.open span:nth-child(2){opacity:0;}
+.hamburger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px);}
+@media(max-width:900px){
+  .hamburger{display:flex;}
+  .mobile-menu{display:none;position:fixed;top:68px;left:0;right:0;background:rgba(8,12,18,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:99;padding:16px 20px;flex-direction:column;gap:4px;}
+  .mobile-menu.open{display:flex;}
+  .mobile-menu a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:600;padding:10px 14px;border-radius:8px;display:block;}
+  .mobile-menu a:hover,.mobile-menu a.active{color:var(--gold);background:var(--gold-dim);}
+  .mobile-menu .m-sep{height:1px;background:var(--border);margin:6px 0;}
+}
 </style>
 </head>
 <body class="lang-en">
@@ -217,15 +232,15 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
 <nav>
   <div class="logo"><div class="logo-icon">₿</div><span>Crysanto</span></div>
   <ul class="nav-links">
-    <li><a class="active" onclick="showPage('home',this)" data-ar="الرئيسية" data-en="Home" data-tr="Ana Sayfa">الرئيسية</a></li>
-    <li><a onclick="showPage('about',this)" data-ar="من نحن" data-en="About" data-tr="Hakkımızda">من نحن</a></li>
-    <li><a onclick="showPage('plans',this)" data-ar="الباقات" data-en="Plans" data-tr="Planlar">الباقات</a></li>
-    <li><a onclick="showPage('markets',this)" data-ar="الأسواق" data-en="Markets" data-tr="Piyasalar">الأسواق</a></li>
-    <li><a onclick="showPage('dashboard',this)" class="nav-protected" data-ar="لوحتي" data-en="Dashboard" data-tr="Panel">لوحتي</a></li>
-    <li><a onclick="showPage('deposit',this)" class="nav-protected" data-ar="إيداع/سحب" data-en="Deposit/Withdraw" data-tr="Yatırım/Çekim">إيداع/سحب</a></li>
-    <li><a onclick="showPage('referral',this)" class="nav-protected" data-ar="الإحالة" data-en="Referral" data-tr="Referans">الإحالة</a></li>
-    <li><a onclick="showPage('faq',this)" data-ar="الأسئلة" data-en="FAQ" data-tr="SSS">الأسئلة</a></li>
-    <li><a onclick="showPage('contact',this)" data-ar="تواصل" data-en="Contact" data-tr="İletişim">تواصل</a></li>
+    <li><a class="active" onclick="showPage('home',this)" data-ar="الرئيسية" data-en="Home" data-tr="Ana Sayfa">Home</a></li>
+    <li><a onclick="showPage('about',this)" data-ar="من نحن" data-en="About" data-tr="Hakkımızda">About</a></li>
+    <li><a onclick="showPage('plans',this)" data-ar="الباقات" data-en="Plans" data-tr="Planlar">Plans</a></li>
+    <li><a onclick="showPage('markets',this)" data-ar="الأسواق" data-en="Markets" data-tr="Piyasalar">Markets</a></li>
+    <li><a onclick="showPage('dashboard',this)" class="nav-protected" data-ar="لوحتي" data-en="Dashboard" data-tr="Panel">Dashboard</a></li>
+    <li><a onclick="showPage('deposit',this)" class="nav-protected" data-ar="إيداع/سحب" data-en="Deposit/Withdraw" data-tr="Yatırım/Çekim">Deposit/Withdraw</a></li>
+    <li><a onclick="showPage('referral',this)" class="nav-protected" data-ar="الإحالة" data-en="Referral" data-tr="Referans">Referral</a></li>
+    <li><a onclick="showPage('faq',this)" data-ar="الأسئلة" data-en="FAQ" data-tr="SSS">FAQ</a></li>
+    <li><a onclick="showPage('contact',this)" data-ar="تواصل" data-en="Contact" data-tr="İletişim">Contact</a></li>
   </ul>
   <div class="nav-right">
     <div class="lang-sw">
@@ -233,17 +248,34 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
       <button class="lb on" onclick="setLang('en')">EN</button>
       <button class="lb" onclick="setLang('tr')">TR</button>
     </div>
-    <button class="btn-nav btn-login" id="btnLogin" onclick="openModal('login')">دخول</button>
-    <button class="btn-nav btn-register" id="btnRegister" onclick="openModal('register')">تسجيل</button>
+    <button class="btn-nav btn-login" id="btnLogin" onclick="openModal('login')" data-ar="دخول" data-en="Sign In" data-tr="Giriş">Sign In</button>
+    <button class="btn-nav btn-register" id="btnRegister" onclick="openModal('register')" data-ar="تسجيل" data-en="Register" data-tr="Kayıt">Register</button>
+    <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
     <div id="user-menu" style="display:none;align-items:center;gap:8px;">
       <div onclick="showPage('dashboard',null)" style="display:flex;align-items:center;gap:8px;background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:6px 14px;cursor:pointer;">
         <div id="user-av" style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;">U</div>
         <span id="user-name-nav" style="font-size:13px;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">User</span>
       </div>
-      <button onclick="doLogout()" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;" id="logout-btn" data-ar="خروج" data-en="Logout" data-tr="Çıkış">خروج</button>
+      <button onclick="doLogout()" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;" id="logout-btn" data-ar="خروج" data-en="Logout" data-tr="Çıkış">Logout</button>
     </div>
   </div>
 </nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobile-menu">
+  <a onclick="showPage('home',this);closeMobileMenu()" data-ar="الرئيسية" data-en="Home" data-tr="Ana Sayfa">Home</a>
+  <a onclick="showPage('about',this);closeMobileMenu()" data-ar="من نحن" data-en="About" data-tr="Hakkımızda">About</a>
+  <a onclick="showPage('plans',this);closeMobileMenu()" data-ar="الباقات" data-en="Plans" data-tr="Planlar">Plans</a>
+  <a onclick="showPage('markets',this);closeMobileMenu()" data-ar="الأسواق" data-en="Markets" data-tr="Piyasalar">Markets</a>
+  <a onclick="showPage('dashboard',this);closeMobileMenu()" class="nav-protected" data-ar="لوحتي" data-en="Dashboard" data-tr="Panel">Dashboard</a>
+  <a onclick="showPage('deposit',this);closeMobileMenu()" class="nav-protected" data-ar="إيداع/سحب" data-en="Deposit/Withdraw" data-tr="Yatırım/Çekim">Deposit/Withdraw</a>
+  <a onclick="showPage('referral',this);closeMobileMenu()" class="nav-protected" data-ar="الإحالة" data-en="Referral" data-tr="Referans">Referral</a>
+  <div class="m-sep"></div>
+  <a onclick="showPage('faq',this);closeMobileMenu()" data-ar="الأسئلة" data-en="FAQ" data-tr="SSS">FAQ</a>
+  <a onclick="showPage('contact',this);closeMobileMenu()" data-ar="تواصل" data-en="Contact" data-tr="İletişim">Contact</a>
+</div>
 
 <!-- HOME -->
 <div class="page active" id="page-home">
@@ -802,15 +834,15 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
     <button class="modal-close" onclick="closeModal('login')">✕</button>
     <div style="text-align:center;margin-bottom:22px">
       <div style="font-family:var(--en);font-size:20px;font-weight:800;color:var(--gold)">Crysanto</div>
-      <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="login-title" data-ar="تسجيل الدخول" data-en="Sign In" data-tr="Giriş Yap">تسجيل الدخول</h3>
+      <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="login-title" data-ar="تسجيل الدخول" data-en="Sign In" data-tr="Giriş Yap">Sign In</h3>
     </div>
     <div class="err-msg" id="login-err"></div>
-    <div class="form-group"><label id="ll1" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">البريد الإلكتروني</label><input type="email" id="login-email" placeholder="example@mail.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <div class="form-group"><label id="ll2" data-ar="كلمة المرور" data-en="Password" data-tr="Şifre">كلمة المرور</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <button class="btn-primary" style="width:100%;margin-bottom:14px" onclick="doLogin()" id="login-btn-txt" data-ar="دخول" data-en="Sign In" data-tr="Giriş">دخول</button>
+    <div class="form-group"><label id="ll1" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">Email</label><input type="email" id="login-email" placeholder="example@mail.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="form-group"><label id="ll2" data-ar="كلمة المرور" data-en="Password" data-tr="Şifre">Password</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-primary" style="width:100%;margin-bottom:14px" onclick="doLogin()" id="login-btn-txt" data-ar="دخول" data-en="Sign In" data-tr="Giriş">Sign In</button>
     <p style="text-align:center;font-size:12px;color:var(--muted)">
-      <span id="lno-acc" data-ar="ليس لديك حساب؟" data-en="No account?" data-tr="Hesabınız yok mu?">ليس لديك حساب؟</span>
-      <a href="#" style="color:var(--gold);font-weight:700" onclick="closeModal('login');openModal('register')" id="lgo-reg" data-ar=" سجل الآن" data-en=" Register" data-tr=" Kayıt Ol"> سجل الآن</a>
+      <span id="lno-acc" data-ar="ليس لديك حساب؟" data-en="No account?" data-tr="Hesabınız yok mu?">No account?</span>
+      <a href="#" style="color:var(--gold);font-weight:700" onclick="closeModal('login');openModal('register')" id="lgo-reg" data-ar=" سجل الآن" data-en=" Register" data-tr=" Kayıt Ol"> Register</a>
     </p>
   </div>
 </div>
@@ -821,26 +853,26 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
     <button class="modal-close" onclick="closeModal('register')">✕</button>
     <div style="text-align:center;margin-bottom:22px">
       <div style="font-family:var(--en);font-size:20px;font-weight:800;color:var(--gold)">Crysanto</div>
-      <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="reg-title" data-ar="إنشاء حساب" data-en="Create Account" data-tr="Hesap Oluştur">إنشاء حساب</h3>
+      <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="reg-title" data-ar="إنشاء حساب" data-en="Create Account" data-tr="Hesap Oluştur">Create Account</h3>
     </div>
     <div class="err-msg" id="reg-err"></div>
-    <div class="form-group"><label id="rl1" data-ar="الاسم الكامل" data-en="Full Name" data-tr="Ad Soyad">الاسم الكامل</label><input type="text" id="reg-name" placeholder="Ahmed Mohamed"></div>
-    <div class="form-group"><label id="rl2" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">البريد الإلكتروني</label><input type="email" id="reg-email" placeholder="example@mail.com"></div>
+    <div class="form-group"><label id="rl1" data-ar="الاسم الكامل" data-en="Full Name" data-tr="Ad Soyad">Full Name</label><input type="text" id="reg-name" placeholder="Ahmed Mohamed"></div>
+    <div class="form-group"><label id="rl2" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">Email</label><input type="email" id="reg-email" placeholder="example@mail.com"></div>
     <div class="form-group">
-      <label id="rl3" data-ar="كلمة المرور" data-en="Password" data-tr="Şifre">كلمة المرور</label>
+      <label id="rl3" data-ar="كلمة المرور" data-en="Password" data-tr="Şifre">Password</label>
       <input type="password" id="reg-pass" placeholder="8+ characters" oninput="checkPassStrength(this.value)">
       <div id="pass-strength-bar"><div id="pass-strength-fill"></div></div>
       <div id="pass-strength-txt" style="font-size:11px;color:var(--muted);margin-top:3px"></div>
     </div>
-    <div class="form-group"><label id="rl4" data-ar="كود الإحالة (اختياري)" data-en="Referral Code (optional)" data-tr="Referans Kodu">كود الإحالة (اختياري)</label><input type="text" id="reg-ref" placeholder="CRY-XXXXX" style="font-family:var(--mono)"></div>
+    <div class="form-group"><label id="rl4" data-ar="كود الإحالة (اختياري)" data-en="Referral Code (optional)" data-tr="Referans Kodu">Referral Code (optional)</label><input type="text" id="reg-ref" placeholder="CRY-XXXXX" style="font-family:var(--mono)"></div>
     <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:14px;font-size:12px;color:var(--muted)">
       <input type="checkbox" id="reg-terms" style="margin-top:2px;accent-color:var(--gold)">
-      <label for="reg-terms" id="terms-lbl" data-ar="أوافق على شروط الاستخدام وسياسة الخصوصية" data-en="I agree to Terms of Service & Privacy Policy" data-tr="Kullanım Şartlarını kabul ediyorum">أوافق على شروط الاستخدام وسياسة الخصوصية</label>
+      <label for="reg-terms" id="terms-lbl" data-ar="أوافق على شروط الاستخدام وسياسة الخصوصية" data-en="I agree to Terms of Service & Privacy Policy" data-tr="Kullanım Şartlarını kabul ediyorum">I agree to Terms of Service & Privacy Policy</label>
     </div>
-    <button class="btn-primary" style="width:100%;margin-bottom:14px" onclick="doRegister()" id="reg-btn-txt" data-ar="إنشاء الحساب" data-en="Create Account" data-tr="Hesap Oluştur">إنشاء الحساب</button>
+    <button class="btn-primary" style="width:100%;margin-bottom:14px" onclick="doRegister()" id="reg-btn-txt" data-ar="إنشاء الحساب" data-en="Create Account" data-tr="Hesap Oluştur">Create Account</button>
     <p style="text-align:center;font-size:12px;color:var(--muted)">
-      <span id="rhas-acc" data-ar="لديك حساب؟" data-en="Have an account?" data-tr="Hesabınız var mı?">لديك حساب؟</span>
-      <a href="#" style="color:var(--gold);font-weight:700" onclick="closeModal('register');openModal('login')" id="rgo-login" data-ar=" ادخل" data-en=" Sign In" data-tr=" Giriş"> ادخل</a>
+      <span id="rhas-acc" data-ar="لديك حساب؟" data-en="Have an account?" data-tr="Hesabınız var mı?">Have an account?</span>
+      <a href="#" style="color:var(--gold);font-weight:700" onclick="closeModal('register');openModal('login')" id="rgo-login" data-ar=" ادخل" data-en=" Sign In" data-tr=" Giriş"> Sign In</a>
     </p>
   </div>
 </div>
@@ -849,20 +881,20 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
 <div class="modal-overlay" id="kyc-modal">
   <div class="modal" style="max-width:500px">
     <button class="modal-close" onclick="closeModal('kyc')">✕</button>
-    <h3 style="font-size:18px;font-weight:800;margin-bottom:20px">🪪 <span id="kyc-modal-title" data-ar="رفع مستندات KYC" data-en="Upload KYC Documents" data-tr="KYC Belgeleri Yükle">رفع مستندات KYC</span></h3>
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:20px">🪪 <span id="kyc-modal-title" data-ar="رفع مستندات KYC" data-en="Upload KYC Documents" data-tr="KYC Belgeleri Yükle">Upload KYC Documents</span></h3>
     <div class="form-group">
-      <label id="kyc-doc-type-lbl" data-ar="نوع المستند" data-en="Document Type" data-tr="Belge Türü">نوع المستند</label>
+      <label id="kyc-doc-type-lbl" data-ar="نوع المستند" data-en="Document Type" data-tr="Belge Türü">Document Type</label>
       <select id="kyc-doc-type" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;font-family:inherit">
-        <option value="passport" data-ar="جواز سفر" data-en="Passport" data-tr="Pasaport">جواز سفر</option>
-        <option value="national_id" data-ar="بطاقة هوية وطنية" data-en="National ID" data-tr="Kimlik Kartı">بطاقة هوية وطنية</option>
-        <option value="driving_license" data-ar="رخصة قيادة" data-en="Driving License" data-tr="Ehliyet">رخصة قيادة</option>
+        <option value="passport" data-ar="جواز سفر" data-en="Passport" data-tr="Pasaport">Passport</option>
+        <option value="national_id" data-ar="بطاقة هوية وطنية" data-en="National ID" data-tr="Kimlik Kartı">National ID</option>
+        <option value="driving_license" data-ar="رخصة قيادة" data-en="Driving License" data-tr="Ehliyet">Driving License</option>
       </select>
     </div>
-    <div class="form-group"><label id="kyc-front-lbl" data-ar="صورة الوجه الأمامي" data-en="Front Side" data-tr="Ön Yüz">صورة الوجه الأمامي</label><input type="file" id="kyc-front" accept="image/*,application/pdf"></div>
-    <div class="form-group"><label id="kyc-back-lbl" data-ar="صورة الوجه الخلفي" data-en="Back Side" data-tr="Arka Yüz">صورة الوجه الخلفي</label><input type="file" id="kyc-back" accept="image/*,application/pdf"></div>
-    <div class="form-group"><label id="kyc-selfie-lbl" data-ar="صورة سيلفي مع المستند" data-en="Selfie with Document" data-tr="Belge ile Selfie">صورة سيلفي مع المستند</label><input type="file" id="kyc-selfie" accept="image/*"></div>
+    <div class="form-group"><label id="kyc-front-lbl" data-ar="صورة الوجه الأمامي" data-en="Front Side" data-tr="Ön Yüz">Front Side</label><input type="file" id="kyc-front" accept="image/*,application/pdf"></div>
+    <div class="form-group"><label id="kyc-back-lbl" data-ar="صورة الوجه الخلفي" data-en="Back Side" data-tr="Arka Yüz">Back Side</label><input type="file" id="kyc-back" accept="image/*,application/pdf"></div>
+    <div class="form-group"><label id="kyc-selfie-lbl" data-ar="صورة سيلفي مع المستند" data-en="Selfie with Document" data-tr="Belge ile Selfie">Selfie with Document</label><input type="file" id="kyc-selfie" accept="image/*"></div>
     <div class="err-msg" id="kyc-upload-err"></div>
-    <button class="btn-primary" style="width:100%" onclick="submitKYC()" id="kyc-submit-btn" data-ar="📤 رفع المستندات" data-en="📤 Upload Documents" data-tr="📤 Belgeleri Yükle">📤 رفع المستندات</button>
+    <button class="btn-primary" style="width:100%" onclick="submitKYC()" id="kyc-submit-btn" data-ar="📤 رفع المستندات" data-en="📤 Upload Documents" data-tr="📤 Belgeleri Yükle">📤 Upload Documents</button>
   </div>
 </div>
 
@@ -1224,7 +1256,7 @@ async function submitDeposit() {
   try {
     const activeBtn=document.querySelector('#dw-dep .coin-btn.active');
     const coinKey=activeBtn?activeBtn.getAttribute('onclick').match(/'([^']+)'/)[1]:'USDT-TRC20';
-    await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,tx_hash:hash,memo:userProfile.memo,status:'pending'});
+    await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,hash:hash,status:'pending'});
     await db.from('notifications').insert({user_id:userProfile.id,title:'📥 '+(lang==='ar'?'تم استلام طلب إيداعك':'Deposit request received'),body:(lang==='ar'?'طلب إيداع $':'Deposit request $')+amount+' '+(lang==='ar'?'قيد المراجعة':'under review'),type:'info'});
     showToast(lang==='ar'?'✓ تم إرسال طلب الإيداع بنجاح':'✓ Deposit request submitted');
     document.getElementById('dep-hash').value='';
@@ -1241,7 +1273,7 @@ async function submitWithdrawal() {
   if(amount>(userProfile.balance||0)){showToast(lang==='ar'?'الرصيد غير كافٍ':'Insufficient balance','err');return;}
   try {
     const coin=document.getElementById('wd-coin').value;
-    await db.from('withdrawals').insert({user_id:userProfile.id,amount,coin:coin.split('-')[0],network:coin,wallet_address:addr,status:'pending'});
+    await db.from('withdrawals').insert({user_id:userProfile.id,amount,coin:coin.split('-')[0],network:coin,wallet_addr:addr,status:'pending'});
     await db.from('notifications').insert({user_id:userProfile.id,title:'📤 '+(lang==='ar'?'تم استلام طلب سحبك':'Withdrawal request received'),body:(lang==='ar'?'طلب سحب $':'Withdrawal request $')+amount+' '+(lang==='ar'?'قيد المراجعة':'under review'),type:'info'});
     showToast(lang==='ar'?'✓ تم إرسال طلب السحب':'✓ Withdrawal request sent');
     document.getElementById('wd-addr').value='';
@@ -1357,9 +1389,31 @@ function showErr(el,msgs){el.textContent='❌ '+(msgs[lang]||msgs.ar);el.style.d
 function checkPassStrength(v){const fill=document.getElementById('pass-strength-fill');const txt=document.getElementById('pass-strength-txt');const sc=[v.length>=8,/[A-Z]/.test(v),/[0-9]/.test(v),/[^A-Za-z0-9]/.test(v)].filter(Boolean).length;const cfg=[{w:'25%',c:'var(--red)',t:{ar:'ضعيفة',en:'Weak',tr:'Zayıf'}},{w:'50%',c:'var(--orange)',t:{ar:'متوسطة',en:'Fair',tr:'Orta'}},{w:'75%',c:'var(--gold)',t:{ar:'جيدة',en:'Good',tr:'İyi'}},{w:'100%',c:'var(--green)',t:{ar:'قوية',en:'Strong',tr:'Güçlü'}}];if(!v){if(fill)fill.style.width='0';if(txt)txt.textContent='';return;}const c=cfg[sc-1]||cfg[0];if(fill){fill.style.width=c.w;fill.style.background=c.c;}if(txt){txt.textContent=c.t[lang];txt.style.color=c.c;}}
 function updatePrices(){coins.forEach(c=>{c.price=Math.max(0.001,c.price*(1+(Math.random()-.49)*.003));c.change=parseFloat((c.change+(Math.random()-.5)*.15).toFixed(2));});buildTicker();buildLivePrices();buildMarkets();}
 
+// ── MOBILE MENU ──
+function toggleMobileMenu(){
+  const btn=document.getElementById('hamburger-btn');
+  const menu=document.getElementById('mobile-menu');
+  btn.classList.toggle('open');
+  menu.classList.toggle('open');
+}
+function closeMobileMenu(){
+  document.getElementById('hamburger-btn').classList.remove('open');
+  document.getElementById('mobile-menu').classList.remove('open');
+}
+// close mobile menu when clicking outside
+document.addEventListener('click',function(e){
+  const menu=document.getElementById('mobile-menu');
+  const btn=document.getElementById('hamburger-btn');
+  if(menu&&menu.classList.contains('open')&&!menu.contains(e.target)&&!btn.contains(e.target)){
+    closeMobileMenu();
+  }
+});
+
 // ── INIT ──
 function init(){
-  setLang(lang); // يستخدم الـ lang المحفوظة في localStorage
+  // ── تطبيق اللغة فوراً قبل أي render ──
+  // بدل ما نكتب النص بالعربي في HTML ثم نترجم، نطبق اللغة أول حاجة
+  setLang(lang);
   buildTicker();buildMarkets();buildLivePrices();buildFaq();buildFeatures();buildPlans();calcProfit();
   setInterval(updatePrices,5000);
   // Animate live stats
