@@ -1273,9 +1273,17 @@ function renderInvestments(){
     </tbody></table>`;
 }
 
-// ── KYC ──
-function renderKYC(){
+// ── KYC — Supabase ──
+async function renderKYC(){
   const wrap = document.getElementById('kyc-table-wrap');
+  showTableSkeleton('kyc-table-wrap', 6);
+  const { data, error } = await sdb
+    .from('users')
+    .select('id, name, email, kyc_status, kyc_data, created_at')
+    .not('kyc_data', 'is', null)
+    .order('created_at', { ascending: false });
+  if(error || !data){ wrap.innerHTML='<div style="color:var(--muted);text-align:center;padding:30px">—</div>'; return; }
+  if(!data.length){ wrap.innerHTML=`<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">${lang==='ar'?'لا توجد طلبات KYC':'No KYC requests'}</div>`; return; }
   wrap.innerHTML = `<table>
     <thead><tr>
       <th>${lang==='ar'?'المستخدم':'User'}</th>
@@ -1285,26 +1293,38 @@ function renderKYC(){
       <th>${lang==='ar'?'الحالة':'Status'}</th>
       <th>${lang==='ar'?'الإجراء':'Action'}</th>
     </tr></thead>
-    <tbody>${kycReqs.map((k,i)=>`
+    <tbody>${data.map(u=>{
+      const kd = typeof u.kyc_data === 'string' ? JSON.parse(u.kyc_data||'{}') : (u.kyc_data||{});
+      return `
       <tr>
-        <td style="font-weight:600">${k.user}</td>
-        <td style="color:var(--muted);font-size:12px">${k.email}</td>
-        <td>${k.type}</td>
-        <td style="font-size:12px;color:var(--muted)">${k.submitted}</td>
-        <td>${kycBadge(k.status)}</td>
+        <td style="font-weight:600">${u.name||'—'}</td>
+        <td style="color:var(--muted);font-size:12px">${u.email||'—'}</td>
+        <td>${kd.doc_type||'—'}</td>
+        <td style="font-size:12px;color:var(--muted)">${kd.submitted_at?.slice(0,10)||u.created_at?.slice(0,10)||'—'}</td>
+        <td>${kycBadge(u.kyc_status)}</td>
         <td>
-          ${k.status==='pending'?`
+          ${u.kyc_status==='pending'?`
           <div style="display:flex;gap:6px">
-            <button class="act-btn green" onclick="approveKyc(${i})">${t('approve')}</button>
-            <button class="act-btn red" onclick="rejectKyc(${i})">${t('reject')}</button>
-          </div>`:
-          `<span style="color:var(--muted);font-size:12px">—</span>`}
+            <button class="act-btn green" onclick="approveKyc('${u.id}')">${t('approve')}</button>
+            <button class="act-btn red" onclick="rejectKyc('${u.id}')">${t('reject')}</button>
+          </div>`:`<span style="color:var(--muted);font-size:12px">—</span>`}
         </td>
-      </tr>`).join('')}
+      </tr>`;
+    }).join('')}
     </tbody></table>`;
 }
-function approveKyc(i){ kycReqs[i].status='approved'; renderKYC(); showToast(lang==='ar'?'تم قبول KYC':'KYC Approved'); }
-function rejectKyc(i){ kycReqs[i].status='rejected'; renderKYC(); showToast(lang==='ar'?'تم رفض KYC':'KYC Rejected'); }
+async function approveKyc(userId){
+  await sdb.from('users').update({ kyc_status:'verified' }).eq('id', userId);
+  await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'✅ تم التحقق من هويتك':'✅ Identity Verified', body: lang==='ar'?'تم قبول مستنداتك بنجاح':'Your documents have been approved', type:'success' });
+  showToast(lang==='ar'?'✓ تم قبول KYC':'KYC Approved');
+  renderKYC();
+}
+async function rejectKyc(userId){
+  await sdb.from('users').update({ kyc_status:'rejected' }).eq('id', userId);
+  await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'❌ تم رفض طلب KYC':'❌ KYC Rejected', body: lang==='ar'?'يرجى إعادة رفع المستندات بجودة أفضل':'Please re-upload your documents with better quality', type:'warning' });
+  showToast(lang==='ar'?'✗ تم رفض KYC':'KYC Rejected');
+  renderKYC();
+}
 
 // ── REFERRALS ──
 function renderReferrals(){
@@ -1424,18 +1444,36 @@ function renderNotifs(){
     renderNotifHistory();
   }
 }
-function sendNotif(){
+async function sendNotif(){
   const title=(document.getElementById('notif-title-in')||{}).value||'';
   const body=(document.getElementById('notif-body-in')||{}).value||'';
   if(!title) { showToast(lang==='ar'?'أدخل عنوان الإشعار':'Enter notification title'); return; }
   const icons={info:'💬',success:'✅',warning:'⚠️',profit:'💰'};
   const target=(document.getElementById('notif-target')||{}).value||'all';
-  notifHistory.unshift({icon:icons[notifType],title,body,target,time:new Date().toLocaleString(),count:48214});
-  renderNotifHistory();
-  document.getElementById('notif-title-in').value='';
-  document.getElementById('notif-body-in').value='';
-  updateNotifPreview();
-  showToast(lang==='ar'?'✓ تم إرسال الإشعار بنجاح':'✓ Notification sent successfully');
+
+  try {
+    if(target === 'all') {
+      // جلب كل المستخدمين وإرسال الإشعار للكل
+      const { data: allUsers } = await sdb.from('users').select('id').eq('status','active');
+      if(allUsers && allUsers.length) {
+        const inserts = allUsers.map(u => ({ user_id: u.id, title, body, type: notifType }));
+        // إدخال دفعة (Supabase يقبل حتى 1000 صف مرة واحدة)
+        await sdb.from('notifications').insert(inserts);
+      }
+    } else {
+      // إرسال لمستخدم بعينه (target = user_id)
+      await sdb.from('notifications').insert({ user_id: target, title, body, type: notifType });
+    }
+    const icons2={info:'💬',success:'✅',warning:'⚠️',profit:'💰'};
+    notifHistory.unshift({icon:icons2[notifType],title,body,target,time:new Date().toLocaleString(),count:target==='all'?'all':1});
+    renderNotifHistory();
+    document.getElementById('notif-title-in').value='';
+    document.getElementById('notif-body-in').value='';
+    updateNotifPreview();
+    showToast(lang==='ar'?'✓ تم إرسال الإشعار بنجاح':'✓ Notification sent successfully');
+  } catch(e) {
+    showToast(lang==='ar'?'خطأ في إرسال الإشعار':'Error sending notification');
+  }
 }
 function renderNotifHistory(){
   const el = document.getElementById('notif-history');
@@ -2035,7 +2073,7 @@ function renderRealDeposits(data) {
         <td style="font-size:11px;color:var(--muted)">${d.users?.email || '—'}</td>
         <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(d.amount).toLocaleString()}</td>
         <td><span style="font-family:var(--mono)">${d.coin}</span></td>
-        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.tx_hash ? d.tx_hash.slice(0,16)+'...' : '—'}</td>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.hash ? d.hash.slice(0,16)+'...' : '—'}</td>
         <td style="font-family:var(--mono);color:var(--blue)">${d.memo || '—'}</td>
         <td style="font-size:11px;color:var(--muted)">${d.created_at?.slice(0,16)}</td>
         <td>${statusBadge(d.status)}</td>
@@ -2058,23 +2096,14 @@ async function approveDeposit(depositId, userId, amount, email, name) {
   showToast(lang==='ar'?'جارٍ المعالجة...':'Processing...');
 
   // 1. تحديث حالة الإيداع
-  await sdb.from('deposits').update({ status: 'approved', approved_at: new Date().toISOString() }).eq('id', depositId);
+  await sdb.from('deposits').update({ status: 'approved' }).eq('id', depositId);
 
   // 2. إضافة المبلغ لرصيد العميل
   const { data: userData } = await sdb.from('users').select('balance').eq('id', userId).single();
   const newBalance = (parseFloat(userData?.balance) || 0) + parseFloat(amount);
   await sdb.from('users').update({ balance: newBalance }).eq('id', userId);
 
-  // 3. إضافة معاملة في سجل المعاملات
-  await sdb.from('transactions').insert({
-    user_id: userId,
-    type: 'deposit',
-    amount: amount,
-    coin: 'USDT',
-    description: lang==='ar' ? `تم قبول إيداع $${amount}` : `Deposit of $${amount} approved`
-  });
-
-  // 4. إرسال إشعار للعميل في قاعدة البيانات
+  // 3. إرسال إشعار للعميل في قاعدة البيانات
   await sdb.from('notifications').insert({
     user_id: userId,
     title: lang==='ar' ? '✅ تم قبول إيداعك' : '✅ Deposit Approved',
@@ -2145,7 +2174,7 @@ function renderRealWithdrawals(data) {
         <td style="font-weight:600">${w.users?.name || '—'}</td>
         <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(w.amount).toLocaleString()}</td>
         <td><span style="font-family:var(--mono)">${w.coin}</span></td>
-        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${w.wallet_address?.slice(0,20)}...</td>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${w.wallet_addr ? w.wallet_addr.slice(0,20)+'...' : '—'}</td>
         <td style="font-size:11px;color:var(--muted)">${w.created_at?.slice(0,16)}</td>
         <td>${statusBadge(w.status)}</td>
         <td>
@@ -2162,12 +2191,11 @@ function renderRealWithdrawals(data) {
 async function approveWithdrawal(wdId, userId, amount, name) {
   const confirmed = confirm(lang==='ar' ? `موافقة على سحب $${amount} لـ ${name}؟` : `Approve $${amount} withdrawal for ${name}?`);
   if (!confirmed) return;
-  await sdb.from('withdrawals').update({ status: 'approved', approved_at: new Date().toISOString() }).eq('id', wdId);
+  await sdb.from('withdrawals').update({ status: 'approved' }).eq('id', wdId);
   // خصم المبلغ من الرصيد
   const { data: userData } = await sdb.from('users').select('balance').eq('id', userId).single();
   const newBalance = Math.max(0, (parseFloat(userData?.balance)||0) - parseFloat(amount));
   await sdb.from('users').update({ balance: newBalance }).eq('id', userId);
-  await sdb.from('transactions').insert({ user_id: userId, type: 'withdrawal', amount, description: lang==='ar'?`تم صرف $${amount}`:`Withdrawal of $${amount} approved` });
   await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'✅ تم قبول طلب السحب':'✅ Withdrawal Approved', body: lang==='ar'?`تم تحويل $${amount} لمحفظتك`:`$${amount} has been sent to your wallet`, type: 'success' });
   showToast(lang==='ar'?`✓ تم قبول سحب $${amount} لـ ${name}`:`✓ $${amount} withdrawal approved for ${name}`);
   await loadRealWithdrawals();
