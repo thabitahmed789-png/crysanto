@@ -911,19 +911,27 @@ window.addEventListener('unhandledrejection', function(e){
 const SUPA_URL = 'https://pxcnolevnhbxmfarivon.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4Y25vbGV2bmhieG1mYXJpdm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTk3NzksImV4cCI6MjA5NTQ5NTc3OX0.Uj9hytWXYZupPDUSj3SaOWKLA6lOaZlVCKuywCfU5b8';
 const { createClient } = supabase;
-const db = createClient(SUPA_URL, SUPA_KEY);
+const db = createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+    storage: window.localStorage
+  }
+});
 
 let lang = localStorage.getItem('crysanto_lang') || "en";
 let isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
 let _authHandled = false; // منع تعارض login/register مع onAuthStateChange
 const PROTECTED = ['dashboard','deposit','referral'];
 
-// مراقبة الجلسة — بيشتغل بس عند الريفريش أو انتهاء الجلسة
+// مراقبة الجلسة — الريفريش + الدخول التلقائي
 db.auth.onAuthStateChange(async (event, session) => {
   if(_authHandled) return; // doLogin / doRegister شغّالين
 
-  if(event === 'SIGNED_IN' && session && !isLoggedIn) {
-    // ريفريش تلقائي للصفحة
+  // INITIAL_SESSION = عند تحميل الصفحة لو في جلسة محفوظة
+  // SIGNED_IN = بعد login جديد (عبر onAuthStateChange مش doLogin)
+  if((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session && !isLoggedIn) {
     currentUser = session.user;
     await fetchProfile(8, 800);
     if(userProfile) afterLogin();
@@ -933,6 +941,7 @@ db.auth.onAuthStateChange(async (event, session) => {
     const bL=document.getElementById('btnLogin'); if(bL) bL.style.display='';
     const bR=document.getElementById('btnRegister'); if(bR) bR.style.display='';
     const uM=document.getElementById('user-menu'); if(uM) uM.style.display='none';
+    showPage('home', null);
   }
 });
 
@@ -1101,15 +1110,29 @@ async function doLogin() {
     if(btn) { btn.textContent = '⏳ ...'; btn.disabled = true; }
     await fetchProfile(8, 800);
 
+    // ── 3. Fallback: لو الـ profile مش موجود نعمله ──
     if(!userProfile) {
-      showErr(errEl, {ar:'بيانات الحساب غير موجودة، تواصل مع الدعم',en:'Account not found, contact support',tr:'Hesap bulunamadı'});
+      const userName = currentUser.user_metadata?.name || currentUser.email.split('@')[0];
+      const refCode  = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
+      const memo     = Math.floor(100000 + Math.random()*900000).toString();
+      const { data: newP } = await db.from('users').insert({
+        auth_id:    currentUser.id,
+        name:       userName,
+        email:      currentUser.email,
+        ref_code:   refCode,
+        memo:       memo
+      }).select().single();
+      if(newP) userProfile = newP;
+    }
+
+    if(!userProfile) {
+      showErr(errEl, {ar:'تعذر تحميل بيانات الحساب',en:'Could not load account data',tr:'Hesap verisi yüklenemedi'});
       if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
       _authHandled = false;
-      await db.auth.signOut();
       return;
     }
 
-    // ── 3. نجاح ──
+    // ── 4. نجاح ──
     _authHandled = false;
     if(btn) { btn.textContent = '✅'; btn.disabled = true; }
     await new Promise(r => setTimeout(r, 400));
@@ -1228,10 +1251,25 @@ async function fetchProfile(retries = 10, delay = 1000) {
   if(!currentUser) return;
   for(let i = 0; i < retries; i++) {
     try {
+      // جرب بالـ auth_id أولاً
       const res = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
       if(res && res.data) { userProfile = res.data; return; }
+
+      // لو مش لاقيه بالـ auth_id، جرب بالـ email
+      if(!res.data && currentUser.email) {
+        const res2 = await db.from('users').select('*').eq('email', currentUser.email).maybeSingle();
+        if(res2 && res2.data) {
+          // حدّث الـ auth_id لو ناقص
+          if(!res2.data.auth_id) {
+            await db.from('users').update({auth_id: currentUser.id}).eq('id', res2.data.id);
+            res2.data.auth_id = currentUser.id;
+          }
+          userProfile = res2.data;
+          return;
+        }
+      }
     } catch(e) { /* retry */ }
-    await new Promise(r => setTimeout(r, delay));
+    if(i < retries - 1) await new Promise(r => setTimeout(r, delay));
   }
 }
 
