@@ -904,15 +904,24 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const { createClient } = supabase;
 const db = createClient(SUPA_URL, SUPA_KEY);
 
-let lang = localStorage.getItem('crysanto_lang') || "en", isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
+let lang = localStorage.getItem('crysanto_lang') || "en";
+let isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
+let _authHandled = false; // منع تعارض login/register مع onAuthStateChange
 const PROTECTED = ['dashboard','deposit','referral'];
 
-// مراقبة الجلسة تلقائياً - يمنع الخروج عند الريفريش
+// مراقبة الجلسة — بيشتغل بس عند الريفريش أو انتهاء الجلسة
 db.auth.onAuthStateChange(async (event, session) => {
+  // لو doLogin أو doRegister شغّالين، مش محتاجين نكمّل هنا
+  if (_authHandled) return;
+
   if (event === 'SIGNED_IN' && session && !isLoggedIn) {
+    // ده بيحصل بس عند الريفريش لما تكون الجلسة محفوظة
     currentUser = session.user;
-    await fetchProfile();
+    await fetchProfile(5, 800);
     if (userProfile) afterLogin();
+  } else if (event === 'TOKEN_REFRESHED' && session && isLoggedIn) {
+    // تجديد الـ token تلقائياً — مش محتاج نعمل حاجة
+    currentUser = session.user;
   } else if (event === 'SIGNED_OUT') {
     isLoggedIn = false; currentUser = null; userProfile = null;
     document.body.classList.remove('logged-in');
@@ -1047,120 +1056,294 @@ function switchDW(el, id) {
 // ── AUTH ──
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
-  const pass = document.getElementById('login-pass').value;
+  const pass  = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-err');
   errEl.style.display = 'none';
-  if(!email||!pass){showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'});return;}
+
+  if(!email || !pass) {
+    showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'}); return;
+  }
+
   const btn = document.getElementById('login-btn-txt');
-  if(btn){btn.textContent='⏳';btn.disabled=true;}
+  const setBtn = (txt, disabled) => { if(btn){btn.textContent=txt;btn.disabled=disabled;} };
+  setBtn('⏳ ...', true);
+  _authHandled = true; // نمنع onAuthStateChange من التدخل
+
   try {
-    const {data,error} = await db.auth.signInWithPassword({email,password:pass});
-    if(btn){btn.textContent={ar:'دخول',en:'Sign In',tr:'Giriş'}[lang];btn.disabled=false;}
-    if(error){showErr(errEl,{ar:'بريد أو كلمة مرور غير صحيحة',en:'Invalid email or password',tr:'Geçersiz bilgiler'});return;}
+    const {data, error} = await db.auth.signInWithPassword({email, password: pass});
+
+    if(error) {
+      const msg = error.message || '';
+      let friendly;
+      if(msg.includes('Invalid login') || msg.includes('invalid_credentials')) {
+        friendly = {ar:'بريد أو كلمة مرور غير صحيحة',en:'Wrong email or password',tr:'E-posta veya şifre hatalı'};
+      } else if(msg.includes('Email not confirmed')) {
+        friendly = {ar:'يرجى تأكيد بريدك الإلكتروني أولاً',en:'Please confirm your email first',tr:'Önce e-postanızı doğrulayın'};
+      } else if(msg.includes('Too many')) {
+        friendly = {ar:'محاولات كثيرة، انتظر قليلاً',en:'Too many attempts, wait a moment',tr:'Çok fazla deneme, bekleyin'};
+      } else {
+        friendly = {ar:'خطأ في تسجيل الدخول',en:'Login failed',tr:'Giriş başarısız'};
+      }
+      showErr(errEl, friendly);
+      setBtn({ar:'دخول',en:'Sign In',tr:'Giriş'}[lang], false);
+      return;
+    }
+
     currentUser = data.user;
-    await fetchProfile();
+    setBtn({ar:'⏳ جارٍ التحميل...',en:'⏳ Loading...',tr:'⏳ Yükleniyor...'}[lang], true);
+
+    await fetchProfile(5, 800);
+
+    if(!userProfile) {
+      showErr(errEl,{ar:'لم يتم العثور على بيانات الحساب، تواصل مع الدعم',en:'Account data not found, contact support',tr:'Hesap verisi bulunamadı'});
+      setBtn({ar:'دخول',en:'Sign In',tr:'Giriş'}[lang], false);
+      _authHandled = false;
+      await db.auth.signOut();
+      return;
+    }
+
+    _authHandled = false;
     closeModal('login');
     afterLogin();
+
   } catch(e) {
-    if(btn){btn.textContent={ar:'دخول',en:'Sign In',tr:'Giriş'}[lang];btn.disabled=false;}
-    showErr(errEl,{ar:'تحقق من الإنترنت وحاول تاني',en:'Check internet and retry',tr:'İnternet bağlantısını kontrol edin'});
+    _authHandled = false;
+    setBtn({ar:'دخول',en:'Sign In',tr:'Giriş'}[lang], false);
+    showErr(errEl,{ar:'تحقق من اتصال الإنترنت وحاول مجدداً',en:'Check your internet and try again',tr:'İnternet bağlantısını kontrol edin'});
   }
 }
 
 async function doRegister() {
-  const name = document.getElementById('reg-name').value.trim();
+  const name  = document.getElementById('reg-name').value.trim();
   const email = document.getElementById('reg-email').value.trim();
-  const pass = document.getElementById('reg-pass').value;
-  const ref = document.getElementById('reg-ref').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+  const ref   = document.getElementById('reg-ref').value.trim().toUpperCase();
   const terms = document.getElementById('reg-terms').checked;
   const errEl = document.getElementById('reg-err');
   errEl.style.display = 'none';
-  if(!name||!email||!pass){showErr(errEl,{ar:'أكمل جميع الحقول',en:'Fill all fields',tr:'Tüm alanları doldurun'});return;}
-  if(pass.length<8){showErr(errEl,{ar:'كلمة المرور 8 أحرف على الأقل',en:'Password min 8 chars',tr:'Şifre en az 8 karakter'});return;}
-  if(!terms){showErr(errEl,{ar:'يجب الموافقة على الشروط',en:'Must agree to terms',tr:'Şartları kabul edin'});return;}
+
+  // ── Validation ──
+  if(!name || !email || !pass) {
+    showErr(errEl,{ar:'أكمل جميع الحقول',en:'Fill all fields',tr:'Tüm alanları doldurun'}); return;
+  }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showErr(errEl,{ar:'بريد إلكتروني غير صحيح',en:'Invalid email address',tr:'Geçersiz e-posta'}); return;
+  }
+  if(pass.length < 8) {
+    showErr(errEl,{ar:'كلمة المرور 8 أحرف على الأقل',en:'Password min 8 chars',tr:'Şifre en az 8 karakter'}); return;
+  }
+  if(!terms) {
+    showErr(errEl,{ar:'يجب الموافقة على الشروط',en:'Must agree to terms',tr:'Şartları kabul edin'}); return;
+  }
+
   const btn = document.getElementById('reg-btn-txt');
-  if(btn){btn.textContent='⏳';btn.disabled=true;}
+  const setBtn = (txt, disabled) => { if(btn){btn.textContent=txt;btn.disabled=disabled;} };
+  setBtn('⏳ ...', true);
+  _authHandled = true; // نمنع onAuthStateChange من التدخل أثناء التسجيل
+
   try {
-    const {data,error} = await db.auth.signUp({email,password:pass,options:{data:{name,ref_code:ref||null}}});
-    if(btn){btn.textContent={ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang];btn.disabled=false;}
-    if(error){showErr(errEl,{ar:'خطأ: '+error.message,en:'Error: '+error.message,tr:'Hata: '+error.message});return;}
-    await new Promise(r=>setTimeout(r,2000));
+    const {data, error} = await db.auth.signUp({
+      email, password: pass,
+      options: { data: { name, ref_code: ref || null } }
+    });
+
+    if(error) {
+      // ترجمة أشهر أخطاء Supabase
+      const msg = error.message || '';
+      let friendly;
+      if(msg.includes('already registered') || msg.includes('already exists')) {
+        friendly = {ar:'هذا البريد مسجّل من قبل',en:'Email already registered',tr:'E-posta zaten kayıtlı'};
+      } else if(msg.includes('invalid') && msg.includes('email')) {
+        friendly = {ar:'بريد إلكتروني غير صحيح',en:'Invalid email address',tr:'Geçersiz e-posta'};
+      } else if(msg.includes('password')) {
+        friendly = {ar:'كلمة المرور ضعيفة جداً',en:'Password too weak',tr:'Şifre çok zayıf'};
+      } else {
+        friendly = {ar:'خطأ: '+msg, en:'Error: '+msg, tr:'Hata: '+msg};
+      }
+      showErr(errEl, friendly);
+      setBtn({ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang], false);
+      _authHandled = false;
+      return;
+    }
+
     currentUser = data.user;
-    await fetchProfile();
+
+    // ── انتظار الـ trigger يعمل الـ profile (بـ polling ذكي) ──
+    setBtn({ar:'⏳ جارٍ إعداد حسابك...',en:'⏳ Setting up your account...',tr:'⏳ Hesabınız hazırlanıyor...'}[lang], true);
+    await fetchProfile(8, 1000); // 8 محاولات، كل 1 ثانية
+
+    if(!userProfile) {
+      // Profile مش اتعمل — نعمله يدوياً كـ fallback
+      const refCode = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
+      const memo    = Math.floor(100000 + Math.random()*900000).toString();
+      const {data: newProfile} = await db.from('users').insert({
+        auth_id: currentUser.id,
+        name, email,
+        ref_code: refCode,
+        referred_by: ref || null,
+        memo
+      }).select().single();
+      if(newProfile) userProfile = newProfile;
+    }
+
+    setBtn({ar:'✅ تم إنشاء الحساب',en:'✅ Account Created',tr:'✅ Hesap Oluşturuldu'}[lang], true);
+    await new Promise(r=>setTimeout(r,600));
+
+    _authHandled = false;
     closeModal('register');
     afterLogin();
+
   } catch(e) {
-    if(btn){btn.textContent={ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang];btn.disabled=false;}
-    showErr(errEl,{ar:'تحقق من الإنترنت وحاول تاني',en:'Check internet and retry',tr:'İnternet bağlantısını kontrol edin'});
+    _authHandled = false;
+    setBtn({ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang], false);
+    showErr(errEl,{ar:'تحقق من اتصال الإنترنت وحاول مجدداً',en:'Check your internet and try again',tr:'İnternet bağlantısını kontrol edin'});
   }
 }
 
 async function doLogout() {
+  _authHandled = true; // نتعامل مع الخروج هنا
   await db.auth.signOut();
-  isLoggedIn=false;currentUser=null;userProfile=null;
+  _authHandled = false;
+  isLoggedIn = false; currentUser = null; userProfile = null;
   document.body.classList.remove('logged-in');
-  document.getElementById('btnLogin').style.display='';
-  document.getElementById('btnRegister').style.display='';
-  document.getElementById('user-menu').style.display='none';
-  showPage('home',document.querySelector('.nav-links a'));
-  showToast({ar:'تم تسجيل الخروج',en:'Logged out',tr:'Çıkış yapıldı'}[lang]);
+  const btnL = document.getElementById('btnLogin');
+  const btnR = document.getElementById('btnRegister');
+  const uMenu = document.getElementById('user-menu');
+  if(btnL) btnL.style.display = '';
+  if(btnR) btnR.style.display = '';
+  if(uMenu) uMenu.style.display = 'none';
+  showPage('home', document.querySelector('.nav-links a'));
+  showToast({ar:'تم تسجيل الخروج بنجاح',en:'Logged out successfully',tr:'Başarıyla çıkış yapıldı'}[lang]);
 }
 
-async function fetchProfile(retries = 5) {
+async function fetchProfile(retries = 6, delay = 900) {
   if(!currentUser) return;
   for(let i = 0; i < retries; i++) {
     try {
-      const {data} = await db.from('users').select('*').eq('auth_id',currentUser.id).single();
-      if(data) { userProfile=data; return; }
-    } catch(e){}
-    // انتظر 800ms وجرب تاني (الـ trigger محتاج وقت)
-    await new Promise(r => setTimeout(r, 800));
+      const {data, error} = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
+      if(data) { userProfile = data; return; }
+    } catch(e) {}
+    // انتظر وجرب تاني — الـ trigger بيأخد وقت أحياناً
+    if(i < retries - 1) await new Promise(r => setTimeout(r, delay));
   }
 }
 
 function afterLogin() {
-  isLoggedIn=true;
+  isLoggedIn = true;
   document.body.classList.add('logged-in');
-  document.getElementById('btnLogin').style.display='none';
-  document.getElementById('btnRegister').style.display='none';
-  document.getElementById('user-menu').style.display='flex';
-  if(userProfile){
-    document.getElementById('user-av').textContent=userProfile.name[0].toUpperCase();
-    document.getElementById('user-name-nav').textContent=userProfile.name.split(' ')[0];
-    const m=document.getElementById('user-memo');if(m)m.textContent=userProfile.memo||'---';
-    const r=document.getElementById('ref-link-txt');if(r)r.textContent='https://crysanto.io/ref/'+(userProfile.ref_code||'---');
+
+  // إخفاء/إظهار الأزرار
+  const btnL = document.getElementById('btnLogin');
+  const btnR = document.getElementById('btnRegister');
+  const uMenu = document.getElementById('user-menu');
+  if(btnL) btnL.style.display = 'none';
+  if(btnR) btnR.style.display = 'none';
+  if(uMenu) uMenu.style.display = 'flex';
+
+  // تحديث معلومات المستخدم في الـ nav
+  if(userProfile) {
+    const av = document.getElementById('user-av');
+    const nm = document.getElementById('user-name-nav');
+    const m  = document.getElementById('user-memo');
+    const r  = document.getElementById('ref-link-txt');
+    if(av) av.textContent = (userProfile.name||'?')[0].toUpperCase();
+    if(nm) nm.textContent = (userProfile.name||'').split(' ')[0];
+    if(m)  m.textContent  = userProfile.memo || '---';
+    if(r)  r.textContent  = 'https://crysanto.io/ref/' + (userProfile.ref_code || '---');
   }
-  showToast({ar:'مرحباً '+(userProfile?.name||'')+' 👋',en:'Welcome '+(userProfile?.name||'')+' 👋',tr:'Hoşgeldiniz '+(userProfile?.name||'')+' 👋'}[lang]);
-  if(pendingPage){const p=pendingPage;pendingPage=null;setTimeout(()=>showPage(p.id,p.el),300);}
-  else showPage('dashboard',null);
+
+  // الـ lang buttons — تأكد إن الـ EN محدد
+  document.querySelectorAll('.lb').forEach(b=>b.classList.remove('on'));
+  const activeLb = document.querySelector('.lb[onclick="setLang(''+lang+'')"]');
+  if(activeLb) activeLb.classList.add('on');
+
+  showToast({
+    ar: 'مرحباً ' + (userProfile?.name||'') + ' 👋',
+    en: 'Welcome '  + (userProfile?.name||'') + ' 👋',
+    tr: 'Hoşgeldiniz ' + (userProfile?.name||'') + ' 👋'
+  }[lang]);
+
+  if(pendingPage) {
+    const p = pendingPage; pendingPage = null;
+    setTimeout(()=>showPage(p.id, p.el), 200);
+  } else {
+    showPage('dashboard', null);
+  }
 }
 
 // ── DASHBOARD ──
 async function loadDashboard() {
   if(!userProfile) return;
-  document.getElementById('d-bal').textContent='$'+(userProfile.balance||0).toLocaleString();
-  document.getElementById('d-invested').textContent='$'+(userProfile.invested||0).toLocaleString();
-  document.getElementById('d-ref-earn').textContent='$'+(userProfile.ref_earnings||0).toLocaleString();
+
+  // ── بيانات من الـ profile ──
+  document.getElementById('d-bal').textContent     = '$'+(userProfile.balance||0).toLocaleString();
+  document.getElementById('d-profit').textContent  = '$'+(userProfile.profit||0).toLocaleString();
+
+  // invested و ref_earnings بنحسبهم من الـ investments table
   try {
-    const {data:invs}=await db.from('investments').select('*').eq('user_id',userProfile.id).eq('status','active');
-    if(invs&&invs.length){
-      const daily=invs.reduce((s,i)=>s+parseFloat(i.daily_profit||0),0);
-      document.getElementById('d-profit').textContent='$'+daily.toFixed(2);
-      document.getElementById('d-active-inv').innerHTML='<div class="wallet-list">'+invs.map(inv=>'<div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:var(--gold-dim);color:var(--gold)">💹</div><div><div class="w-name">'+inv.plan_name+'</div><div class="w-addr">'+inv.daily_rate+'%/day</div></div></div><div class="w-bal">$'+parseFloat(inv.amount).toLocaleString()+'</div></div>').join('')+'</div>';
+    const [invRes, depRes] = await Promise.all([
+      db.from('investments').select('*').eq('user_id',userProfile.id),
+      db.from('deposits').select('amount').eq('user_id',userProfile.id).eq('status','approved')
+    ]);
+
+    const invs = invRes.data || [];
+    const activeInvs = invs.filter(i=>i.status==='active');
+
+    // إجمالي المستثمر
+    const totalInvested = invs.reduce((s,i)=>s+parseFloat(i.amount||0),0);
+    const d_inv = document.getElementById('d-invested');
+    if(d_inv) d_inv.textContent = '$'+totalInvested.toLocaleString();
+
+    // الربح اليومي الحالي = sum(amount * daily_rate / 100) للاستثمارات النشطة
+    const dailyProfit = activeInvs.reduce((s,i)=>s+(parseFloat(i.amount||0)*parseFloat(i.daily_rate||0)/100),0);
+    const d_daily = document.getElementById('d-daily-profit');
+    if(d_daily) d_daily.textContent = '$'+dailyProfit.toFixed(2);
+
+    // الإيداعات المقبولة
+    const totalDep = (depRes.data||[]).reduce((s,d)=>s+parseFloat(d.amount||0),0);
+    const d_dep = document.getElementById('d-total-dep');
+    if(d_dep) d_dep.textContent = '$'+totalDep.toLocaleString();
+
+    // عرض الاستثمارات النشطة
+    const invBox = document.getElementById('d-active-inv');
+    if(invBox) {
+      if(activeInvs.length) {
+        invBox.innerHTML = '<div class="wallet-list">'+activeInvs.map(inv=>
+          '<div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:var(--gold-dim);color:var(--gold)">💹</div>'+
+          '<div><div class="w-name">'+inv.plan_name+'</div>'+
+          '<div class="w-addr">'+inv.daily_rate+'%/day · '+inv.duration+' days</div></div></div>'+
+          '<div class="w-bal">$'+parseFloat(inv.amount).toLocaleString()+'</div></div>'
+        ).join('')+'</div>';
+      } else {
+        invBox.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+(lang==='ar'?'لا توجد استثمارات نشطة':'No active investments')+'</div>';
+      }
     }
-  } catch(e){}
+
+    // إجمالي الإحالة من ref_count في profile
+    const d_ref = document.getElementById('d-ref-earn');
+    if(d_ref) d_ref.textContent = '$'+(userProfile.profit||0).toLocaleString();
+
+  } catch(e) { console.error('loadDashboard error', e); }
 }
 
 async function loadTransactions() {
   if(!userProfile) return;
   const el=document.getElementById('tx-list');
+  el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">⏳</div>';
   try {
-    const {data}=await db.from('transactions').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(20);
-    if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+(lang==='ar'?'لا توجد معاملات':'No transactions')+'</div>';return;}
-    const icons={deposit:'📥',withdrawal:'📤',profit:'💰',referral:'🎁',bonus:'⭐'};
-    const colors={deposit:'var(--green)',withdrawal:'var(--red)',profit:'var(--gold)',referral:'var(--gold)',bonus:'var(--blue)'};
-    el.innerHTML=data.map(tx=>'<div class="tx-item"><div class="tx-left"><span style="font-size:18px">'+(icons[tx.type]||'💱')+'</span><div><div class="tx-type">'+(tx.description||tx.type)+'</div><div class="tx-date">'+(tx.created_at||'').slice(0,10)+'</div></div></div><div class="tx-amt" style="color:'+(colors[tx.type]||'var(--text)')+'\">'+(tx.type==='withdrawal'?'-':'+')+' $'+parseFloat(tx.amount).toLocaleString()+'</div></div>').join('');
-  } catch(e){}
+    const [depRes, wdRes] = await Promise.all([
+      db.from('deposits').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(15),
+      db.from('withdrawals').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(15)
+    ]);
+    const deps = (depRes.data||[]).map(d=>({...d,type:'deposit'}));
+    const wds  = (wdRes.data||[]).map(w=>({...w,type:'withdrawal'}));
+    const all  = [...deps,...wds].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    if(!all.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+(lang==='ar'?'لا توجد معاملات':'No transactions')+'</div>';return;}
+    const icons={deposit:'📥',withdrawal:'📤'};
+    const colors={deposit:'var(--green)',withdrawal:'var(--red)'};
+    const statusLabel={pending:lang==='ar'?'معلق':'Pending',approved:lang==='ar'?'مقبول':'Approved',rejected:lang==='ar'?'مرفوض':'Rejected'};
+    el.innerHTML=all.map(tx=>'<div class="tx-item"><div class="tx-left"><span style="font-size:18px">'+(icons[tx.type]||'💱')+'</span><div><div class="tx-type">'+(tx.type==='deposit'?(lang==='ar'?'إيداع':'Deposit'):(lang==='ar'?'سحب':'Withdrawal'))+(tx.coin?' — '+tx.coin:'')+'</div><div class="tx-date">'+(tx.created_at||'').slice(0,10)+' · '+(statusLabel[tx.status]||tx.status)+'</div></div></div><div class="tx-amt" style="color:'+(colors[tx.type]||'var(--text)')+'\">'+(tx.type==='withdrawal'?'-':'+')+' $'+parseFloat(tx.amount).toLocaleString()+'</div></div>').join('');
+  } catch(e){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">—</div>';}
 }
 
 async function loadNotifications() {
@@ -1180,9 +1363,33 @@ async function loadInvestments() {
   try {
     const {data}=await db.from('investments').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false});
     if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">—</div>';return;}
+    const statusColors = {active:'var(--green)',completed:'var(--muted)',cancelled:'var(--red)'};
     el.innerHTML=data.map(inv=>{
-      const pct=Math.min(100,Math.round(((new Date()-new Date(inv.start_date))/(86400000))/inv.duration_days*100));
-      return '<div style="background:var(--dark3);border-radius:10px;padding:14px;margin-bottom:10px;border:1px solid var(--border)"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:700">'+inv.plan_name+'</span><span style="font-family:var(--mono);color:var(--gold)">$'+parseFloat(inv.amount).toLocaleString()+'</span></div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px"><span>'+inv.daily_rate+'%/day</span><span>'+inv.start_date+' → '+inv.end_date+'</span></div><div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%;background:linear-gradient(90deg,var(--gold),var(--green))"></div></div><div style="font-size:11px;color:var(--muted);margin-top:5px">'+pct+'%</div></div>';
+      const start = new Date(inv.started_at);
+      const end   = new Date(inv.ends_at);
+      const now   = new Date();
+      const totalMs = end - start;
+      const doneMs  = now - start;
+      const pct = Math.min(100, Math.max(0, Math.round((doneMs/totalMs)*100)));
+      const statusLabel = {active:lang==='ar'?'نشط':'Active', completed:lang==='ar'?'منتهي':'Completed', cancelled:lang==='ar'?'ملغي':'Cancelled'};
+      return '<div style="background:var(--dark3);border-radius:10px;padding:14px;margin-bottom:10px;border:1px solid var(--border)">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
+          '<span style="font-weight:700">'+inv.plan_name+'</span>'+
+          '<span style="font-size:11px;color:'+(statusColors[inv.status]||'var(--muted)')+'">● '+(statusLabel[inv.status]||inv.status)+'</span>'+
+        '</div>'+
+        '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
+          '<span style="font-family:var(--mono);color:var(--gold);font-size:15px;font-weight:700">$'+parseFloat(inv.amount).toLocaleString()+'</span>'+
+          '<span style="font-size:12px;color:var(--muted)">'+inv.daily_rate+'%/day</span>'+
+        '</div>'+
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:8px">'+
+          '<span>'+(inv.started_at||'').slice(0,10)+'</span>'+
+          '<span>→ '+(inv.ends_at||'').slice(0,10)+'</span>'+
+        '</div>'+
+        '<div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%;background:linear-gradient(90deg,var(--gold),var(--green))"></div></div>'+
+        '<div style="font-size:11px;color:var(--muted);margin-top:5px;display:flex;justify-content:space-between">'+
+          '<span>'+pct+'%</span>'+
+          '<span>'+lang==='ar'?'الربح: ':'Profit: '+'$'+parseFloat(inv.profit_earned||0).toFixed(2)+'</span>'+
+        '</div></div>';
     }).join('');
   } catch(e){}
 }
