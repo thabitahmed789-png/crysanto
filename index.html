@@ -911,23 +911,19 @@ const PROTECTED = ['dashboard','deposit','referral'];
 
 // مراقبة الجلسة — بيشتغل بس عند الريفريش أو انتهاء الجلسة
 db.auth.onAuthStateChange(async (event, session) => {
-  // لو doLogin أو doRegister شغّالين، مش محتاجين نكمّل هنا
-  if (_authHandled) return;
+  if(_authHandled) return; // doLogin / doRegister شغّالين
 
-  if (event === 'SIGNED_IN' && session && !isLoggedIn) {
-    // ده بيحصل بس عند الريفريش لما تكون الجلسة محفوظة
+  if(event === 'SIGNED_IN' && session && !isLoggedIn) {
+    // ريفريش تلقائي للصفحة
     currentUser = session.user;
-    await fetchProfile(5, 800);
-    if (userProfile) afterLogin();
-  } else if (event === 'TOKEN_REFRESHED' && session && isLoggedIn) {
-    // تجديد الـ token تلقائياً — مش محتاج نعمل حاجة
-    currentUser = session.user;
-  } else if (event === 'SIGNED_OUT') {
+    await fetchProfile(8, 800);
+    if(userProfile) afterLogin();
+  } else if(event === 'SIGNED_OUT') {
     isLoggedIn = false; currentUser = null; userProfile = null;
     document.body.classList.remove('logged-in');
-    document.getElementById('btnLogin').style.display = '';
-    document.getElementById('btnRegister').style.display = '';
-    document.getElementById('user-menu').style.display = 'none';
+    const bL=document.getElementById('btnLogin'); if(bL) bL.style.display='';
+    const bR=document.getElementById('btnRegister'); if(bR) bR.style.display='';
+    const uM=document.getElementById('user-menu'); if(uM) uM.style.display='none';
   }
 });
 
@@ -1058,58 +1054,62 @@ async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-err');
+  const btn   = document.getElementById('login-btn-txt');
   errEl.style.display = 'none';
 
   if(!email || !pass) {
-    showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'}); return;
+    showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'});
+    return;
   }
 
-  const btn = document.getElementById('login-btn-txt');
-  const setBtn = (txt, disabled) => { if(btn){btn.textContent=txt;btn.disabled=disabled;} };
-  setBtn('⏳ ...', true);
-  _authHandled = true; // نمنع onAuthStateChange من التدخل
+  // ── تعطيل الزر ──
+  if(btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  _authHandled = true;
 
   try {
-    const {data, error} = await db.auth.signInWithPassword({email, password: pass});
+    // ── 1. تسجيل الدخول ──
+    const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
 
     if(error) {
-      const msg = error.message || '';
-      let friendly;
-      if(msg.includes('Invalid login') || msg.includes('invalid_credentials')) {
-        friendly = {ar:'بريد أو كلمة مرور غير صحيحة',en:'Wrong email or password',tr:'E-posta veya şifre hatalı'};
-      } else if(msg.includes('Email not confirmed')) {
-        friendly = {ar:'يرجى تأكيد بريدك الإلكتروني أولاً',en:'Please confirm your email first',tr:'Önce e-postanızı doğrulayın'};
-      } else if(msg.includes('Too many')) {
-        friendly = {ar:'محاولات كثيرة، انتظر قليلاً',en:'Too many attempts, wait a moment',tr:'Çok fazla deneme, bekleyin'};
-      } else {
-        friendly = {ar:'خطأ في تسجيل الدخول',en:'Login failed',tr:'Giriş başarısız'};
-      }
+      const m = error.message || '';
+      const friendly =
+        m.includes('invalid_credentials') || m.includes('Invalid login')
+          ? {ar:'بريد أو كلمة مرور غير صحيحة',en:'Wrong email or password',tr:'Hatalı bilgiler'}
+        : m.includes('Email not confirmed')
+          ? {ar:'تأكيد البريد الإلكتروني مطلوب',en:'Please confirm your email first',tr:'E-postanızı onaylayın'}
+        : m.includes('Too many')
+          ? {ar:'محاولات كثيرة، انتظر قليلاً',en:'Too many attempts, please wait',tr:'Çok fazla deneme'}
+        : {ar:'فشل تسجيل الدخول',en:'Login failed, try again',tr:'Giriş başarısız'};
       showErr(errEl, friendly);
-      setBtn({ar:'دخول',en:'Sign In',tr:'Giriş'}[lang], false);
+      if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
+      _authHandled = false;
       return;
     }
 
+    // ── 2. جلب الـ profile ──
     currentUser = data.user;
-    setBtn({ar:'⏳ جارٍ التحميل...',en:'⏳ Loading...',tr:'⏳ Yükleniyor...'}[lang], true);
-
-    await fetchProfile(5, 800);
+    if(btn) { btn.textContent = '⏳ ...'; btn.disabled = true; }
+    await fetchProfile(8, 800);
 
     if(!userProfile) {
-      showErr(errEl,{ar:'لم يتم العثور على بيانات الحساب، تواصل مع الدعم',en:'Account data not found, contact support',tr:'Hesap verisi bulunamadı'});
-      setBtn({ar:'دخول',en:'Sign In',tr:'Giriş'}[lang], false);
+      showErr(errEl, {ar:'بيانات الحساب غير موجودة، تواصل مع الدعم',en:'Account not found, contact support',tr:'Hesap bulunamadı'});
+      if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
       _authHandled = false;
       await db.auth.signOut();
       return;
     }
 
+    // ── 3. نجاح ──
     _authHandled = false;
+    if(btn) { btn.textContent = '✅'; btn.disabled = true; }
+    await new Promise(r => setTimeout(r, 400));
     closeModal('login');
     afterLogin();
 
   } catch(e) {
     _authHandled = false;
-    setBtn({ar:'دخول',en:'Sign In',tr:'Giriş'}[lang], false);
-    showErr(errEl,{ar:'تحقق من اتصال الإنترنت وحاول مجدداً',en:'Check your internet and try again',tr:'İnternet bağlantısını kontrol edin'});
+    if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
+    showErr(errEl, {ar:'تحقق من الإنترنت وأعد المحاولة',en:'Check internet and try again',tr:'İnternet bağlantısını kontrol edin'});
   }
 }
 
@@ -1120,6 +1120,7 @@ async function doRegister() {
   const ref   = document.getElementById('reg-ref').value.trim().toUpperCase();
   const terms = document.getElementById('reg-terms').checked;
   const errEl = document.getElementById('reg-err');
+  const btn   = document.getElementById('reg-btn-txt');
   errEl.style.display = 'none';
 
   // ── Validation ──
@@ -1136,69 +1137,66 @@ async function doRegister() {
     showErr(errEl,{ar:'يجب الموافقة على الشروط',en:'Must agree to terms',tr:'Şartları kabul edin'}); return;
   }
 
-  const btn = document.getElementById('reg-btn-txt');
-  const setBtn = (txt, disabled) => { if(btn){btn.textContent=txt;btn.disabled=disabled;} };
-  setBtn('⏳ ...', true);
-  _authHandled = true; // نمنع onAuthStateChange من التدخل أثناء التسجيل
+  if(btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  _authHandled = true;
 
   try {
-    const {data, error} = await db.auth.signUp({
-      email, password: pass,
+    // ── 1. إنشاء الحساب ──
+    const { data, error } = await db.auth.signUp({
+      email,
+      password: pass,
       options: { data: { name, ref_code: ref || null } }
     });
 
     if(error) {
-      // ترجمة أشهر أخطاء Supabase
-      const msg = error.message || '';
-      let friendly;
-      if(msg.includes('already registered') || msg.includes('already exists')) {
-        friendly = {ar:'هذا البريد مسجّل من قبل',en:'Email already registered',tr:'E-posta zaten kayıtlı'};
-      } else if(msg.includes('invalid') && msg.includes('email')) {
-        friendly = {ar:'بريد إلكتروني غير صحيح',en:'Invalid email address',tr:'Geçersiz e-posta'};
-      } else if(msg.includes('password')) {
-        friendly = {ar:'كلمة المرور ضعيفة جداً',en:'Password too weak',tr:'Şifre çok zayıf'};
-      } else {
-        friendly = {ar:'خطأ: '+msg, en:'Error: '+msg, tr:'Hata: '+msg};
-      }
+      const m = error.message || '';
+      const friendly =
+        m.includes('already registered') || m.includes('already exists') || m.includes('User already registered')
+          ? {ar:'هذا البريد مسجّل من قبل',en:'Email already registered',tr:'E-posta zaten kayıtlı'}
+        : m.includes('password')
+          ? {ar:'كلمة المرور ضعيفة جداً',en:'Password is too weak',tr:'Şifre çok zayıf'}
+        : {ar:'خطأ: ' + m, en:'Error: ' + m, tr:'Hata: ' + m};
       showErr(errEl, friendly);
-      setBtn({ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang], false);
+      if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
       _authHandled = false;
       return;
     }
 
     currentUser = data.user;
+    if(btn) { btn.textContent = '⏳ ...'; btn.disabled = true; }
 
-    // ── انتظار الـ trigger يعمل الـ profile (بـ polling ذكي) ──
-    setBtn({ar:'⏳ جارٍ إعداد حسابك...',en:'⏳ Setting up your account...',tr:'⏳ Hesabınız hazırlanıyor...'}[lang], true);
-    await fetchProfile(8, 1000); // 8 محاولات، كل 1 ثانية
+    // ── 2. انتظار الـ trigger يعمل الـ profile ──
+    await fetchProfile(10, 1000);
 
-    if(!userProfile) {
-      // Profile مش اتعمل — نعمله يدوياً كـ fallback
+    // ── 3. Fallback: لو الـ trigger اتأخر، نعمل الـ profile يدوياً ──
+    if(!userProfile && currentUser) {
       const refCode = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
       const memo    = Math.floor(100000 + Math.random()*900000).toString();
-      const {data: newProfile} = await db.from('users').insert({
+      const { data: newP, error: insertErr } = await db.from('users').insert({
         auth_id: currentUser.id,
-        name, email,
+        name,
+        email,
         ref_code: refCode,
         referred_by: ref || null,
         memo
       }).select().single();
-      if(newProfile) userProfile = newProfile;
+      if(newP) userProfile = newP;
     }
 
-    setBtn({ar:'✅ تم إنشاء الحساب',en:'✅ Account Created',tr:'✅ Hesap Oluşturuldu'}[lang], true);
-    await new Promise(r=>setTimeout(r,600));
-
+    // ── 4. نجاح ──
     _authHandled = false;
+    if(btn) { btn.textContent = '✅'; btn.disabled = true; }
+    await new Promise(r => setTimeout(r, 500));
     closeModal('register');
     afterLogin();
 
   } catch(e) {
     _authHandled = false;
-    setBtn({ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang], false);
-    showErr(errEl,{ar:'تحقق من اتصال الإنترنت وحاول مجدداً',en:'Check your internet and try again',tr:'İnternet bağlantısını kontrol edin'});
+    if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
+    showErr(errEl, {ar:'تحقق من الإنترنت وأعد المحاولة',en:'Check internet and try again',tr:'İnternet bağlantısını kontrol edin'});
   }
 }
+
 
 async function doLogout() {
   _authHandled = true; // نتعامل مع الخروج هنا
@@ -1216,15 +1214,14 @@ async function doLogout() {
   showToast({ar:'تم تسجيل الخروج بنجاح',en:'Logged out successfully',tr:'Başarıyla çıkış yapıldı'}[lang]);
 }
 
-async function fetchProfile(retries = 6, delay = 900) {
+async function fetchProfile(retries = 10, delay = 1000) {
   if(!currentUser) return;
   for(let i = 0; i < retries; i++) {
     try {
-      const {data, error} = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
-      if(data) { userProfile = data; return; }
-    } catch(e) {}
-    // انتظر وجرب تاني — الـ trigger بيأخد وقت أحياناً
-    if(i < retries - 1) await new Promise(r => setTimeout(r, delay));
+      const res = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
+      if(res && res.data) { userProfile = res.data; return; }
+    } catch(e) { /* retry */ }
+    await new Promise(r => setTimeout(r, delay));
   }
 }
 
