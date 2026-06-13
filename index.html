@@ -1261,8 +1261,9 @@ function afterLogin() {
 
   // الـ lang buttons — تأكد إن الـ EN محدد
   document.querySelectorAll('.lb').forEach(b=>b.classList.remove('on'));
-  const activeLb = document.querySelector('.lb[onclick="setLang(''+lang+'')"]');
-  if(activeLb) activeLb.classList.add('on');
+  document.querySelectorAll('.lb').forEach(b => {
+    if(b.getAttribute('onclick') === "setLang('"+lang+"')") b.classList.add('on');
+  });
 
   showToast({
     ar: 'مرحباً ' + (userProfile?.name||'') + ' 👋',
