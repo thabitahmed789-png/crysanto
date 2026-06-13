@@ -899,6 +899,15 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
 </div>
 
 <script>
+// Global error handler — يمنع خطأ واحد من إيقاف كل JS
+window.addEventListener('error', function(e){
+  console.error('JS Error:', e.message, 'at', e.filename, e.lineno);
+});
+window.addEventListener('unhandledrejection', function(e){
+  console.error('Unhandled Promise:', e.reason);
+  e.preventDefault();
+});
+
 const SUPA_URL = 'https://pxcnolevnhbxmfarivon.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4Y25vbGV2bmhieG1mYXJpdm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTk3NzksImV4cCI6MjA5NTQ5NTc3OX0.Uj9hytWXYZupPDUSj3SaOWKLA6lOaZlVCKuywCfU5b8';
 const { createClient } = supabase;
@@ -1010,22 +1019,23 @@ const features = {
 
 // ── NAVIGATION ──
 function showPage(id, el) {
-  if (PROTECTED.includes(id) && !isLoggedIn) { pendingPage={id,el}; openModal('login'); return; }
+  if(PROTECTED.includes(id) && !isLoggedIn) { pendingPage={id,el}; openModal('login'); return; }
   pendingPage = null;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg = document.getElementById('page-'+id);
-  if (pg) pg.classList.add('active');
-  document.querySelectorAll('.nav-links a').forEach(a=>a.classList.remove('active'));
-  if (el) el.classList.add('active');
-  window.scrollTo(0,0);
-  if (id==='dashboard' && userProfile) loadDashboard();
-  if (id==='referral' && userProfile) loadReferral();
-  if (id==='deposit' && userProfile) { const m=document.getElementById('user-memo'); if(m) m.textContent=userProfile.memo||'---'; }
+  if(pg) pg.classList.add('active');
+  document.querySelectorAll('.nav-links a, .mobile-menu a').forEach(a=>a.classList.remove('active'));
+  if(el && el.classList) el.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='dashboard' && userProfile) loadDashboard();
+  if(id==='referral'  && userProfile) loadReferral();
+  if(id==='deposit'   && userProfile) { const m=document.getElementById('user-memo'); if(m) m.textContent=userProfile.memo||'---'; }
 }
 
-function openModal(type) { document.getElementById('modal-'+type).classList.add('open'); }
+function openModal(type) { const m=document.getElementById('modal-'+type); if(m) m.classList.add('open'); }
 function closeModal(type) {
-  document.getElementById('modal-'+type).classList.remove('open');
+  const modal = document.getElementById('modal-'+type);
+  if(modal) modal.classList.remove('open');
   const e = document.getElementById(type==='login'?'login-err':type==='register'?'reg-err':'kyc-upload-err');
   if(e) e.style.display='none';
 }
@@ -1546,7 +1556,7 @@ function buildFaq(){
   document.getElementById('faq-list').innerHTML = data.map(f=>'<div class="faq-item" onclick="this.classList.toggle(\'open\')"><div class="faq-q">'+f.q+'<span class="faq-arrow">▼</span></div><div class="faq-a">'+f.a+'</div></div>').join('');
 }
 function buildFeatures(){document.getElementById('features-grid').innerHTML=(features[lang]||features.ar).map(f=>'<div style="background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:24px;transition:.3s" onmouseover="this.style.borderColor=\'var(--gold)\';this.style.transform=\'translateY(-3px)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.transform=\'\'"><div style="font-size:28px;margin-bottom:12px">'+f.icon+'</div><h4 style="font-size:14px;font-weight:700;margin-bottom:6px">'+f.t+'</h4><p style="font-size:12px;color:var(--muted);line-height:1.8">'+f.d+'</p></div>').join('');}
-function buildPlans(){
+function buildPlans(){ const _bp=document.getElementById('plans-grid'); if(!_bp) return;
   const pl=[
     {name:{ar:'الباقة الأساسية',en:'Starter Plan',tr:'Başlangıç'},roi:'2.5',dur:{ar:'30 يوم · من $100',en:'30 days · Min $100',tr:'30 gün · Min $100'},feats:{ar:['ربح يومي مضمون','سحب فوري','دعم 24/7'],en:['Daily profit','Instant withdrawal','24/7 Support'],tr:['Günlük kar','Anında çekim','7/24 Destek']}},
     {name:{ar:'الباقة الذهبية',en:'Gold Plan',tr:'Altın Planı'},roi:'4.8',featured:true,dur:{ar:'60 يوم · من $500',en:'60 days · Min $500',tr:'60 gün · Min $500'},feats:{ar:['ربح يومي مضمون','سحب فوري','مدير حساب خاص','تقارير أسبوعية'],en:['Daily profit','Instant withdrawal','Account manager','Weekly reports'],tr:['Günlük kar','Anında çekim','Hesap yöneticisi','Haftalık raporlar']}},
@@ -1615,12 +1625,9 @@ document.addEventListener('click',function(e){
 
 // ── INIT ──
 function init(){
-  // ── تطبيق اللغة فوراً قبل أي render ──
-  // بدل ما نكتب النص بالعربي في HTML ثم نترجم، نطبق اللغة أول حاجة
   setLang(lang);
   buildTicker();buildMarkets();buildLivePrices();buildFaq();buildFeatures();buildPlans();calcProfit();
   setInterval(updatePrices,5000);
-  // Animate live stats
   setInterval(()=>{
     const v1=document.getElementById('ls1v');
     const v2=document.getElementById('ls2v');
@@ -1628,7 +1635,7 @@ function init(){
     if(v2){const base=284320+Math.floor(Math.random()*5000);v2.textContent='$'+base.toLocaleString();}
   },4000);
 }
-init();
+document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
