@@ -1038,7 +1038,7 @@ function showPage(id, el) {
   window.scrollTo({top:0,behavior:'smooth'});
   if(id==='dashboard' && userProfile) loadDashboard();
   if(id==='referral'  && userProfile) loadReferral();
-  if(id==='deposit'   && userProfile) { const m=document.getElementById('user-memo'); if(m) m.textContent=userProfile.memo||'---'; }
+  if(id==='deposit'   && userProfile) { const m=document.getElementById('user-memo'); if(m) m.textContent=userProfile.memo||userProfile.ref_code||'---'; }
 }
 
 function openModal(type) { const m=document.getElementById('modal-'+type); if(m) m.classList.add('open'); }
@@ -1114,13 +1114,14 @@ async function doLogin() {
     if(!userProfile) {
       const userName = currentUser.user_metadata?.name || currentUser.email.split('@')[0];
       const refCode  = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
-      const memo     = Math.floor(100000 + Math.random()*900000).toString();
       const { data: newP } = await db.from('users').insert({
         auth_id:    currentUser.id,
         name:       userName,
         email:      currentUser.email,
         ref_code:   refCode,
-        memo:       memo
+        balance:    0,
+        status:     'active',
+        kyc_status: 'none'
       }).select().single();
       if(newP) userProfile = newP;
     }
@@ -1196,6 +1197,18 @@ async function doRegister() {
     }
 
     currentUser = data.user;
+
+    // ── تحقق من Email Confirmation ──
+    // لو Supabase عنده email confirmation مفعّل، session هتكون null
+    if(!data.session) {
+      // المستخدم محتاج يأكد إيميله
+      _authHandled = false;
+      if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
+      closeModal('register');
+      showToast({ar:'✅ تم إنشاء الحساب! تحقق من بريدك لتأكيد الحساب',en:'✅ Account created! Check your email to confirm',tr:'✅ Hesap oluşturuldu! E-postanızı kontrol edin'}[lang], 6000);
+      return;
+    }
+
     if(btn) { btn.textContent = '⏳ ...'; btn.disabled = true; }
 
     // ── 2. انتظار الـ trigger يعمل الـ profile ──
@@ -1204,14 +1217,15 @@ async function doRegister() {
     // ── 3. Fallback: لو الـ trigger اتأخر، نعمل الـ profile يدوياً ──
     if(!userProfile && currentUser) {
       const refCode = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
-      const memo    = Math.floor(100000 + Math.random()*900000).toString();
-      const { data: newP, error: insertErr } = await db.from('users').insert({
-        auth_id: currentUser.id,
+      const { data: newP } = await db.from('users').insert({
+        auth_id:      currentUser.id,
         name,
         email,
-        ref_code: refCode,
-        referred_by: ref || null,
-        memo
+        ref_code:     refCode,
+        referred_by:  ref || null,
+        balance:      0,
+        status:       'active',
+        kyc_status:   'none'
       }).select().single();
       if(newP) userProfile = newP;
     }
@@ -1248,29 +1262,33 @@ async function doLogout() {
 }
 
 async function fetchProfile(retries = 10, delay = 1000) {
-  if(!currentUser) return;
+  if(!currentUser) { console.warn('fetchProfile: no currentUser'); return; }
+  console.log('fetchProfile: starting for', currentUser.email);
   for(let i = 0; i < retries; i++) {
     try {
-      // جرب بالـ auth_id أولاً
       const res = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
+      console.log('fetchProfile attempt', i+1, ':', res.data ? 'FOUND' : 'not found', res.error ? '| error: '+res.error.message : '');
       if(res && res.data) { userProfile = res.data; return; }
 
-      // لو مش لاقيه بالـ auth_id، جرب بالـ email
-      if(!res.data && currentUser.email) {
+      // لو في error من RLS أو غيره، اطبعه
+      if(res.error) console.error('fetchProfile error:', res.error);
+
+      // جرب بالـ email كـ fallback
+      if(currentUser.email) {
         const res2 = await db.from('users').select('*').eq('email', currentUser.email).maybeSingle();
+        console.log('fetchProfile by email:', res2.data ? 'FOUND' : 'not found', res2.error ? '| error: '+res2.error.message : '');
         if(res2 && res2.data) {
-          // حدّث الـ auth_id لو ناقص
           if(!res2.data.auth_id) {
             await db.from('users').update({auth_id: currentUser.id}).eq('id', res2.data.id);
-            res2.data.auth_id = currentUser.id;
           }
           userProfile = res2.data;
           return;
         }
       }
-    } catch(e) { /* retry */ }
+    } catch(e) { console.error('fetchProfile exception:', e); }
     if(i < retries - 1) await new Promise(r => setTimeout(r, delay));
   }
+  console.error('fetchProfile: FAILED after', retries, 'attempts');
 }
 
 function afterLogin() {
@@ -1293,7 +1311,7 @@ function afterLogin() {
     const r  = document.getElementById('ref-link-txt');
     if(av) av.textContent = (userProfile.name||'?')[0].toUpperCase();
     if(nm) nm.textContent = (userProfile.name||'').split(' ')[0];
-    if(m)  m.textContent  = userProfile.memo || '---';
+    if(m)  m.textContent  = userProfile.memo || userProfile.ref_code || '---';
     if(r)  r.textContent  = 'https://crysanto.io/ref/' + (userProfile.ref_code || '---');
   }
 
@@ -1323,7 +1341,7 @@ async function loadDashboard() {
 
   // ── بيانات من الـ profile ──
   document.getElementById('d-bal').textContent     = '$'+(userProfile.balance||0).toLocaleString();
-  document.getElementById('d-profit').textContent  = '$'+(userProfile.profit||0).toLocaleString();
+  document.getElementById('d-profit').textContent  = '$'+(userProfile.total_profit||0).toLocaleString();
 
   // invested و ref_earnings بنحسبهم من الـ investments table
   try {
@@ -1367,7 +1385,7 @@ async function loadDashboard() {
 
     // إجمالي الإحالة من ref_count في profile
     const d_ref = document.getElementById('d-ref-earn');
-    if(d_ref) d_ref.textContent = '$'+(userProfile.profit||0).toLocaleString();
+    if(d_ref) d_ref.textContent = '$'+(userProfile.ref_earnings||0).toLocaleString();
 
   } catch(e) { console.error('loadDashboard error', e); }
 }
