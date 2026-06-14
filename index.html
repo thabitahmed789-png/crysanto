@@ -1077,16 +1077,15 @@ async function doLogin() {
   errEl.style.display = 'none';
 
   if(!email || !pass) {
-    showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'});
-    return;
+    showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'}); return;
   }
 
-  // ── تعطيل الزر ──
   if(btn) { btn.textContent = '⏳'; btn.disabled = true; }
   _authHandled = true;
 
   try {
-    // ── 1. تسجيل الدخول ──
+    // ── STEP 1: تسجيل الدخول ──
+    if(btn) btn.textContent = '1/2 Signing in...';
     const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
 
     if(error) {
@@ -1095,45 +1094,47 @@ async function doLogin() {
         m.includes('invalid_credentials') || m.includes('Invalid login')
           ? {ar:'بريد أو كلمة مرور غير صحيحة',en:'Wrong email or password',tr:'Hatalı bilgiler'}
         : m.includes('Email not confirmed')
-          ? {ar:'تأكيد البريد الإلكتروني مطلوب',en:'Please confirm your email first',tr:'E-postanızı onaylayın'}
-        : m.includes('Too many')
-          ? {ar:'محاولات كثيرة، انتظر قليلاً',en:'Too many attempts, please wait',tr:'Çok fazla deneme'}
-        : {ar:'فشل تسجيل الدخول',en:'Login failed, try again',tr:'Giriş başarısız'};
+          ? {ar:'تأكيد البريد مطلوب أولاً',en:'Please confirm your email first',tr:'E-postanızı onaylayın'}
+        : {ar:'خطأ: '+m, en:'Error: '+m, tr:'Hata: '+m};
       showErr(errEl, friendly);
       if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
       _authHandled = false;
       return;
     }
 
-    // ── 2. جلب الـ profile ──
     currentUser = data.user;
-    if(btn) { btn.textContent = '⏳ ...'; btn.disabled = true; }
-    await fetchProfile(8, 800);
 
-    // ── 3. Fallback: لو الـ profile مش موجود نعمله ──
-    if(!userProfile) {
-      const userName = currentUser.user_metadata?.name || currentUser.email.split('@')[0];
-      const refCode  = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
-      const { data: newP } = await db.from('users').insert({
-        auth_id:    currentUser.id,
-        name:       userName,
-        email:      currentUser.email,
-        ref_code:   refCode,
-        balance:    0,
-        status:     'active',
-        kyc_status: 'none'
-      }).select().single();
-      if(newP) userProfile = newP;
-    }
+    // ── STEP 2: جلب الـ profile ──
+    if(btn) btn.textContent = '2/2 Loading profile...';
+    const { data: prof, error: profErr } = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
 
-    if(!userProfile) {
-      showErr(errEl, {ar:'تعذر تحميل بيانات الحساب',en:'Could not load account data',tr:'Hesap verisi yüklenemedi'});
+    if(profErr) {
+      showErr(errEl, {ar:'خطأ DB: '+profErr.message, en:'DB error: '+profErr.message, tr:'DB hatası: '+profErr.message});
       if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
       _authHandled = false;
       return;
     }
 
-    // ── 4. نجاح ──
+    if(prof) {
+      userProfile = prof;
+    } else {
+      // مفيش profile — نعمله
+      const userName = currentUser.user_metadata?.name || email.split('@')[0];
+      const refCode  = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
+      const { data: newP, error: insErr } = await db.from('users').insert({
+        auth_id: currentUser.id, name: userName, email,
+        ref_code: refCode, balance: 0, status: 'active', kyc_status: 'none'
+      }).select().single();
+
+      if(insErr) {
+        showErr(errEl, {ar:'خطأ الملف الشخصي: '+insErr.message, en:'Profile error: '+insErr.message, tr:'Profil hatası: '+insErr.message});
+        if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
+        _authHandled = false;
+        return;
+      }
+      userProfile = newP;
+    }
+
     _authHandled = false;
     if(btn) { btn.textContent = '✅'; btn.disabled = true; }
     await new Promise(r => setTimeout(r, 400));
@@ -1143,9 +1144,10 @@ async function doLogin() {
   } catch(e) {
     _authHandled = false;
     if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
-    showErr(errEl, {ar:'تحقق من الإنترنت وأعد المحاولة',en:'Check internet and try again',tr:'İnternet bağlantısını kontrol edin'});
+    showErr(errEl, {ar:'خطأ: '+e.message, en:'Error: '+e.message, tr:'Hata: '+e.message});
   }
 }
+
 
 async function doRegister() {
   const name  = document.getElementById('reg-name').value.trim();
@@ -1157,12 +1159,11 @@ async function doRegister() {
   const btn   = document.getElementById('reg-btn-txt');
   errEl.style.display = 'none';
 
-  // ── Validation ──
   if(!name || !email || !pass) {
     showErr(errEl,{ar:'أكمل جميع الحقول',en:'Fill all fields',tr:'Tüm alanları doldurun'}); return;
   }
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    showErr(errEl,{ar:'بريد إلكتروني غير صحيح',en:'Invalid email address',tr:'Geçersiz e-posta'}); return;
+    showErr(errEl,{ar:'بريد إلكتروني غير صحيح',en:'Invalid email',tr:'Geçersiz e-posta'}); return;
   }
   if(pass.length < 8) {
     showErr(errEl,{ar:'كلمة المرور 8 أحرف على الأقل',en:'Password min 8 chars',tr:'Şifre en az 8 karakter'}); return;
@@ -1175,21 +1176,16 @@ async function doRegister() {
   _authHandled = true;
 
   try {
-    // ── 1. إنشاء الحساب ──
-    const { data, error } = await db.auth.signUp({
-      email,
-      password: pass,
-      options: { data: { name, ref_code: ref || null } }
-    });
+    // ── STEP 1: إنشاء الحساب في Auth ──
+    if(btn) btn.textContent = '1/3 Creating auth...';
+    const { data, error } = await db.auth.signUp({ email, password: pass, options: { data: { name, ref_code: ref||null } } });
 
     if(error) {
       const m = error.message || '';
       const friendly =
         m.includes('already registered') || m.includes('already exists') || m.includes('User already registered')
           ? {ar:'هذا البريد مسجّل من قبل',en:'Email already registered',tr:'E-posta zaten kayıtlı'}
-        : m.includes('password')
-          ? {ar:'كلمة المرور ضعيفة جداً',en:'Password is too weak',tr:'Şifre çok zayıf'}
-        : {ar:'خطأ: ' + m, en:'Error: ' + m, tr:'Hata: ' + m};
+        : {ar:'خطأ Auth: '+m, en:'Auth error: '+m, tr:'Auth hatası: '+m};
       showErr(errEl, friendly);
       if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
       _authHandled = false;
@@ -1198,49 +1194,59 @@ async function doRegister() {
 
     currentUser = data.user;
 
-    // ── تحقق من Email Confirmation ──
-    // لو Supabase عنده email confirmation مفعّل، session هتكون null
+    // لو email confirmation مطلوب
     if(!data.session) {
-      // المستخدم محتاج يأكد إيميله
       _authHandled = false;
       if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
       closeModal('register');
-      showToast({ar:'✅ تم إنشاء الحساب! تحقق من بريدك لتأكيد الحساب',en:'✅ Account created! Check your email to confirm',tr:'✅ Hesap oluşturuldu! E-postanızı kontrol edin'}[lang], 6000);
+      showToast({ar:'✅ تحقق من بريدك لتفعيل الحساب',en:'✅ Check your email to activate account',tr:'✅ E-postanızı kontrol edin'}[lang], 6000);
       return;
     }
 
-    if(btn) { btn.textContent = '⏳ ...'; btn.disabled = true; }
+    // ── STEP 2: انتظار الـ profile ──
+    if(btn) btn.textContent = '2/3 Loading profile...';
+    await new Promise(r => setTimeout(r, 2000)); // انتظر الـ trigger
+    const { data: prof, error: profErr } = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
 
-    // ── 2. انتظار الـ trigger يعمل الـ profile ──
-    await fetchProfile(10, 1000);
-
-    // ── 3. Fallback: لو الـ trigger اتأخر، نعمل الـ profile يدوياً ──
-    if(!userProfile && currentUser) {
-      const refCode = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
-      const { data: newP } = await db.from('users').insert({
-        auth_id:      currentUser.id,
-        name,
-        email,
-        ref_code:     refCode,
-        referred_by:  ref || null,
-        balance:      0,
-        status:       'active',
-        kyc_status:   'none'
-      }).select().single();
-      if(newP) userProfile = newP;
+    if(profErr) {
+      showErr(errEl, {ar:'خطأ DB: '+profErr.message, en:'DB error: '+profErr.message, tr:'DB hatası: '+profErr.message});
+      if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
+      _authHandled = false;
+      return;
     }
 
-    // ── 4. نجاح ──
+    if(prof) {
+      userProfile = prof;
+    } else {
+      // ── STEP 3: Fallback insert ──
+      if(btn) btn.textContent = '3/3 Creating profile...';
+      const refCode = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
+      const { data: newP, error: insErr } = await db.from('users').insert({
+        auth_id: currentUser.id,
+        name, email, ref_code: refCode,
+        referred_by: ref || null,
+        balance: 0, status: 'active', kyc_status: 'none'
+      }).select().single();
+
+      if(insErr) {
+        showErr(errEl, {ar:'خطأ إنشاء الملف: '+insErr.message, en:'Profile error: '+insErr.message, tr:'Profil hatası: '+insErr.message});
+        if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
+        _authHandled = false;
+        return;
+      }
+      userProfile = newP;
+    }
+
     _authHandled = false;
     if(btn) { btn.textContent = '✅'; btn.disabled = true; }
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 400));
     closeModal('register');
     afterLogin();
 
   } catch(e) {
     _authHandled = false;
     if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
-    showErr(errEl, {ar:'تحقق من الإنترنت وأعد المحاولة',en:'Check internet and try again',tr:'İnternet bağlantısını kontrol edin'});
+    showErr(errEl, {ar:'خطأ غير متوقع: '+e.message, en:'Unexpected error: '+e.message, tr:'Beklenmedik hata: '+e.message});
   }
 }
 
