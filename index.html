@@ -1194,6 +1194,11 @@ async function doRegister() {
 
     currentUser = data.user;
 
+    // تأكد إن الـ session اتسجلت في الـ client
+    if(data.session) {
+      await db.auth.setSession(data.session);
+    }
+
     // لو email confirmation مطلوب
     if(!data.session) {
       _authHandled = false;
@@ -1205,8 +1210,15 @@ async function doRegister() {
 
     // ── STEP 2: انتظار الـ profile ──
     if(btn) btn.textContent = '2/3 Loading profile...';
-    await new Promise(r => setTimeout(r, 2000)); // انتظر الـ trigger
-    const { data: prof, error: profErr } = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
+    // انتظر الـ trigger + الـ session تتسجل
+    let prof = null, profErr = null;
+    for(let attempt = 0; attempt < 8; attempt++) {
+      await new Promise(r => setTimeout(r, 1500));
+      const res = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
+      profErr = res.error;
+      if(res.data) { prof = res.data; break; }
+      console.log('Profile attempt', attempt+1, '- error:', res.error?.message, '- data:', res.data);
+    }
 
     if(profErr) {
       showErr(errEl, {ar:'خطأ DB: '+profErr.message, en:'DB error: '+profErr.message, tr:'DB hatası: '+profErr.message});
