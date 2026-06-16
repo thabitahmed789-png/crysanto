@@ -1193,11 +1193,7 @@ async function doRegister() {
     }
 
     currentUser = data.user;
-
-    // تأكد إن الـ session اتسجلت في الـ client
-    if(data.session) {
-      await db.auth.setSession(data.session);
-    }
+    await new Promise(r => setTimeout(r, 50)); // yield للـ UI
 
     // لو email confirmation مطلوب
     if(!data.session) {
@@ -1209,7 +1205,7 @@ async function doRegister() {
     }
 
     // ── STEP 2: انتظار الـ profile ──
-    if(btn) btn.textContent = '2/3 Loading profile...';
+    if(btn) { btn.textContent = '2/3 Loading profile...'; btn.disabled = true; }
     // انتظر الـ trigger + الـ session تتسجل
     let prof = null, profErr = null;
     for(let attempt = 0; attempt < 8; attempt++) {
