@@ -878,7 +878,7 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
 </div>
 
 <!-- KYC MODAL -->
-<div class="modal-overlay" id="kyc-modal">
+<div class="modal-overlay" id="modal-kyc">
   <div class="modal" style="max-width:500px">
     <button class="modal-close" onclick="closeModal('kyc')">✕</button>
     <h3 style="font-size:18px;font-weight:800;margin-bottom:20px">🪪 <span id="kyc-modal-title" data-ar="رفع مستندات KYC" data-en="Upload KYC Documents" data-tr="KYC Belgeleri Yükle">Upload KYC Documents</span></h3>
@@ -937,6 +937,7 @@ let _authHandled = false; // منع تعارض login/register مع onAuthStateCh
 const PROTECTED = ['dashboard','deposit','referral'];
 
 // مراقبة الجلسة — الريفريش + الدخول التلقائي
+let authReady = false; // false لحد ما نتأكد فعليًا فيه جلسة محفوظة ولا لأ (بيحل مشكلة الخروج التلقائي لو ضغط المستخدم على صفحة محمية بسرعة قبل ما نتأكد)
 db.auth.onAuthStateChange(async (event, session) => {
   if(_authHandled) return; // doLogin / doRegister شغّالين
 
@@ -953,6 +954,18 @@ db.auth.onAuthStateChange(async (event, session) => {
     const bR=document.getElementById('btnRegister'); if(bR) bR.style.display='';
     const uM=document.getElementById('user-menu'); if(uM) uM.style.display='none';
     showPage('home', null);
+  }
+
+  if(event === 'INITIAL_SESSION') {
+    authReady = true;
+    // لو المستخدم كان ضغط على صفحة محمية (زي تحديد باقة استثمار) قبل ما نتأكد من الجلسة، نكمله دلوقتي
+    if(pendingPage && pendingPage.id && pendingPage.id !== 'login') {
+      const pp = pendingPage; pendingPage = null;
+      if(isLoggedIn) {
+        if(pp.id === 'deposit' && pp.planRate) goToDeposit(pp.planRate);
+        else showPage(pp.id, pp.el);
+      }
+    }
   }
 });
 
@@ -1039,7 +1052,15 @@ const features = {
 
 // ── NAVIGATION ──
 function showPage(id, el) {
-  if(PROTECTED.includes(id) && !isLoggedIn) { pendingPage={id,el}; openModal('login'); return; }
+  if(PROTECTED.includes(id) && !isLoggedIn) {
+    if(!authReady) {
+      // لسه بنتأكد فيه جلسة محفوظة ولا لأ — منستعجلش بإظهار صفحة تسجيل الدخول
+      pendingPage = {id, el};
+      showToast(lang==='ar'?'⏳ لحظة...':'⏳ One moment...');
+      return;
+    }
+    pendingPage={id,el}; openModal('login'); return;
+  }
   pendingPage = null;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg = document.getElementById('page-'+id);
@@ -1604,8 +1625,13 @@ function copyRef() {
 
 // ── PLAN BUTTONS ──
 function handlePlanClick(rate) {
-  if(isLoggedIn) goToDeposit(rate);
-  else { pendingPage={id:'deposit',el:null,planRate:rate}; openModal('login'); }
+  if(isLoggedIn) { goToDeposit(rate); return; }
+  if(!authReady) {
+    pendingPage={id:'deposit',el:null,planRate:rate};
+    showToast(lang==='ar'?'⏳ لحظة...':'⏳ One moment...');
+    return;
+  }
+  pendingPage={id:'deposit',el:null,planRate:rate}; openModal('login');
 }
 
 function goToDeposit(rate) {
