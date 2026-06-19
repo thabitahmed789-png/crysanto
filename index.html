@@ -920,6 +920,17 @@ const db = createClient(SUPA_URL, SUPA_KEY, {
   }
 });
 
+// ── Timeout helper: لو أي نداء Supabase علّق، نوقفه بعد 15 ثانية برسالة واضحة ──
+function withTimeout(promise, ms = 15000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
+  ]);
+}
+function timeoutMsg(l) {
+  return {ar:'انتهت مهلة الاتصال — تحقق من الإنترنت وحاول تاني', en:'Connection timed out — check your internet and try again', tr:'Bağlantı zaman aşımına uğradı — internetinizi kontrol edin'}[l] || 'Connection timed out — try again';
+}
+
 let lang = localStorage.getItem('crysanto_lang') || "en";
 let isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
 let _authHandled = false; // منع تعارض login/register مع onAuthStateChange
@@ -1086,7 +1097,7 @@ async function doLogin() {
   try {
     // ── STEP 1: تسجيل الدخول ──
     if(btn) btn.textContent = '1/2 Signing in...';
-    const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+    const { data, error } = await withTimeout(db.auth.signInWithPassword({ email, password: pass }));
 
     if(error) {
       const m = error.message || '';
@@ -1107,7 +1118,7 @@ async function doLogin() {
     // ── STEP 2: جلب الـ profile ──
     if(btn) btn.textContent = '2/2 Loading profile...';
     await new Promise(r => setTimeout(r, 500));
-    const { data: prof, error: profErr } = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
+    const { data: prof, error: profErr } = await withTimeout(db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle());
 
     if(profErr) {
       showErr(errEl, {ar:'خطأ DB: '+profErr.message, en:'DB error: '+profErr.message, tr:'DB hatası: '+profErr.message});
@@ -1122,10 +1133,10 @@ async function doLogin() {
       // مفيش profile — نعمله
       const userName = currentUser.user_metadata?.name || email.split('@')[0];
       const refCode  = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
-      const { data: newP, error: insErr } = await db.from('users').insert({
+      const { data: newP, error: insErr } = await withTimeout(db.from('users').insert({
         auth_id: currentUser.id, name: userName, email,
         ref_code: refCode, balance: 0, status: 'active', kyc_status: 'none'
-      }).select().single();
+      }).select().single());
 
       if(insErr) {
         showErr(errEl, {ar:'خطأ الملف الشخصي: '+insErr.message, en:'Profile error: '+insErr.message, tr:'Profil hatası: '+insErr.message});
@@ -1145,7 +1156,7 @@ async function doLogin() {
   } catch(e) {
     _authHandled = false;
     if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
-    showErr(errEl, {ar:'خطأ: '+e.message, en:'Error: '+e.message, tr:'Hata: '+e.message});
+    showErr(errEl, e.message === 'TIMEOUT' ? {ar:timeoutMsg('ar'),en:timeoutMsg('en'),tr:timeoutMsg('tr')} : {ar:'خطأ: '+e.message, en:'Error: '+e.message, tr:'Hata: '+e.message});
   }
 }
 
@@ -1179,7 +1190,7 @@ async function doRegister() {
   try {
     // ── STEP 1: إنشاء الحساب في Auth ──
     if(btn) btn.textContent = '1/3 Creating auth...';
-    const { data, error } = await db.auth.signUp({ email, password: pass, options: { data: { name, ref_code: ref||null } } });
+    const { data, error } = await withTimeout(db.auth.signUp({ email, password: pass, options: { data: { name, ref_code: ref||null } } }));
 
     if(error) {
       const m = error.message || '';
@@ -1210,7 +1221,7 @@ async function doRegister() {
     await new Promise(r => setTimeout(r, 1500)); // انتظر الـ trigger
     let prof = null, profErr = null;
     for(let attempt = 0; attempt < 5; attempt++) {
-      const res = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
+      const res = await withTimeout(db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle());
       profErr = res.error;
       if(res.data) { prof = res.data; break; }
       if(attempt < 4) await new Promise(r => setTimeout(r, 1000));
@@ -1229,12 +1240,12 @@ async function doRegister() {
       // ── STEP 3: Fallback insert ──
       if(btn) btn.textContent = '3/3 Creating profile...';
       const refCode = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
-      const { data: newP, error: insErr } = await db.from('users').insert({
+      const { data: newP, error: insErr } = await withTimeout(db.from('users').insert({
         auth_id: currentUser.id,
         name, email, ref_code: refCode,
         referred_by: ref || null,
         balance: 0, status: 'active', kyc_status: 'none'
-      }).select().single();
+      }).select().single());
 
       if(insErr) {
         showErr(errEl, {ar:'خطأ إنشاء الملف: '+insErr.message, en:'Profile error: '+insErr.message, tr:'Profil hatası: '+insErr.message});
@@ -1254,7 +1265,7 @@ async function doRegister() {
   } catch(e) {
     _authHandled = false;
     if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
-    showErr(errEl, {ar:'خطأ غير متوقع: '+e.message, en:'Unexpected error: '+e.message, tr:'Beklenmedik hata: '+e.message});
+    showErr(errEl, e.message === 'TIMEOUT' ? {ar:timeoutMsg('ar'),en:timeoutMsg('en'),tr:timeoutMsg('tr')} : {ar:'خطأ غير متوقع: '+e.message, en:'Unexpected error: '+e.message, tr:'Beklenmedik hata: '+e.message});
   }
 }
 
@@ -1280,7 +1291,7 @@ async function fetchProfile(retries = 10, delay = 1000) {
   console.log('fetchProfile: starting for', currentUser.email);
   for(let i = 0; i < retries; i++) {
     try {
-      const res = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
+      const res = await withTimeout(db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle(), 10000);
       console.log('fetchProfile attempt', i+1, ':', res.data ? 'FOUND' : 'not found', res.error ? '| error: '+res.error.message : '');
       if(res && res.data) { userProfile = res.data; return; }
 
@@ -1289,7 +1300,7 @@ async function fetchProfile(retries = 10, delay = 1000) {
 
       // جرب بالـ email كـ fallback
       if(currentUser.email) {
-        const res2 = await db.from('users').select('*').eq('email', currentUser.email).maybeSingle();
+        const res2 = await withTimeout(db.from('users').select('*').eq('email', currentUser.email).maybeSingle(), 10000);
         console.log('fetchProfile by email:', res2.data ? 'FOUND' : 'not found', res2.error ? '| error: '+res2.error.message : '');
         if(res2 && res2.data) {
           if(!res2.data.auth_id) {
