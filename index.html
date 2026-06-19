@@ -1106,6 +1106,7 @@ async function doLogin() {
 
     // ── STEP 2: جلب الـ profile ──
     if(btn) btn.textContent = '2/2 Loading profile...';
+    await new Promise(r => setTimeout(r, 500));
     const { data: prof, error: profErr } = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
 
     if(profErr) {
@@ -1204,16 +1205,15 @@ async function doRegister() {
       return;
     }
 
-    // ── STEP 2: انتظار الـ profile ──
+    // ── STEP 2: قراءة الـ profile ──
     if(btn) { btn.textContent = '2/3 Loading profile...'; btn.disabled = true; }
-    // انتظر الـ trigger + الـ session تتسجل
+    await new Promise(r => setTimeout(r, 1500)); // انتظر الـ trigger
     let prof = null, profErr = null;
-    for(let attempt = 0; attempt < 8; attempt++) {
-      await new Promise(r => setTimeout(r, 1500));
+    for(let attempt = 0; attempt < 5; attempt++) {
       const res = await db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle();
       profErr = res.error;
       if(res.data) { prof = res.data; break; }
-      console.log('Profile attempt', attempt+1, '- error:', res.error?.message, '- data:', res.data);
+      if(attempt < 4) await new Promise(r => setTimeout(r, 1000));
     }
 
     if(profErr) {
