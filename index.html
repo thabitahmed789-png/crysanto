@@ -227,6 +227,12 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
 </head>
 <body class="lang-en">
 
+<div id="session-check-overlay" style="position:fixed;inset:0;background:#0b0e17;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+  <div style="width:42px;height:42px;border:3px solid rgba(255,193,7,.25);border-top-color:#ffc107;border-radius:50%;animation:scSpin .8s linear infinite;"></div>
+  <div style="color:#ffc107;font-weight:700;font-size:15px;font-family:inherit;">Crysanto</div>
+</div>
+<style>@keyframes scSpin{to{transform:rotate(360deg)}}</style>
+
 <div class="toast" id="toast"></div>
 
 <nav>
@@ -932,6 +938,8 @@ function timeoutMsg(l) {
 }
 
 let lang = localStorage.getItem('crysanto_lang') || "en";
+// شبكة أمان: لو لأي سبب الـ INITIAL_SESSION ماجتش، منسيبش شاشة التحميل عالقة للأبد
+setTimeout(() => { const ov = document.getElementById('session-check-overlay'); if(ov) ov.style.display = 'none'; }, 6000);
 let isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
 let _authHandled = false; // منع تعارض login/register مع onAuthStateChange
 const PROTECTED = ['dashboard','deposit','referral'];
@@ -958,6 +966,9 @@ db.auth.onAuthStateChange(async (event, session) => {
 
   if(event === 'INITIAL_SESSION') {
     authReady = true;
+    // نشيل شاشة "بنتأكد من حسابك" دلوقتي بعد ما عرفنا فعليًا هل المستخدم داخل أو لأ
+    const ov = document.getElementById('session-check-overlay');
+    if(ov) ov.style.display = 'none';
     // لو المستخدم كان ضغط على صفحة محمية (زي تحديد باقة استثمار) قبل ما نتأكد من الجلسة، نكمله دلوقتي
     if(pendingPage && pendingPage.id && pendingPage.id !== 'login') {
       const pp = pendingPage; pendingPage = null;
