@@ -939,7 +939,7 @@ function timeoutMsg(l) {
 
 let lang = localStorage.getItem('crysanto_lang') || "en";
 // شبكة أمان: لو لأي سبب الـ INITIAL_SESSION ماجتش، منسيبش شاشة التحميل عالقة للأبد
-setTimeout(() => { const ov = document.getElementById('session-check-overlay'); if(ov) ov.style.display = 'none'; }, 6000);
+setTimeout(() => { const ov = document.getElementById('session-check-overlay'); if(ov) ov.style.display = 'none'; }, 25000);
 let isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
 let _authHandled = false; // منع تعارض login/register مع onAuthStateChange
 const PROTECTED = ['dashboard','deposit','referral'];
@@ -953,7 +953,7 @@ db.auth.onAuthStateChange(async (event, session) => {
   // SIGNED_IN = بعد login جديد (عبر onAuthStateChange مش doLogin)
   if((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session && !isLoggedIn) {
     currentUser = session.user;
-    await fetchProfile(8, 800);
+    await fetchProfile(4, 600);
     if(userProfile) afterLogin();
   } else if(event === 'SIGNED_OUT') {
     isLoggedIn = false; currentUser = null; userProfile = null;
@@ -1429,12 +1429,20 @@ async function loadDashboard() {
     const invBox = document.getElementById('d-active-inv');
     if(invBox) {
       if(activeInvs.length) {
-        invBox.innerHTML = '<div class="wallet-list">'+activeInvs.map(inv=>
-          '<div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:var(--gold-dim);color:var(--gold)">💹</div>'+
+        const now = new Date();
+        invBox.innerHTML = '<div class="wallet-list">'+activeInvs.map(inv=>{
+          const start = new Date(inv.started_at);
+          const end   = new Date(inv.ends_at);
+          const totalDays = Math.max(1, Math.round((end-start)/86400000));
+          const dayNum = Math.min(totalDays, Math.floor((now-start)/86400000)+1);
+          const msIntoCurrentDay = (now-start) % 86400000;
+          const msUntilNextProfit = 86400000 - msIntoCurrentDay;
+          const h = Math.floor(msUntilNextProfit/3600000), m = Math.floor((msUntilNextProfit%3600000)/60000);
+          return '<div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:var(--gold-dim);color:var(--gold)">💹</div>'+
           '<div><div class="w-name">'+inv.plan_name+'</div>'+
-          '<div class="w-addr">'+inv.daily_rate+'%/day · '+inv.duration+' days</div></div></div>'+
-          '<div class="w-bal">$'+parseFloat(inv.amount).toLocaleString()+'</div></div>'
-        ).join('')+'</div>';
+          '<div class="w-addr">'+inv.daily_rate+'%/day · '+(lang==='ar'?'اليوم ':'Day ')+dayNum+(lang==='ar'?' من ':'/')+totalDays+' · ⏱ '+h+'h '+m+'m</div></div></div>'+
+          '<div class="w-bal">$'+parseFloat(inv.amount).toLocaleString()+'</div></div>';
+        }).join('')+'</div>';
       } else {
         invBox.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+(lang==='ar'?'لا توجد استثمارات نشطة':'No active investments')+'</div>';
       }
@@ -1493,6 +1501,24 @@ async function loadInvestments() {
       const doneMs  = now - start;
       const pct = Math.min(100, Math.max(0, Math.round((doneMs/totalMs)*100)));
       const statusLabel = {active:lang==='ar'?'نشط':'Active', completed:lang==='ar'?'منتهي':'Completed', cancelled:lang==='ar'?'ملغي':'Cancelled'};
+
+      // حساب اليوم الحالي من إجمالي الأيام + موعد الربح القادم (ربح يومي ثابت كل 24 ساعة من بداية الاستثمار)
+      const totalDays = Math.max(1, Math.round(totalMs / 86400000));
+      const dayNum = Math.min(totalDays, Math.max(0, Math.floor(doneMs / 86400000)) + (inv.status==='active'?1:0));
+      let nextProfitHtml = '';
+      if (inv.status === 'active') {
+        const msSinceStart = now - start;
+        const msIntoCurrentDay = msSinceStart % 86400000;
+        const msUntilNextProfit = 86400000 - msIntoCurrentDay;
+        const nextProfitDate = new Date(now.getTime() + msUntilNextProfit);
+        const h = Math.floor(msUntilNextProfit / 3600000);
+        const m = Math.floor((msUntilNextProfit % 3600000) / 60000);
+        nextProfitHtml = '<div style="font-size:11px;color:var(--gold);margin-top:6px;display:flex;justify-content:space-between">' +
+          '<span>📅 '+(lang==='ar'?'اليوم ':'Day ')+dayNum+(lang==='ar'?' من ':' of ')+totalDays+'</span>' +
+          '<span>⏱ '+(lang==='ar'?'الربح القادم بعد ':'Next profit in ')+h+'h '+m+'m</span>' +
+        '</div>';
+      }
+
       return '<div style="background:var(--dark3);border-radius:10px;padding:14px;margin-bottom:10px;border:1px solid var(--border)">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
           '<span style="font-weight:700">'+inv.plan_name+'</span>'+
@@ -1510,7 +1536,7 @@ async function loadInvestments() {
         '<div style="font-size:11px;color:var(--muted);margin-top:5px;display:flex;justify-content:space-between">'+
           '<span>'+pct+'%</span>'+
           '<span>'+lang==='ar'?'الربح: ':'Profit: '+'$'+parseFloat(inv.profit_earned||0).toFixed(2)+'</span>'+
-        '</div></div>';
+        '</div>'+nextProfitHtml+'</div>';
     }).join('');
   } catch(e){}
 }
