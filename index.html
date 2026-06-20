@@ -1323,7 +1323,7 @@ async function fetchProfile(retries = 10, delay = 1000) {
   console.log('fetchProfile: starting for', currentUser.email);
   for(let i = 0; i < retries; i++) {
     try {
-      const res = await withTimeout(db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle(), 10000);
+      const res = await withTimeout(db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle(), 5000);
       console.log('fetchProfile attempt', i+1, ':', res.data ? 'FOUND' : 'not found', res.error ? '| error: '+res.error.message : '');
       if(res && res.data) { userProfile = res.data; return; }
 
@@ -1332,7 +1332,7 @@ async function fetchProfile(retries = 10, delay = 1000) {
 
       // جرب بالـ email كـ fallback
       if(currentUser.email) {
-        const res2 = await withTimeout(db.from('users').select('*').eq('email', currentUser.email).maybeSingle(), 10000);
+        const res2 = await withTimeout(db.from('users').select('*').eq('email', currentUser.email).maybeSingle(), 5000);
         console.log('fetchProfile by email:', res2.data ? 'FOUND' : 'not found', res2.error ? '| error: '+res2.error.message : '');
         if(res2 && res2.data) {
           if(!res2.data.auth_id) {
