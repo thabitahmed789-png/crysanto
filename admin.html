@@ -1314,13 +1314,15 @@ async function renderKYC(){
     </tbody></table>`;
 }
 async function approveKyc(userId){
-  await sdb.from('users').update({ kyc_status:'verified' }).eq('id', userId);
+  const { error } = await sdb.from('users').update({ kyc_status:'verified' }).eq('id', userId);
+  if (error) { showToast((lang==='ar'?'✗ فشل قبول KYC: ':'✗ Failed to approve KYC: ')+error.message); console.error('approveKyc error:', error); return; }
   await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'✅ تم التحقق من هويتك':'✅ Identity Verified', body: lang==='ar'?'تم قبول مستنداتك بنجاح':'Your documents have been approved', type:'success' });
   showToast(lang==='ar'?'✓ تم قبول KYC':'KYC Approved');
   renderKYC();
 }
 async function rejectKyc(userId){
-  await sdb.from('users').update({ kyc_status:'rejected' }).eq('id', userId);
+  const { error } = await sdb.from('users').update({ kyc_status:'rejected' }).eq('id', userId);
+  if (error) { showToast((lang==='ar'?'✗ فشل رفض KYC: ':'✗ Failed to reject KYC: ')+error.message); console.error('rejectKyc error:', error); return; }
   await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'❌ تم رفض طلب KYC':'❌ KYC Rejected', body: lang==='ar'?'يرجى إعادة رفع المستندات بجودة أفضل':'Please re-upload your documents with better quality', type:'warning' });
   showToast(lang==='ar'?'✗ تم رفض KYC':'KYC Rejected');
   renderKYC();
@@ -2096,20 +2098,24 @@ async function approveDeposit(depositId, userId, amount, email, name) {
   showToast(lang==='ar'?'جارٍ المعالجة...':'Processing...');
 
   // 1. تحديث حالة الإيداع
-  await sdb.from('deposits').update({ status: 'approved' }).eq('id', depositId);
+  const { error: e1 } = await sdb.from('deposits').update({ status: 'approved' }).eq('id', depositId);
+  if (e1) { showToast((lang==='ar'?'✗ فشل تحديث الإيداع: ':'✗ Failed to update deposit: ')+e1.message); console.error('approveDeposit/deposits update error:', e1); return; }
 
   // 2. إضافة المبلغ لرصيد العميل
-  const { data: userData } = await sdb.from('users').select('balance').eq('id', userId).single();
+  const { data: userData, error: e2 } = await sdb.from('users').select('balance').eq('id', userId).single();
+  if (e2) { showToast((lang==='ar'?'✗ فشل قراءة رصيد العميل: ':'✗ Failed to read user balance: ')+e2.message); console.error('approveDeposit/balance read error:', e2); return; }
   const newBalance = (parseFloat(userData?.balance) || 0) + parseFloat(amount);
-  await sdb.from('users').update({ balance: newBalance }).eq('id', userId);
+  const { error: e3 } = await sdb.from('users').update({ balance: newBalance }).eq('id', userId);
+  if (e3) { showToast((lang==='ar'?'✗ فشل تحديث الرصيد: ':'✗ Failed to update balance: ')+e3.message); console.error('approveDeposit/balance update error:', e3); return; }
 
   // 3. إرسال إشعار للعميل في قاعدة البيانات
-  await sdb.from('notifications').insert({
+  const { error: e4 } = await sdb.from('notifications').insert({
     user_id: userId,
     title: lang==='ar' ? '✅ تم قبول إيداعك' : '✅ Deposit Approved',
     body: lang==='ar' ? `تم إضافة $${amount} لرصيدك بنجاح` : `$${amount} has been added to your balance`,
     type: 'success'
   });
+  if (e4) console.error('approveDeposit/notification insert error:', e4); // إشعار فاشل مش لازم يوقف العملية
 
   // 5. إرسال إيميل للعميل عبر Supabase
   await sendEmailNotification(email, name, amount, 'approved');
@@ -2121,7 +2127,8 @@ async function approveDeposit(depositId, userId, amount, email, name) {
 // ── رفض إيداع ──
 async function rejectDeposit(depositId, email, name) {
   const reason = prompt(lang==='ar' ? 'سبب الرفض (اختياري):' : 'Rejection reason (optional):') || '';
-  await sdb.from('deposits').update({ status: 'rejected' }).eq('id', depositId);
+  const { error } = await sdb.from('deposits').update({ status: 'rejected' }).eq('id', depositId);
+  if (error) { showToast((lang==='ar'?'✗ فشل رفض الإيداع: ':'✗ Failed to reject deposit: ')+error.message); console.error('rejectDeposit error:', error); return; }
   await sendEmailNotification(email, name, 0, 'rejected', reason);
   showToast(lang==='ar' ? `✗ تم رفض الإيداع` : `✗ Deposit rejected`);
   await loadRealDeposits();
@@ -2191,18 +2198,23 @@ function renderRealWithdrawals(data) {
 async function approveWithdrawal(wdId, userId, amount, name) {
   const confirmed = confirm(lang==='ar' ? `موافقة على سحب $${amount} لـ ${name}؟` : `Approve $${amount} withdrawal for ${name}?`);
   if (!confirmed) return;
-  await sdb.from('withdrawals').update({ status: 'approved' }).eq('id', wdId);
+  const { error: e1 } = await sdb.from('withdrawals').update({ status: 'approved' }).eq('id', wdId);
+  if (e1) { showToast((lang==='ar'?'✗ فشل تحديث السحب: ':'✗ Failed to update withdrawal: ')+e1.message); console.error('approveWithdrawal/withdrawals update error:', e1); return; }
   // خصم المبلغ من الرصيد
-  const { data: userData } = await sdb.from('users').select('balance').eq('id', userId).single();
+  const { data: userData, error: e2 } = await sdb.from('users').select('balance').eq('id', userId).single();
+  if (e2) { showToast((lang==='ar'?'✗ فشل قراءة رصيد العميل: ':'✗ Failed to read user balance: ')+e2.message); console.error('approveWithdrawal/balance read error:', e2); return; }
   const newBalance = Math.max(0, (parseFloat(userData?.balance)||0) - parseFloat(amount));
-  await sdb.from('users').update({ balance: newBalance }).eq('id', userId);
-  await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'✅ تم قبول طلب السحب':'✅ Withdrawal Approved', body: lang==='ar'?`تم تحويل $${amount} لمحفظتك`:`$${amount} has been sent to your wallet`, type: 'success' });
+  const { error: e3 } = await sdb.from('users').update({ balance: newBalance }).eq('id', userId);
+  if (e3) { showToast((lang==='ar'?'✗ فشل تحديث الرصيد: ':'✗ Failed to update balance: ')+e3.message); console.error('approveWithdrawal/balance update error:', e3); return; }
+  const { error: e4 } = await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'✅ تم قبول طلب السحب':'✅ Withdrawal Approved', body: lang==='ar'?`تم تحويل $${amount} لمحفظتك`:`$${amount} has been sent to your wallet`, type: 'success' });
+  if (e4) console.error('approveWithdrawal/notification insert error:', e4);
   showToast(lang==='ar'?`✓ تم قبول سحب $${amount} لـ ${name}`:`✓ $${amount} withdrawal approved for ${name}`);
   await loadRealWithdrawals();
 }
 
 async function rejectWithdrawal(wdId, userId, amount, name) {
-  await sdb.from('withdrawals').update({ status: 'rejected' }).eq('id', wdId);
+  const { error } = await sdb.from('withdrawals').update({ status: 'rejected' }).eq('id', wdId);
+  if (error) { showToast((lang==='ar'?'✗ فشل رفض السحب: ':'✗ Failed to reject withdrawal: ')+error.message); console.error('rejectWithdrawal error:', error); return; }
   await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'❌ تم رفض طلب السحب':'❌ Withdrawal Rejected', body: lang==='ar'?`تم رفض طلب سحب $${amount}`:`Withdrawal request of $${amount} was rejected`, type: 'warning' });
   showToast(lang==='ar'?`✗ تم رفض السحب`:`✗ Withdrawal rejected`);
   await loadRealWithdrawals();
