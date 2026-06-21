@@ -1610,11 +1610,24 @@ async function submitDeposit() {
   try {
     const activeBtn=document.querySelector('#dw-dep .coin-btn.active');
     const coinKey=activeBtn?activeBtn.getAttribute('onclick').match(/'([^']+)'/)[1]:'USDT-TRC20';
-    await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,hash:hash,status:'pending'});
+
+    // ربط الإيداع بالباقة المختارة فعليًا (لو العميل جاي من صفحة الباقات)
+    let planId = null;
+    if (window.__selectedPlanRate) {
+      const { data: planRow } = await db.from('plans').select('id,min_amount,max_amount').eq('daily_rate', window.__selectedPlanRate).maybeSingle();
+      if (planRow) {
+        if (amount < parseFloat(planRow.min_amount)) { showToast(lang==='ar'?`الحد الأدنى لهذه الباقة $${planRow.min_amount}`:`Minimum for this plan is $${planRow.min_amount}`,'err'); return; }
+        if (planRow.max_amount && amount > parseFloat(planRow.max_amount)) { showToast(lang==='ar'?`الحد الأقصى لهذه الباقة $${planRow.max_amount}`:`Maximum for this plan is $${planRow.max_amount}`,'err'); return; }
+        planId = planRow.id;
+      }
+    }
+
+    await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,hash:hash,status:'pending',plan_id:planId});
     await db.from('notifications').insert({user_id:userProfile.id,title:'📥 '+(lang==='ar'?'تم استلام طلب إيداعك':'Deposit request received'),body:(lang==='ar'?'طلب إيداع $':'Deposit request $')+amount+' '+(lang==='ar'?'قيد المراجعة':'under review'),type:'info'});
     showToast(lang==='ar'?'✓ تم إرسال طلب الإيداع بنجاح':'✓ Deposit request submitted');
     document.getElementById('dep-hash').value='';
     document.getElementById('dep-amount').value='';
+    window.__selectedPlanRate = null;
   } catch(e){showToast(lang==='ar'?'حدث خطأ':'Error occurred','err');}
 }
 
@@ -1673,6 +1686,7 @@ function handlePlanClick(rate) {
 
 function goToDeposit(rate) {
   showPage('deposit',null);
+  window.__selectedPlanRate = rate; // هنستخدمها عند تقديم طلب الإيداع لربطه بالباقة فعليًا
   const names={'2.5':{ar:'الباقة الأساسية',en:'Starter Plan',tr:'Başlangıç'},'4.8':{ar:'الباقة الذهبية',en:'Gold Plan',tr:'Altın Planı'},'8.2':{ar:'باقة VIP',en:'VIP Plan',tr:'VIP Planı'}};
   const plan=names[rate];if(!plan)return;
   let b=document.getElementById('plan-banner');
