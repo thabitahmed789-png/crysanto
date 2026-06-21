@@ -2038,7 +2038,13 @@ async function loadRealDeposits() {
     .from('deposits')
     .select('*, users(name, email, memo)')
     .order('created_at', { ascending: false });
-  if (error) { console.error(error); return; }
+  if (error) {
+    console.error('loadRealDeposits error:', error);
+    showToast((lang==='ar'?'✗ فشل تحميل الإيداعات: ':'✗ Failed to load deposits: ')+error.message);
+    const wrap = document.getElementById('dep-table-wrap');
+    if (wrap) wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل الإيداعات':'Error loading deposits'}: ${error.message}</div>`;
+    return;
+  }
   if (data) {
     // استبدال البيانات التجريبية بالحقيقية
     window.realDeposits = data;
@@ -2108,6 +2114,28 @@ async function approveDeposit(depositId, userId, amount, email, name) {
   const { error: e3 } = await sdb.from('users').update({ balance: newBalance }).eq('id', userId);
   if (e3) { showToast((lang==='ar'?'✗ فشل تحديث الرصيد: ':'✗ Failed to update balance: ')+e3.message); console.error('approveDeposit/balance update error:', e3); return; }
 
+  // 2.5 لو الإيداع ده مرتبط بباقة استثمار، ننشئ سجل استثمار فعلي عشان الربح اليومي يبدأ يُحسب
+  const { data: depRow } = await sdb.from('deposits').select('plan_id').eq('id', depositId).maybeSingle();
+  if (depRow && depRow.plan_id) {
+    const { data: planRow, error: ePlan } = await sdb.from('plans').select('*').eq('id', depRow.plan_id).maybeSingle();
+    if (ePlan) console.error('approveDeposit/plan read error:', ePlan);
+    if (planRow) {
+      const startedAt = new Date();
+      const endsAt = new Date(startedAt.getTime() + planRow.duration_days * 86400000);
+      const { error: eInv } = await sdb.from('investments').insert({
+        user_id: userId,
+        plan_name: planRow.name_ar || planRow.name_en,
+        amount: amount,
+        daily_rate: planRow.daily_rate,
+        duration: planRow.duration_days,
+        status: 'active',
+        started_at: startedAt.toISOString(),
+        ends_at: endsAt.toISOString()
+      });
+      if (eInv) { console.error('approveDeposit/investment insert error:', eInv); showToast((lang==='ar'?'⚠️ تم قبول الإيداع لكن فشل إنشاء الاستثمار: ':'⚠️ Deposit approved but failed to create investment: ')+eInv.message); }
+    }
+  }
+
   // 3. إرسال إشعار للعميل في قاعدة البيانات
   const { error: e4 } = await sdb.from('notifications').insert({
     user_id: userId,
@@ -2116,6 +2144,31 @@ async function approveDeposit(depositId, userId, amount, email, name) {
     type: 'success'
   });
   if (e4) console.error('approveDeposit/notification insert error:', e4); // إشعار فاشل مش لازم يوقف العملية
+
+  // 4.5 عمولة الإحالة: لو العميل ده جاي بإحالة من عميل تاني، نحط له نسبة من المبلغ (محفوظة في جدول settings)
+  try {
+    const { data: depositorRow } = await sdb.from('users').select('referred_by').eq('id', userId).maybeSingle();
+    if (depositorRow && depositorRow.referred_by) {
+      const { data: refRateRow } = await sdb.from('settings').select('value').eq('key', 'referral_rate').maybeSingle();
+      const refRate = parseFloat(refRateRow?.value) || 0;
+      if (refRate > 0) {
+        const { data: referrerRow } = await sdb.from('users').select('id, balance, ref_earnings, ref_count').eq('ref_code', depositorRow.referred_by).maybeSingle();
+        if (referrerRow) {
+          const commission = parseFloat(amount) * refRate / 100;
+          // نتأكد إن دي أول عمولة من هذا العميل المُحال بالذات (عشان نزود ref_count مرة واحدة بس)
+          const { data: existingRef } = await sdb.from('referrals').select('id').eq('referrer_id', referrerRow.id).eq('referred_id', userId).maybeSingle();
+          await sdb.from('referrals').insert({ referrer_id: referrerRow.id, referred_id: userId, commission, status: 'paid' });
+          const { error: eRef } = await sdb.from('users').update({
+            balance: (parseFloat(referrerRow.balance)||0) + commission,
+            ref_earnings: (parseFloat(referrerRow.ref_earnings)||0) + commission,
+            ref_count: existingRef ? (referrerRow.ref_count||0) : (referrerRow.ref_count||0) + 1
+          }).eq('id', referrerRow.id);
+          if (eRef) console.error('approveDeposit/referral credit error:', eRef);
+          else await sdb.from('notifications').insert({ user_id: referrerRow.id, title: lang==='ar'?'🎉 عمولة إحالة جديدة':'🎉 New Referral Commission', body: lang==='ar'?`حصلت على $${commission.toFixed(2)} عمولة إحالة`:`You earned $${commission.toFixed(2)} referral commission`, type:'success' });
+        }
+      }
+    }
+  } catch(eRefOuter) { console.error('approveDeposit/referral block error:', eRefOuter); }
 
   // 5. إرسال إيميل للعميل عبر Supabase
   await sendEmailNotification(email, name, amount, 'approved');
@@ -2145,10 +2198,17 @@ async function sendEmailNotification(email, name, amount, status, reason='') {
 // ── تحميل السحوبات الحقيقية ──
 async function loadRealWithdrawals() {
   showTableSkeleton('wd-table-wrap', 8);
-  const { data } = await sdb
+  const { data, error } = await sdb
     .from('withdrawals')
     .select('*, users(name, email)')
     .order('created_at', { ascending: false });
+  if (error) {
+    console.error('loadRealWithdrawals error:', error);
+    showToast((lang==='ar'?'✗ فشل تحميل السحوبات: ':'✗ Failed to load withdrawals: ')+error.message);
+    const wrap = document.getElementById('wd-table-wrap');
+    if (wrap) wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل السحوبات':'Error loading withdrawals'}: ${error.message}</div>`;
+    return;
+  }
   if (data) {
     window.realWithdrawals = data;
     renderRealWithdrawals(data);
@@ -2223,8 +2283,17 @@ async function rejectWithdrawal(wdId, userId, amount, name) {
 // ── تحميل المستخدمين الحقيقيين ──
 async function loadRealUsers() {
   showTableSkeleton('users-table-wrap', 8);
-  const { data } = await sdb.from('users').select('*').order('created_at', { ascending: false });
-  if (data) { window.realUsers = data; renderRealUsers(data); }
+  const { data, error, count } = await sdb.from('users').select('*', { count: 'exact' }).order('created_at', { ascending: false });
+  if (error) {
+    console.error('loadRealUsers error:', error);
+    showToast((lang==='ar'?'✗ فشل تحميل المستخدمين: ':'✗ Failed to load users: ')+error.message);
+    const wrap = document.getElementById('users-table-wrap');
+    if (wrap) wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل المستخدمين':'Error loading users'}: ${error.message}</div>`;
+    return;
+  }
+  console.log('loadRealUsers: loaded', count, 'users, latest:', data?.[0]?.email, data?.[0]?.created_at);
+  window.realUsers = data || [];
+  renderRealUsers(window.realUsers);
 }
 
 function renderRealUsers(data) {
