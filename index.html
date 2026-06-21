@@ -663,6 +663,7 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
     </div>
     <div id="dw-wd" class="dw-panel" style="display:none">
       <div class="panel">
+        <div id="wd-available-box" style="background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px;font-weight:700;color:var(--gold);text-align:center">—</div>
         <div style="background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.3);border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:12px;color:var(--red);display:flex;gap:8px">⚠️ <span id="wd-warn" data-ar="تحقق من العنوان قبل السحب. العمليات لا يمكن التراجع عنها." data-en="Verify address before withdrawal. Irreversible." data-tr="Çekmeden önce adresi doğrulayın.">تحقق من العنوان قبل السحب. العمليات لا يمكن التراجع عنها.</span></div>
         <div class="form-group"><label id="wdl1" data-ar="العملة والشبكة" data-en="Currency & Network" data-tr="Para Birimi ve Ağ">العملة والشبكة</label>
           <select id="wd-coin" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;font-family:inherit;cursor:pointer">
@@ -1409,6 +1410,13 @@ async function loadDashboard() {
 
     const invs = invRes.data || [];
     const activeInvs = invs.filter(i=>i.status==='active');
+    window.__lockedAmount = activeInvs.reduce((s,i)=>s+parseFloat(i.amount||0),0); // فلوس مقفولة في استثمارات نشطة، مينفعش تُسحب لحد ما يتم إلغاء الاستثمار
+    const availBox = document.getElementById('wd-available-box');
+    if (availBox) {
+      const avail = (parseFloat(userProfile.balance)||0) - window.__lockedAmount;
+      availBox.textContent = (lang==='ar' ? '💰 المتاح للسحب: $' : '💰 Available to withdraw: $') + avail.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) +
+        (window.__lockedAmount>0 ? (lang==='ar' ? ` (مقفول في استثمار: $${window.__lockedAmount.toLocaleString()})` : ` (locked in investment: $${window.__lockedAmount.toLocaleString()})`) : '');
+    }
 
     // إجمالي المستثمر
     const totalInvested = invs.reduce((s,i)=>s+parseFloat(i.amount||0),0);
@@ -1535,10 +1543,24 @@ async function loadInvestments() {
         '<div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%;background:linear-gradient(90deg,var(--gold),var(--green))"></div></div>'+
         '<div style="font-size:11px;color:var(--muted);margin-top:5px;display:flex;justify-content:space-between">'+
           '<span>'+pct+'%</span>'+
-          '<span>'+lang==='ar'?'الربح: ':'Profit: '+'$'+parseFloat(inv.profit_earned||0).toFixed(2)+'</span>'+
-        '</div>'+nextProfitHtml+'</div>';
+          '<span>'+(lang==='ar'?'الربح: ':'Profit: ')+'$'+parseFloat(inv.profit_earned||0).toFixed(2)+'</span>'+
+        '</div>'+nextProfitHtml+
+        (inv.status==='active' ? '<button onclick="cancelInvestment(\''+inv.id+'\')" style="width:100%;margin-top:10px;padding:8px;border-radius:8px;border:1px solid var(--red,#e44);background:transparent;color:var(--red,#e44);font-size:12px;font-weight:600;cursor:pointer">'+(lang==='ar'?'إلغاء الاستثمار وتحرير الفلوس':'Cancel Investment & Unlock Funds')+'</button>' : '')
+        +'</div>';
     }).join('');
   } catch(e){}
+}
+
+async function cancelInvestment(investmentId) {
+  const ok = confirm(lang==='ar'
+    ? 'هل أنت متأكد؟ إلغاء الاستثمار سيوقف الربح اليومي عنه، وسيتم تحرير المبلغ المستثمر فيه ليصبح متاحًا للسحب.'
+    : 'Are you sure? Cancelling will stop daily profit on this investment and unlock the invested amount for withdrawal.');
+  if (!ok) return;
+  const { error } = await db.from('investments').update({ status: 'cancelled' }).eq('id', investmentId).eq('user_id', userProfile.id);
+  if (error) { showToast(lang==='ar'?'✗ فشل إلغاء الاستثمار':'✗ Failed to cancel investment','err'); console.error('cancelInvestment error:', error); return; }
+  showToast(lang==='ar'?'✓ تم إلغاء الاستثمار — الفلوس متاحة للسحب الآن':'✓ Investment cancelled — funds now available for withdrawal');
+  await loadInvestments();
+  await loadDashboard();
 }
 
 function loadReferral() {
@@ -1637,7 +1659,23 @@ async function submitWithdrawal() {
   const amount=parseFloat(document.getElementById('wd-amount').value);
   if(!addr){showToast(lang==='ar'?'أدخل عنوان محفظتك':'Enter wallet address','err');return;}
   if(!amount||amount<50){showToast(lang==='ar'?'الحد الأدنى للسحب $50':'Minimum withdrawal $50','err');return;}
-  if(amount>(userProfile.balance||0)){showToast(lang==='ar'?'الرصيد غير كافٍ':'Insufficient balance','err');return;}
+
+  // نحسب الرصيد المتاح الحقيقي = الرصيد الكلي ناقص أي فلوس مقفولة في استثمار نشط
+  const { data: activeInvData } = await db.from('investments').select('amount').eq('user_id',userProfile.id).eq('status','active');
+  const lockedAmount = (activeInvData||[]).reduce((s,i)=>s+parseFloat(i.amount||0),0);
+  const availableBalance = (parseFloat(userProfile.balance)||0) - lockedAmount;
+
+  if(amount > availableBalance) {
+    if(lockedAmount > 0) {
+      showToast(lang==='ar'
+        ? `الرصيد المتاح $${availableBalance.toFixed(2)} فقط — $${lockedAmount.toFixed(2)} مقفول في استثمار نشط. لازم تلغي الاستثمار أولاً من صفحة "استثماراتي" عشان تسحب هذا المبلغ.`
+        : `Only $${availableBalance.toFixed(2)} is available — $${lockedAmount.toFixed(2)} is locked in an active investment. Cancel the investment first from "My Investments" to withdraw it.`, 'err');
+    } else {
+      showToast(lang==='ar'?'الرصيد غير كافٍ':'Insufficient balance','err');
+    }
+    return;
+  }
+
   try {
     const coin=document.getElementById('wd-coin').value;
     await db.from('withdrawals').insert({user_id:userProfile.id,amount,coin:coin.split('-')[0],network:coin,wallet_addr:addr,status:'pending'});
