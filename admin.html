@@ -2038,7 +2038,13 @@ async function loadRealDeposits() {
     .from('deposits')
     .select('*, users(name, email, memo)')
     .order('created_at', { ascending: false });
-  if (error) { console.error(error); return; }
+  if (error) {
+    console.error('loadRealDeposits error:', error);
+    showToast((lang==='ar'?'✗ فشل تحميل الإيداعات: ':'✗ Failed to load deposits: ')+error.message);
+    const wrap = document.getElementById('dep-table-wrap');
+    if (wrap) wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل الإيداعات':'Error loading deposits'}: ${error.message}</div>`;
+    return;
+  }
   if (data) {
     // استبدال البيانات التجريبية بالحقيقية
     window.realDeposits = data;
@@ -2192,10 +2198,17 @@ async function sendEmailNotification(email, name, amount, status, reason='') {
 // ── تحميل السحوبات الحقيقية ──
 async function loadRealWithdrawals() {
   showTableSkeleton('wd-table-wrap', 8);
-  const { data } = await sdb
+  const { data, error } = await sdb
     .from('withdrawals')
     .select('*, users(name, email)')
     .order('created_at', { ascending: false });
+  if (error) {
+    console.error('loadRealWithdrawals error:', error);
+    showToast((lang==='ar'?'✗ فشل تحميل السحوبات: ':'✗ Failed to load withdrawals: ')+error.message);
+    const wrap = document.getElementById('wd-table-wrap');
+    if (wrap) wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل السحوبات':'Error loading withdrawals'}: ${error.message}</div>`;
+    return;
+  }
   if (data) {
     window.realWithdrawals = data;
     renderRealWithdrawals(data);
