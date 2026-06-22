@@ -761,14 +761,7 @@ const withdrawals = [
   {id:'W006', user:'Ali Hassan', amount:50, coin:'TRX', wallet:'TXkm...2a1', date:'2025-05-24 09:00', status:'pending'},
 ];
 
-const investments = [
-  {user:'Ahmed Khalid', plan:'Gold', amount:5000, daily:'4.8%', start:'2025-04-10', end:'2025-06-09', profit:7200, status:'active'},
-  {user:'Sara Yilmaz', plan:'VIP', amount:7000, daily:'8.2%', start:'2025-04-20', end:'2025-07-19', profit:51660, status:'active'},
-  {user:'Maria Lopez', plan:'VIP', amount:15000, daily:'8.2%', start:'2025-03-01', end:'2025-05-29', profit:110700, status:'active'},
-  {user:'Chen Wei', plan:'VIP', amount:30000, daily:'8.2%', start:'2025-02-15', end:'2025-05-15', profit:221400, status:'completed'},
-  {user:'Fatima Al-Zahra', plan:'Gold', amount:4000, daily:'4.8%', start:'2025-04-01', end:'2025-05-31', profit:5760, status:'active'},
-  {user:'John Walker', plan:'Starter', amount:2000, daily:'2.5%', start:'2025-05-01', end:'2025-05-31', profit:1500, status:'active'},
-];
+// investments بقت بتتحمّل من جدول investments الحقيقي في renderInvestments() — مفيش بيانات وهمية تاني
 
 const kycReqs = [
   {user:'John Walker', email:'john@mail.com', type:'National ID', submitted:'2025-05-24', status:'pending'},
@@ -778,40 +771,21 @@ const kycReqs = [
   {user:'Ahmed Khalid', email:'ahmed@mail.com', type:'National ID', submitted:'2025-01-10', status:'approved'},
 ];
 
-const refData = [
-  {referrer:'Chen Wei', referred:'Maria Lopez', amount:750, date:'2025-05-20', status:'paid'},
-  {referrer:'Sara Yilmaz', referred:'Ali Hassan', amount:10, date:'2025-05-22', status:'pending'},
-  {referrer:'Ahmed Khalid', referred:'John Walker', amount:100, date:'2025-05-18', status:'paid'},
-  {referrer:'Fatima Al-Zahra', referred:'Omar Nasser', amount:0, date:'2025-04-28', status:'rejected'},
-  {referrer:'Chen Wei', referred:'Fatima Al-Zahra', amount:200, date:'2025-03-05', status:'paid'},
-];
+// refData بقت بتتحمّل من جدول referrals الحقيقي في renderReferrals() — مفيش بيانات وهمية تاني
 
-const walletAddrs = [
-  {
-    coin:'Tether (USDT)', sym:'USDT', icon:'₮', color:'#26a17b',
-    addr:'TTU9KEnVvjKFj7pAbtk3hGZcepAbYzuVeq',
-    network:'TRON (TRC-20)',
-    note:{ar:'الأسرع والأرخص — موصى به للعملاء', en:'Fastest & cheapest — recommended for clients', tr:'En hızlı ve ucuz — müşteriler için önerilir'}
-  },
-  {
-    coin:'Tether (USDT)', sym:'USDT', icon:'₮', color:'#26a17b',
-    addr:'0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335',
-    network:'BNB Smart Chain (BEP-20)',
-    note:{ar:'مناسب للعملاء الذين يستخدمون بينانس', en:'Suitable for clients using Binance', tr:'Binance kullanan müşteriler için uygun'}
-  },
-  {
-    coin:'Ethereum', sym:'ETH', icon:'Ξ', color:'#627eea',
-    addr:'0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335',
-    network:'Ethereum (ERC-20)',
-    note:{ar:'رسوم شبكة أعلى', en:'Higher network fees', tr:'Daha yüksek ağ ücretleri'}
-  },
-  {
-    coin:'BNB', sym:'BNB', icon:'B', color:'#f0b90b',
-    addr:'0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335',
-    network:'BNB Smart Chain (BEP-20)',
-    note:{ar:'نفس عنوان USDT BEP-20', en:'Same as USDT BEP-20 address', tr:'USDT BEP-20 ile aynı adres'}
-  },
+// عناوين المحافظ الحقيقية بقت في جدول settings (مصدر واحد للحقيقة يشاركه الموقع الأساسي).
+// الماب دي بس بيانات عرض ثابتة (أيقونة/لون/ملاحظة) — العنوان نفسه بييجي لايڤ من الداتابيز في renderWallets()
+const walletMeta = [
+  { key:'wallet_usdt_trc20', coin:'Tether (USDT)', sym:'USDT', icon:'₮', color:'#26a17b', network:'TRON (TRC-20)',
+    note:{ar:'الأسرع والأرخص — موصى به للعملاء', en:'Fastest & cheapest — recommended for clients', tr:'En hızlı ve ucuz — müşteriler için önerilir'} },
+  { key:'wallet_usdt_bep20', coin:'Tether (USDT)', sym:'USDT', icon:'₮', color:'#26a17b', network:'BNB Smart Chain (BEP-20)',
+    note:{ar:'مناسب للعملاء الذين يستخدمون بينانس', en:'Suitable for clients using Binance', tr:'Binance kullanan müşteriler için uygun'} },
+  { key:'wallet_eth', coin:'Ethereum', sym:'ETH', icon:'Ξ', color:'#627eea', network:'Ethereum (ERC-20)',
+    note:{ar:'رسوم شبكة أعلى', en:'Higher network fees', tr:'Daha yüksek ağ ücretleri'} },
+  { key:'wallet_bnb', coin:'BNB', sym:'BNB', icon:'B', color:'#f0b90b', network:'BNB Smart Chain (BEP-20)',
+    note:{ar:'نفس عنوان USDT BEP-20', en:'Same as USDT BEP-20 address', tr:'USDT BEP-20 ile aynı adres'} },
 ];
+let walletAddrs = []; // هتتعبى لايڤ من settings
 
 const geoData = [
   {country:'SA 🇸🇦', pct:22, val:10607},
@@ -823,11 +797,9 @@ const geoData = [
   {country:'Other 🌍', pct:19, val:9163},
 ];
 
-const packages_data = [
-  {name:{ar:'الباقة الأساسية',en:'Starter Plan',tr:'Başlangıç'}, roi:'2.5', days:30, min:100, max:5000, active:1240, color:'var(--green)', icon:'⭐'},
-  {name:{ar:'الباقة الذهبية',en:'Gold Plan',tr:'Altın'}, roi:'4.8', days:60, min:500, max:50000, active:3820, color:'var(--gold)', icon:'🥇'},
-  {name:{ar:'باقة VIP',en:'VIP Plan',tr:'VIP'}, roi:'8.2', days:90, min:5000, max:500000, active:892, color:'var(--purple)', icon:'💎'},
-];
+// packages_data بقت بتتحمّل من جدول plans الحقيقي في renderPackages() — مفيش بيانات وهمية تاني
+const pkgIconMap = ['⭐','🥇','💎','🔷','🔶']; // أيقونة عرض فقط بالترتيب (مش مخزّنة في الداتابيز)
+const pkgColorMap = ['var(--green)','var(--gold)','var(--purple)','var(--blue)','var(--orange)'];
 
 // ── TRANSLATIONS ──
 const T = {
@@ -1148,23 +1120,23 @@ function toggleBlock(id){
 }
 
 function showUserModal(id){
-  const u = users.find(u=>u.id===id);
+  const u = (window.realUsers||[]).find(u=>u.id===id);
   if(!u) return;
   document.getElementById('modal-user-name').textContent = u.name;
   document.getElementById('modal-user-body').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
       ${infoRow(lang==='ar'?'البريد الإلكتروني':'Email',u.email)}
-      ${infoRow(lang==='ar'?'الدولة':'Country',u.country)}
-      ${infoRow(lang==='ar'?'الرصيد':'Balance','$'+u.bal.toLocaleString())}
-      ${infoRow(lang==='ar'?'المستثمر':'Invested','$'+u.invested.toLocaleString())}
-      ${infoRow(lang==='ar'?'الباقة':'Plan',u.plan)}
-      ${infoRow(lang==='ar'?'الإحالات':'Referrals',u.ref)}
-      ${infoRow('KYC',u.kyc)}
-      ${infoRow(lang==='ar'?'تاريخ الانضمام':'Joined',u.joined)}
+      ${infoRow(lang==='ar'?'الدولة':'Country',u.country||'—')}
+      ${infoRow(lang==='ar'?'الرصيد':'Balance','$'+parseFloat(u.balance||0).toLocaleString())}
+      ${infoRow(lang==='ar'?'المستثمر':'Invested','$'+parseFloat(u.invested||0).toLocaleString())}
+      ${infoRow(lang==='ar'?'الباقة':'Plan',u.plan||'—')}
+      ${infoRow(lang==='ar'?'الإحالات':'Referrals',u.ref_count||0)}
+      ${infoRow('KYC',u.kyc_status||'—')}
+      ${infoRow(lang==='ar'?'تاريخ الانضمام':'Joined',u.created_at?.slice(0,10)||'—')}
     </div>
     <div style="display:flex;gap:10px">
-      <button class="act-btn-primary" onclick="showToast('${lang==='ar'?'تم إرسال إشعار':'Notification sent'}');closeModal()">${lang==='ar'?'إرسال إشعار':'Send Notification'}</button>
-      <button class="act-btn red" onclick="toggleBlock(${u.id});closeModal()">${u.status==='blocked'?t('unblock'):t('block')}</button>
+      <button class="act-btn-primary" onclick="sendNotifToUser('${u.id}')">${lang==='ar'?'إرسال إشعار':'Send Notification'}</button>
+      <button class="act-btn red" onclick="toggleUserBlock('${u.id}','${u.status==='blocked'?'active':'blocked'}');closeModal()">${u.status==='blocked'?t('unblock'):t('block')}</button>
     </div>`;
   document.getElementById('user-modal').classList.add('open');
 }
@@ -1257,29 +1229,48 @@ function rejectTx(type,id){
 }
 
 // ── INVESTMENTS ──
-function renderInvestments(){
+async function renderInvestments(){
   const wrap = document.getElementById('inv-table-wrap');
+  showTableSkeleton('inv-table-wrap', 8);
+  const { data, error } = await sdb
+    .from('investments')
+    .select('*, users(name, email)')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('renderInvestments error:', error);
+    wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل الاستثمارات':'Error loading investments'}: ${error.message}</div>`;
+    return;
+  }
+  if (!data || !data.length) {
+    wrap.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">${lang==='ar'?'لا توجد استثمارات':'No investments'}</div>`;
+    return;
+  }
+  const statusLabel = s => s==='active'
+    ? `<span class="badge b-active">${lang==='ar'?'نشط':'Active'}</span>`
+    : s==='cancelled'
+      ? `<span class="badge b-rejected">${lang==='ar'?'ملغي':'Cancelled'}</span>`
+      : `<span class="badge b-gold">${lang==='ar'?'مكتمل':'Completed'}</span>`;
   wrap.innerHTML = `<table>
     <thead><tr>
       <th>${lang==='ar'?'المستخدم':'User'}</th>
       <th>${lang==='ar'?'الباقة':'Plan'}</th>
       <th>${lang==='ar'?'رأس المال':'Capital'}</th>
-      <th>${lang==='ar'?'الربح اليومي':'Daily ROI'}</th>
+      <th>${lang==='ar'?'الربح اليومي %':'Daily ROI %'}</th>
       <th>${lang==='ar'?'البداية':'Start'}</th>
       <th>${lang==='ar'?'النهاية':'End'}</th>
       <th>${lang==='ar'?'إجمالي الربح':'Total Profit'}</th>
       <th>${lang==='ar'?'الحالة':'Status'}</th>
     </tr></thead>
-    <tbody>${investments.map(inv=>`
+    <tbody>${data.map(inv=>`
       <tr>
-        <td style="font-weight:600">${inv.user}</td>
-        <td>${inv.plan}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${inv.amount.toLocaleString()}</td>
-        <td style="color:var(--green);font-family:var(--mono)">${inv.daily}</td>
-        <td style="font-size:12px;color:var(--muted)">${inv.start}</td>
-        <td style="font-size:12px;color:var(--muted)">${inv.end}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${inv.profit.toLocaleString()}</td>
-        <td>${inv.status==='active'?`<span class="badge b-active">${lang==='ar'?'نشط':'Active'}</span>`:`<span class="badge b-gold">${lang==='ar'?'مكتمل':'Completed'}</span>`}</td>
+        <td style="font-weight:600">${escapeHtml(inv.users?.name || '—')}</td>
+        <td>${escapeHtml(inv.plan_name || '—')}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(inv.amount).toLocaleString()}</td>
+        <td style="color:var(--green);font-family:var(--mono)">${inv.daily_rate}%</td>
+        <td style="font-size:12px;color:var(--muted)">${inv.start_date||'—'}</td>
+        <td style="font-size:12px;color:var(--muted)">${inv.end_date||'—'}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(inv.total_profit||0).toLocaleString()}</td>
+        <td>${statusLabel(inv.status)}</td>
       </tr>`).join('')}
     </tbody></table>`;
 }
@@ -1340,8 +1331,23 @@ async function rejectKyc(userId){
 }
 
 // ── REFERRALS ──
-function renderReferrals(){
+async function renderReferrals(){
   const wrap = document.getElementById('ref-table-wrap');
+  showTableSkeleton('ref-table-wrap', 8);
+  const { data, error } = await sdb
+    .from('referrals')
+    .select('*, referrer:referrer_id(name,email), referred:referred_id(name,email)')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('renderReferrals error:', error);
+    wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل الإحالات':'Error loading referrals'}: ${error.message}</div>`;
+    return;
+  }
+  if (!data || !data.length) {
+    wrap.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">${lang==='ar'?'لا توجد إحالات':'No referrals'}</div>`;
+    return;
+  }
+  window.realReferrals = data;
   wrap.innerHTML = `<table>
     <thead><tr>
       <th>${lang==='ar'?'المُحيل':'Referrer'}</th>
@@ -1351,71 +1357,125 @@ function renderReferrals(){
       <th>${lang==='ar'?'الحالة':'Status'}</th>
       <th>${lang==='ar'?'الإجراء':'Action'}</th>
     </tr></thead>
-    <tbody>${refData.map((r,i)=>`
+    <tbody>${data.map(r=>`
       <tr>
-        <td style="font-weight:600">${r.referrer}</td>
-        <td>${r.referred}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${r.amount}</td>
-        <td style="font-size:12px;color:var(--muted)">${r.date}</td>
+        <td style="font-weight:600">${escapeHtml(r.referrer?.name || '—')}</td>
+        <td>${escapeHtml(r.referred?.name || '—')}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(r.commission||0).toLocaleString()}</td>
+        <td style="font-size:12px;color:var(--muted)">${r.created_at?.slice(0,10)||'—'}</td>
         <td>${r.status==='paid'?`<span class="badge b-active">${lang==='ar'?'مدفوع':'Paid'}</span>`
             :r.status==='rejected'?`<span class="badge b-rejected">${lang==='ar'?'مرفوض':'Rejected'}</span>`
             :`<span class="badge b-pending">${lang==='ar'?'معلق':'Pending'}</span>`}</td>
-        <td>${r.status==='pending'?`<button class="act-btn green" onclick="payRef(${i})">${lang==='ar'?'صرف':'Pay'}</button>`:
+        <td>${r.status==='pending'?`<button class="act-btn green" onclick="payRef('${r.id}')">${lang==='ar'?'صرف':'Pay'}</button>`:
             `<span style="color:var(--muted);font-size:12px">—</span>`}</td>
       </tr>`).join('')}
     </tbody></table>`;
 }
-function payRef(i){ refData[i].status='paid'; renderReferrals(); showToast(lang==='ar'?'تم صرف العمولة':'Commission Paid'); }
+async function payRef(referralId){
+  const { error } = await sdb.rpc('admin_pay_referral', { p_referral_id: referralId });
+  if (error) { showToast((lang==='ar'?'✗ فشل صرف العمولة: ':'✗ Failed to pay commission: ')+error.message); console.error('payRef error:', error); return; }
+  showToast(lang==='ar'?'✓ تم صرف العمولة':'✓ Commission paid');
+  renderReferrals();
+}
 
 // ── PROFITS ──
-function renderProfits(){
-  if(!document.getElementById('profit-log').children.length) {
-    profitLog = [
-      {time:'2025-05-26 09:00', plan:'Gold', rate:'4.8%', by:'admin'},
-      {time:'2025-05-25 08:30', plan:'VIP', rate:'8.2%', by:'admin'},
-    ];
-    renderProfitLog();
-  }
+let __profitPlans = []; // [{id, name_ar, name_en, name_tr, daily_rate, updated_at, ...}] مرتبة بالحد الأدنى تصاعديًا — مطابقة لترتيب الكروت الثلاثة في الصفحة
+async function renderProfits(){
+  const { data, error } = await sdb.from('plans').select('*').order('min_amount', { ascending: true });
+  if (error) { console.error('renderProfits error:', error); showToast((lang==='ar'?'✗ فشل تحميل الباقات: ':'✗ Failed to load plans: ')+error.message); return; }
+  __profitPlans = data || [];
+
+  // إجمالي رأس المال النشط لكل باقة (لحساب "مجموع الأرباح اليوم" الحقيقي = رأس المال النشط × نسبة اليوم)
+  const { data: activeInv } = await sdb.from('investments').select('plan_name, amount').eq('status', 'active');
+  const capitalByPlan = {};
+  (activeInv||[]).forEach(inv => { capitalByPlan[inv.plan_name] = (capitalByPlan[inv.plan_name]||0) + parseFloat(inv.amount||0); });
+
+  const titleEls = ['pc-title1','pc-title2','pc-title3'];
+  const rateEls = ['p1-rate','p2-rate','p3-rate'];
+  const totalEls = ['p1-total','p2-total','p3-total'];
+  __profitPlans.slice(0,3).forEach((p, i) => {
+    const name = {ar:p.name_ar, en:p.name_en, tr:p.name_tr}[lang] || p.name_en;
+    const tEl = document.getElementById(titleEls[i]); if (tEl) tEl.textContent = pkgIconMap[i]+' '+name;
+    const rEl = document.getElementById(rateEls[i]); if (rEl) rEl.value = p.daily_rate;
+    const cap = capitalByPlan[p.name_ar] || capitalByPlan[p.name_en] || 0;
+    const totalEl = document.getElementById(totalEls[i]);
+    if (totalEl) totalEl.textContent = '$' + (cap * parseFloat(p.daily_rate) / 100).toLocaleString(undefined,{maximumFractionDigits:2});
+  });
+  await renderProfitLog();
 }
-function applyProfit(plan){
-  const rates = {1:document.getElementById('p1-rate'),2:document.getElementById('p2-rate'),3:document.getElementById('p3-rate')};
-  const names = {1:lang==='ar'?'الأساسية':'Starter',2:lang==='ar'?'الذهبية':'Gold',3:'VIP'};
-  const r = parseFloat(rates[plan].value)||0;
-  const now = new Date().toLocaleString('en-GB').replace(',','');
-  profitLog.unshift({time:now, plan:names[plan], rate:r+'%', by:'admin'});
-  renderProfitLog();
-  showToast(lang==='ar'?`✓ تم تحديث ربح ${names[plan]} إلى ${r}%`:`✓ ${names[plan]} profit updated to ${r}%`);
+async function applyProfit(idx){
+  const p = __profitPlans[idx-1];
+  if (!p) { showToast(lang==='ar'?'الباقة غير موجودة':'Plan not found'); return; }
+  const rateEls = {1:'p1-rate',2:'p2-rate',3:'p3-rate'};
+  const input = document.getElementById(rateEls[idx]);
+  const r = parseFloat(input?.value);
+  if (isNaN(r) || r < 0) { showToast(lang==='ar'?'نسبة غير صحيحة':'Invalid rate'); return; }
+  const { error } = await sdb.from('plans').update({ daily_rate: r }).eq('id', p.id);
+  if (error) { showToast((lang==='ar'?'✗ فشل تحديث الربح: ':'✗ Failed to update rate: ')+error.message); console.error('applyProfit error:', error); return; }
+  const name = {ar:p.name_ar, en:p.name_en, tr:p.name_tr}[lang] || p.name_en;
+  showToast(lang==='ar'?`✓ تم تحديث ربح ${name} إلى ${r}%`:`✓ ${name} profit updated to ${r}%`);
+  await renderProfits();
 }
-function renderProfitLog(){
+async function renderProfitLog(){
   const el = document.getElementById('profit-log');
-  el.innerHTML = profitLog.map(l=>`
+  if (!el) return;
+  // بنبني السجل من آخر تحديث فعلي مخزّن في plans.updated_at — ده بياناتنا الحقيقية الوحيدة المتاحة لتاريخ التعديل
+  const sorted = [...__profitPlans].sort((a,b)=> new Date(b.updated_at||b.created_at) - new Date(a.updated_at||a.created_at));
+  el.innerHTML = sorted.map(p=>{
+    const name = {ar:p.name_ar, en:p.name_en, tr:p.name_tr}[lang] || p.name_en;
+    const when = (p.updated_at||p.created_at||'').replace('T',' ').slice(0,16);
+    return `
     <div style="padding:10px 12px;background:var(--dark);border-radius:8px;border:1px solid var(--border2)">
       <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="font-weight:600;font-size:13px">${l.plan}</span>
-        <span style="color:var(--gold);font-family:var(--mono);font-size:13px">${l.rate}</span>
+        <span style="font-weight:600;font-size:13px">${escapeHtml(name)}</span>
+        <span style="color:var(--gold);font-family:var(--mono);font-size:13px">${p.daily_rate}%</span>
       </div>
-      <div style="font-size:11px;color:var(--muted)">${l.time} · ${l.by}</div>
-    </div>`).join('');
+      <div style="font-size:11px;color:var(--muted)">${when}</div>
+    </div>`;
+  }).join('');
 }
 
 // ── PACKAGES ──
-function renderPackages(){
+async function renderPackages(){
   const wrap = document.getElementById('pkg-cards');
-  wrap.innerHTML = packages_data.map(p=>`
+  const { data: plans, error } = await sdb.from('plans').select('*').order('min_amount', { ascending: true });
+  if (error) { console.error('renderPackages error:', error); wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${error.message}</div>`; return; }
+  const { data: activeInv } = await sdb.from('investments').select('plan_name').eq('status','active');
+  const countByPlan = {};
+  (activeInv||[]).forEach(inv => { countByPlan[inv.plan_name] = (countByPlan[inv.plan_name]||0) + 1; });
+
+  wrap.innerHTML = (plans||[]).map((p,i)=>{
+    const name = {ar:p.name_ar, en:p.name_en, tr:p.name_tr}[lang] || p.name_en;
+    const active = countByPlan[p.name_ar] || countByPlan[p.name_en] || 0;
+    return `
     <div style="background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:28px">
-      <div style="font-size:36px;margin-bottom:12px">${p.icon}</div>
-      <h4 style="font-size:18px;font-weight:700;margin-bottom:16px">${p.name[lang]||p.name.en}</h4>
+      <div style="font-size:36px;margin-bottom:12px">${pkgIconMap[i%pkgIconMap.length]}</div>
+      <h4 style="font-size:18px;font-weight:700;margin-bottom:16px">${escapeHtml(name)}</h4>
       <div style="display:flex;flex-direction:column;gap:10px">
-        ${editRow(lang==='ar'?'الربح اليومي %':'Daily ROI %',p.roi,'%',`rpe-roi-${p.icon}`)}
-        ${editRow(lang==='ar'?'المدة (يوم)':'Duration (days)',p.days,'d',`rpe-days-${p.icon}`)}
-        ${editRow(lang==='ar'?'الحد الأدنى $':'Min Deposit $',p.min,'$',`rpe-min-${p.icon}`)}
-        ${editRow(lang==='ar'?'الحد الأقصى $':'Max Deposit $',p.max,'$',`rpe-max-${p.icon}`)}
+        ${editRow(lang==='ar'?'الربح اليومي %':'Daily ROI %',p.daily_rate,'%',`rpe-roi-${p.id}`)}
+        ${editRow(lang==='ar'?'المدة (يوم)':'Duration (days)',p.duration_days,'d',`rpe-days-${p.id}`)}
+        ${editRow(lang==='ar'?'الحد الأدنى $':'Min Deposit $',p.min_amount,'$',`rpe-min-${p.id}`)}
+        ${editRow(lang==='ar'?'الحد الأقصى $':'Max Deposit $',p.max_amount,'$',`rpe-max-${p.id}`)}
       </div>
       <div style="margin-top:16px;padding:10px;background:var(--dark);border-radius:8px;font-size:12px;color:var(--muted)">
-        ${lang==='ar'?'المستثمرون النشطون:':'Active investors:'} <strong style="color:var(--gold)">${p.active.toLocaleString()}</strong>
+        ${lang==='ar'?'المستثمرون النشطون:':'Active investors:'} <strong style="color:var(--gold)">${active.toLocaleString()}</strong>
       </div>
-      <button class="act-btn-primary" style="width:100%;margin-top:12px" onclick="showToast('${lang==='ar'?'تم حفظ الباقة':'Package saved'}')">${lang==='ar'?'💾 حفظ التغييرات':'💾 Save Changes'}</button>
-    </div>`).join('');
+      <button class="act-btn-primary" style="width:100%;margin-top:12px" onclick="savePlanRow('${p.id}')">${lang==='ar'?'💾 حفظ التغييرات':'💾 Save Changes'}</button>
+    </div>`;
+  }).join('');
+}
+async function savePlanRow(planId){
+  const roi = parseFloat(document.getElementById(`rpe-roi-${planId}`)?.value);
+  const days = parseInt(document.getElementById(`rpe-days-${planId}`)?.value, 10);
+  const min = parseFloat(document.getElementById(`rpe-min-${planId}`)?.value);
+  const max = parseFloat(document.getElementById(`rpe-max-${planId}`)?.value);
+  if ([roi,days,min,max].some(v => v===undefined || isNaN(v) || v<0)) {
+    showToast(lang==='ar'?'قيم غير صحيحة':'Invalid values'); return;
+  }
+  if (max < min) { showToast(lang==='ar'?'الحد الأقصى لازم يكون أكبر من الأدنى':'Max must be greater than min'); return; }
+  const { error } = await sdb.from('plans').update({ daily_rate: roi, duration_days: days, min_amount: min, max_amount: max }).eq('id', planId);
+  if (error) { showToast((lang==='ar'?'✗ فشل حفظ الباقة: ':'✗ Failed to save package: ')+error.message); console.error('savePlanRow error:', error); return; }
+  showToast(lang==='ar'?'✓ تم حفظ الباقة':'✓ Package saved');
 }
 function editRow(label,val,unit,id){
   return `<div style="display:flex;align-items:center;justify-content:space-between;background:var(--dark);border-radius:8px;padding:10px 12px">
@@ -1503,8 +1563,14 @@ function renderNotifHistory(){
 }
 
 // ── WALLETS ──
-function renderWallets(){
+async function renderWallets(){
   const grid = document.getElementById('wallets-grid');
+  const keys = walletMeta.map(w=>w.key);
+  const { data, error } = await sdb.from('settings').select('key,value').in('key', keys);
+  if (error) { console.error('renderWallets error:', error); grid.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${error.message}</div>`; return; }
+  const valByKey = {}; (data||[]).forEach(r => valByKey[r.key] = r.value);
+  walletAddrs = walletMeta.map(w => ({ ...w, addr: valByKey[w.key] || '' }));
+
   grid.innerHTML = walletAddrs.map((w,i)=>`
     <div style="background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px">
 
@@ -1524,14 +1590,14 @@ function renderWallets(){
 
       <!-- Address display -->
       <div style="background:var(--dark);border-radius:10px;padding:14px;font-family:var(--mono);font-size:12px;color:var(--gold);word-break:break-all;border:1px solid var(--border);line-height:1.8">
-        ${w.addr}
+        ${escapeHtml(w.addr)}
       </div>
 
       <!-- Editable input -->
       <input
         id="wallet-input-${i}"
         type="text"
-        value="${w.addr}"
+        value="${escapeHtml(w.addr)}"
         style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:.2s"
         onfocus="this.style.borderColor='var(--gold)'"
         onblur="this.style.borderColor='var(--border2)'"
@@ -1551,13 +1617,16 @@ function renderWallets(){
     </div>`).join('');
 }
 
-function saveWallet(i){
+async function saveWallet(i){
   const input = document.getElementById('wallet-input-'+i);
   if(!input) return;
   const newAddr = input.value.trim();
   if(!newAddr){ showToast(lang==='ar'?'العنوان فارغ':'Address is empty'); return; }
+  const key = walletAddrs[i].key;
+  const { error } = await sdb.from('settings').update({ value: newAddr, updated_at: new Date().toISOString() }).eq('key', key);
+  if (error) { showToast((lang==='ar'?'✗ فشل حفظ المحفظة: ':'✗ Failed to save wallet: ')+error.message); console.error('saveWallet error:', error); return; }
   walletAddrs[i].addr = newAddr;
-  showToast(lang==='ar'?`✓ تم حفظ محفظة ${walletAddrs[i].sym}`:`✓ ${walletAddrs[i].sym} wallet saved`);
+  showToast(lang==='ar'?`✓ تم حفظ محفظة ${walletAddrs[i].sym} — هيظهر العنوان الجديد فورًا للعملاء`:`✓ ${walletAddrs[i].sym} wallet saved — clients will see the new address immediately`);
 }
 
 function copyWallet(i){
@@ -1575,12 +1644,22 @@ function copyWallet(i){
 function renderStats(){
   setTimeout(()=>{ drawMonthlyChart(); drawRegChart(); drawCoinsChart(); drawGeo(); },100);
 }
-function drawGeo(){
+async function drawGeo(){
   const el = document.getElementById('geo-list');
-  el.innerHTML = geoData.map(g=>`
+  const { data, error } = await sdb.from('users').select('country');
+  if (error) { console.error('drawGeo error:', error); return; }
+  const byCountry = {};
+  (data||[]).forEach(u => { const c = u.country || (lang==='ar'?'غير محدد':'Unknown'); byCountry[c] = (byCountry[c]||0) + 1; });
+  const total = (data||[]).length || 1;
+  const geo = Object.entries(byCountry)
+    .map(([country, count]) => ({ country, pct: Math.round(count/total*100) }))
+    .sort((a,b) => b.pct - a.pct)
+    .slice(0, 8);
+  if (!geo.length) { el.innerHTML = `<div style="color:var(--muted);font-size:13px">${lang==='ar'?'لا توجد بيانات':'No data'}</div>`; return; }
+  el.innerHTML = geo.map(g=>`
     <div>
       <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px">
-        <span>${g.country}</span>
+        <span>${escapeHtml(g.country)}</span>
         <span style="color:var(--gold);font-family:var(--mono)">${g.pct}%</span>
       </div>
       <div style="height:6px;background:var(--dark);border-radius:3px;overflow:hidden">
@@ -1678,11 +1757,70 @@ function drawPieChart(canvasId, data, colors, labels){
   });
 }
 
-function drawRevChart(){ drawBarChart('rev-canvas',['1','5','10','15','20','25','30'],[180,220,195,280,310,260,340],'#C9A84C'); }
-function drawDistChart(){ drawPieChart('dist-canvas',[40,25,15,12,8],['#26a17b','#f7931a','#627eea','#f0b90b','#e84940'],['USDT','BTC','ETH','BNB','TRX']); }
-function drawMonthlyChart(){ drawBarChart('monthly-canvas',['Jan','Feb','Mar','Apr','May'],[820,1100,980,1400,1800],'#C9A84C'); }
-function drawRegChart(){ drawLineChart('reg-canvas',[120,180,95,210,165,240,310],'#10D9A0'); }
-function drawCoinsChart(){ drawPieChart('coins-canvas',[45,22,18,10,5],['#26a17b','#f7931a','#627eea','#f0b90b','#e84940'],['USDT','BTC','ETH','BNB','TRX']); }
+// ── CHART DATA HELPERS (بيانات حقيقية من الداتابيز) ──
+const COIN_COLORS = {USDT:'#26a17b', BTC:'#f7931a', ETH:'#627eea', BNB:'#f0b90b', TRX:'#e84940'};
+const FALLBACK_COLORS = ['#8a8af0','#f06292','#4dd0e1','#ba68c8','#ffb74d'];
+function colorForCoin(coin, idx){ return COIN_COLORS[coin] || FALLBACK_COLORS[idx % FALLBACK_COLORS.length]; }
+function lastNDays(n){
+  const out = [];
+  for (let i = n-1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    out.push(d.toISOString().slice(0,10));
+  }
+  return out;
+}
+async function getCoinDistribution(){
+  const { data, error } = await sdb.from('deposits').select('coin, amount').eq('status','approved');
+  if (error) { console.error('getCoinDistribution error:', error); return { labels:[], values:[], colors:[] }; }
+  const byCoin = {};
+  (data||[]).forEach(d => { byCoin[d.coin] = (byCoin[d.coin]||0) + parseFloat(d.amount||0); });
+  const labels = Object.keys(byCoin);
+  const values = labels.map(l => byCoin[l]);
+  const colors = labels.map((l,i) => colorForCoin(l,i));
+  return { labels, values, colors };
+}
+
+async function drawRevChart(){
+  const days = lastNDays(7);
+  const { data, error } = await sdb.from('deposits').select('amount, created_at').eq('status','approved').gte('created_at', days[0]);
+  if (error) { console.error('drawRevChart error:', error); return; }
+  const byDay = {}; days.forEach(d=>byDay[d]=0);
+  (data||[]).forEach(d => { const day = (d.created_at||'').slice(0,10); if (byDay[day]!==undefined) byDay[day] += parseFloat(d.amount||0); });
+  drawBarChart('rev-canvas', days.map(d=>d.slice(8,10)), days.map(d=>byDay[d]), '#C9A84C');
+}
+async function drawDistChart(){
+  const { labels, values, colors } = await getCoinDistribution();
+  if (!labels.length) return;
+  drawPieChart('dist-canvas', values, colors, labels);
+}
+async function drawMonthlyChart(){
+  const monthsBack = 6;
+  const since = new Date(); since.setMonth(since.getMonth()-(monthsBack-1)); since.setDate(1);
+  const { data, error } = await sdb.from('deposits').select('amount, created_at').eq('status','approved').gte('created_at', since.toISOString());
+  if (error) { console.error('drawMonthlyChart error:', error); return; }
+  const labels = []; const keys = [];
+  for (let i = monthsBack-1; i >= 0; i--) {
+    const d = new Date(); d.setMonth(d.getMonth()-i); d.setDate(1);
+    keys.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
+    labels.push(d.toLocaleDateString(lang==='ar'?'ar':'en', { month:'short' }));
+  }
+  const byMonth = {}; keys.forEach(k=>byMonth[k]=0);
+  (data||[]).forEach(d => { const key = (d.created_at||'').slice(0,7); if (byMonth[key]!==undefined) byMonth[key] += parseFloat(d.amount||0); });
+  drawBarChart('monthly-canvas', labels, keys.map(k=>byMonth[k]), '#C9A84C');
+}
+async function drawRegChart(){
+  const days = lastNDays(7);
+  const { data, error } = await sdb.from('users').select('created_at').gte('created_at', days[0]);
+  if (error) { console.error('drawRegChart error:', error); return; }
+  const byDay = {}; days.forEach(d=>byDay[d]=0);
+  (data||[]).forEach(u => { const day = (u.created_at||'').slice(0,10); if (byDay[day]!==undefined) byDay[day]++; });
+  drawLineChart('reg-canvas', days.map(d=>byDay[d]), '#10D9A0');
+}
+async function drawCoinsChart(){
+  const { labels, values, colors } = await getCoinDistribution();
+  if (!labels.length) return;
+  drawPieChart('coins-canvas', values, colors, labels);
+}
 
 // ── HELPERS ──
 function statusBadge(s){
@@ -1861,14 +1999,17 @@ document.addEventListener('keydown', e => {
 // ── EXPORT TABLE AS CSV ──
 function exportCSV(section){
   const tables = {
-    users: { data: users, keys: ['name','email','bal','plan','status','country'], headers_ar: ['الاسم','البريد','الرصيد','الباقة','الحالة','الدولة'], headers_en: ['Name','Email','Balance','Plan','Status','Country'] },
-    deposits: { data: deposits, keys: ['id','user','amount','coin','hash','date','status'], headers_ar: ['رقم','المستخدم','المبلغ','العملة','Hash','التاريخ','الحالة'], headers_en: ['ID','User','Amount','Coin','Hash','Date','Status'] },
-    withdrawals: { data: withdrawals, keys: ['id','user','amount','coin','wallet','date','status'], headers_ar: ['رقم','المستخدم','المبلغ','العملة','المحفظة','التاريخ','الحالة'], headers_en: ['ID','User','Amount','Coin','Wallet','Date','Status'] },
+    users: { data: (window.realUsers||[]).map(u=>({name:u.name,email:u.email,balance:u.balance,plan:u.plan,status:u.status,country:u.country})),
+      keys: ['name','email','balance','plan','status','country'], headers_ar: ['الاسم','البريد','الرصيد','الباقة','الحالة','الدولة'], headers_en: ['Name','Email','Balance','Plan','Status','Country'] },
+    deposits: { data: (window.realDeposits||[]).map(d=>({id:d.id,user:d.users?.name||'',amount:d.amount,coin:d.coin,hash:d.tx_hash,date:d.created_at,status:d.status})),
+      keys: ['id','user','amount','coin','hash','date','status'], headers_ar: ['رقم','المستخدم','المبلغ','العملة','Hash','التاريخ','الحالة'], headers_en: ['ID','User','Amount','Coin','Hash','Date','Status'] },
+    withdrawals: { data: (window.realWithdrawals||[]).map(w=>({id:w.id,user:w.users?.name||'',amount:w.amount,coin:w.coin,wallet:w.wallet_address,date:w.created_at,status:w.status})),
+      keys: ['id','user','amount','coin','wallet','date','status'], headers_ar: ['رقم','المستخدم','المبلغ','العملة','المحفظة','التاريخ','الحالة'], headers_en: ['ID','User','Amount','Coin','Wallet','Date','Status'] },
   };
   const cfg = tables[section];
-  if(!cfg) return;
+  if(!cfg || !cfg.data.length){ showToast(lang==='ar'?'لا توجد بيانات للتصدير — افتح القسم أولاً':'No data to export — open the section first'); return; }
   const headers = lang==='ar' ? cfg.headers_ar : cfg.headers_en;
-  const rows = cfg.data.map(row => cfg.keys.map(k => `"${row[k]||''}"`).join(','));
+  const rows = cfg.data.map(row => cfg.keys.map(k => `"${(row[k]??'').toString().replace(/"/g,'""')}"`).join(','));
   const csv = [headers.join(','), ...rows].join('\n');
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
@@ -1957,11 +2098,13 @@ function toggleAutoDist(){
 })();
 
 // ── SEND NOTIF TO SPECIFIC USER (from user modal) ──
-function sendNotifToUser(userId){
-  const u = users.find(u=>u.id===userId);
+async function sendNotifToUser(userId){
+  const u = (window.realUsers||[]).find(u=>u.id===userId);
   if(!u) return;
   const msg = prompt(lang==='ar' ? `أرسل إشعاراً لـ ${u.name}:` : `Send notification to ${u.name}:`);
   if(!msg) return;
+  const { error } = await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'📢 إشعار من الإدارة':'📢 Admin Notice', body: msg, type: 'info' });
+  if (error) { showToast((lang==='ar'?'✗ فشل إرسال الإشعار: ':'✗ Failed to send notification: ')+error.message); console.error('sendNotifToUser error:', error); return; }
   showToast(lang==='ar' ? `✓ تم إرسال الإشعار لـ ${u.name}` : `✓ Notification sent to ${u.name}`);
   closeModal();
 }
@@ -1969,8 +2112,17 @@ function sendNotifToUser(userId){
 // ── OVERVIEW: QUICK PENDING ALERTS ──
 (function(){
   const origRenderOverview = window.renderOverview;
-  window.renderOverview = function(){
-    origRenderOverview();
+  window.renderOverview = async function(){
+    await origRenderOverview();
+    // pull REAL pending counts (مش من arrays وهمية)
+    const [depCount, wdCount, kycCount] = await Promise.all([
+      sdb.from('deposits').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      sdb.from('withdrawals').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      sdb.from('users').select('*', { count: 'exact', head: true }).eq('kyc_status', 'pending').not('kyc_data', 'is', null),
+    ]);
+    const nDep = depCount.count || 0;
+    const nWd = wdCount.count || 0;
+    const nKyc = kycCount.count || 0;
     // inject pending action buttons under stat grid
     const sec = document.getElementById('s-overview');
     let existing = document.getElementById('quick-actions');
@@ -1979,9 +2131,9 @@ function sendNotifToUser(userId){
     qa.id = 'quick-actions';
     qa.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;';
     const actions = [
-      {label:{ar:`📥 ${deposits.filter(d=>d.status==='pending').length} إيداع معلق`,en:`📥 ${deposits.filter(d=>d.status==='pending').length} Pending Deposits`,tr:`📥 Bekleyen Yatırım`}, sec:'s-deposits', color:'var(--gold)'},
-      {label:{ar:`📤 ${withdrawals.filter(w=>w.status==='pending').length} سحب معلق`,en:`📤 ${withdrawals.filter(w=>w.status==='pending').length} Pending Withdrawals`,tr:`📤 Bekleyen Çekim`}, sec:'s-withdrawals', color:'var(--red)'},
-      {label:{ar:`🪪 ${kycReqs.filter(k=>k.status==='pending').length} طلب KYC`,en:`🪪 ${kycReqs.filter(k=>k.status==='pending').length} KYC Requests`,tr:`🪪 KYC Talepleri`}, sec:'s-kyc', color:'var(--blue)'},
+      {label:{ar:`📥 ${nDep} إيداع معلق`,en:`📥 ${nDep} Pending Deposits`,tr:`📥 ${nDep} Bekleyen Yatırım`}, sec:'s-deposits', color:'var(--gold)'},
+      {label:{ar:`📤 ${nWd} سحب معلق`,en:`📤 ${nWd} Pending Withdrawals`,tr:`📤 ${nWd} Bekleyen Çekim`}, sec:'s-withdrawals', color:'var(--red)'},
+      {label:{ar:`🪪 ${nKyc} طلب KYC`,en:`🪪 ${nKyc} KYC Requests`,tr:`🪪 ${nKyc} KYC Talepleri`}, sec:'s-kyc', color:'var(--blue)'},
     ];
     qa.innerHTML = actions.map(a=>`
       <button onclick="switchSection('${a.sec}')" style="
@@ -1997,23 +2149,7 @@ function sendNotifToUser(userId){
   };
 })();
 
-// ── COMPLETE: PATCH showUserModal to add send notif button ──
-(function(){
-  const orig = window.showUserModal;
-  window.showUserModal = function(id){
-    orig(id);
-    // upgrade modal body
-    const body = document.getElementById('modal-user-body');
-    if(!body) return;
-    const btns = body.querySelector('div[style*="display:flex"]');
-    if(!btns) return;
-    const nb = document.createElement('button');
-    nb.className = 'act-btn blue';
-    nb.textContent = lang==='ar' ? '📢 إشعار' : '📢 Notify';
-    nb.onclick = () => sendNotifToUser(id);
-    btns.appendChild(nb);
-  };
-})();
+// (الزرار "Notify" بقى جزء أصلي من showUserModal فوق، فمفيش حاجة نضيفها هنا تاني)
 
 // ── INIT FAB on login ──
 document.getElementById('li-pass').addEventListener('keydown', e => {
@@ -2140,12 +2276,25 @@ async function rejectDeposit(depositId, email, name) {
   await loadRealDeposits();
 }
 
-// ── إرسال إيميل عبر Supabase Edge Function (بسيط) ──
+// ── إرسال إيميل حقيقي عبر Supabase Edge Function (send-email + Resend) ──
+// لو الإيميل فشل (مثلاً RESEND_API_KEY لسه مش مضاف) العملية الأساسية (قبول/رفض) متعملة بالفعل وما تفشلش بسبب الإيميل
 async function sendEmailNotification(email, name, amount, status, reason='') {
-  // نستخدم Supabase Realtime notifications بدل إيميل مباشر
-  // الإيميل الحقيقي محتاج Supabase Edge Function أو SendGrid
-  console.log('Email notification:', { email, name, amount, status });
-  // في المرحلة دي بنحفظ الإشعار في قاعدة البيانات وهيظهر للعميل في الموقع
+  if (!email) return;
+  const subjects = {
+    approved: lang==='ar' ? `✅ تم قبول طلبك بنجاح — Crysanto` : `✅ Your request was approved — Crysanto`,
+    rejected: lang==='ar' ? `❌ تم رفض طلبك — Crysanto` : `❌ Your request was rejected — Crysanto`,
+  };
+  const bodyHtml = status === 'approved'
+    ? `<div style="font-family:sans-serif"><h2>مرحبًا ${escapeHtml(name)}،</h2><p>تم قبول طلبك بمبلغ <b>$${amount}</b> وإضافته/تنفيذه على حسابك في Crysanto.</p></div>`
+    : `<div style="font-family:sans-serif"><h2>مرحبًا ${escapeHtml(name)}،</h2><p>تم رفض طلبك${reason ? ' — السبب: '+escapeHtml(reason) : ''}.</p></div>`;
+  try {
+    const { error } = await sdb.functions.invoke('send-email', {
+      body: { to: email, subject: subjects[status] || subjects.approved, html: bodyHtml }
+    });
+    if (error) console.error('send-email function error:', error);
+  } catch (e) {
+    console.error('sendEmailNotification unexpected error:', e);
+  }
 }
 
 // ── تحميل السحوبات الحقيقية ──
@@ -2200,15 +2349,15 @@ function renderRealWithdrawals(data) {
         <td>
           ${w.status === 'pending' ? `
           <div style="display:flex;gap:6px">
-            <button class="act-btn green" onclick="approveWithdrawal('${w.id}','${w.user_id}',${w.amount},'${escapeJsAttr(w.users?.name||'')}')">${t('approve')}</button>
-            <button class="act-btn red" onclick="rejectWithdrawal('${w.id}','${w.user_id}',${w.amount},'${escapeJsAttr(w.users?.name||'')}')">${t('reject')}</button>
+            <button class="act-btn green" onclick="approveWithdrawal('${w.id}','${w.user_id}',${w.amount},'${escapeJsAttr(w.users?.name||'')}','${escapeJsAttr(w.users?.email||'')}')">${t('approve')}</button>
+            <button class="act-btn red" onclick="rejectWithdrawal('${w.id}','${w.user_id}',${w.amount},'${escapeJsAttr(w.users?.name||'')}','${escapeJsAttr(w.users?.email||'')}')">${t('reject')}</button>
           </div>` : `<span style="color:var(--muted);font-size:12px">—</span>`}
         </td>
       </tr>`).join('')}
     </tbody></table>`;
 }
 
-async function approveWithdrawal(wdId, userId, amount, name) {
+async function approveWithdrawal(wdId, userId, amount, name, email) {
   const confirmed = confirm(lang==='ar' ? `موافقة على سحب $${amount} لـ ${name}؟` : `Approve $${amount} withdrawal for ${name}?`);
   if (!confirmed) return;
   const { data, error } = await sdb.rpc('admin_approve_withdrawal', { p_withdrawal_id: wdId });
@@ -2217,13 +2366,15 @@ async function approveWithdrawal(wdId, userId, amount, name) {
     console.error('approveWithdrawal RPC error:', error);
     return;
   }
+  await sendEmailNotification(email, name, amount, 'approved');
   showToast(lang==='ar'?`✓ تم قبول سحب $${amount} لـ ${name}`:`✓ $${amount} withdrawal approved for ${name}`);
   await loadRealWithdrawals();
 }
 
-async function rejectWithdrawal(wdId, userId, amount, name) {
+async function rejectWithdrawal(wdId, userId, amount, name, email) {
   const { error } = await sdb.rpc('admin_reject_withdrawal', { p_withdrawal_id: wdId, p_reason: '' });
   if (error) { showToast((lang==='ar'?'✗ فشل رفض السحب: ':'✗ Failed to reject withdrawal: ')+error.message); console.error('rejectWithdrawal RPC error:', error); return; }
+  await sendEmailNotification(email, name, amount, 'rejected');
   showToast(lang==='ar'?`✗ تم رفض السحب`:`✗ Withdrawal rejected`);
   await loadRealWithdrawals();
 }
@@ -2278,6 +2429,7 @@ function renderRealUsers(data) {
         <td>${statusBadge(u.status)}</td>
         <td style="font-size:11px;color:var(--muted)">${u.created_at?.slice(0,10)||'—'}</td>
         <td><div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="act-btn blue" onclick="showUserModal('${u.id}')">${t('details')}</button>
           ${u.status==='blocked'
             ? `<button class="act-btn green" onclick="toggleUserBlock('${u.id}','active')">${t('unblock')}</button>`
             : `<button class="act-btn red" onclick="toggleUserBlock('${u.id}','blocked')">${t('block')}</button>`}
@@ -2288,7 +2440,8 @@ function renderRealUsers(data) {
 }
 
 async function toggleUserBlock(userId, newStatus) {
-  await sdb.from('users').update({ status: newStatus }).eq('id', userId);
+  const { error } = await sdb.from('users').update({ status: newStatus }).eq('id', userId);
+  if (error) { showToast((lang==='ar'?'✗ فشل تنفيذ العملية: ':'✗ Failed: ')+error.message); console.error('toggleUserBlock error:', error); return; }
   showToast(newStatus==='blocked' ? (lang==='ar'?'تم حظر المستخدم':'User blocked') : (lang==='ar'?'تم رفع الحظر':'User unblocked'));
   await loadRealUsers();
 }
