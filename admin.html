@@ -657,16 +657,17 @@ body.ltr .toast{left:auto;right:24px;}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
         <div class="panel">
           <div class="panel-head"><span id="set-site-title">إعدادات الموقع</span></div>
-          <div class="form-g"><label id="set-sitename-l">اسم الموقع</label><input type="text" value="Crysanto" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
-          <div class="form-g"><label id="set-email-l">البريد الإلكتروني</label><input type="email" value="support@crysanto.io" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
-          <div class="form-g"><label id="set-min-dep-l">الحد الأدنى للإيداع ($)</label><input type="number" value="100" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
-          <div class="form-g"><label id="set-min-wd-l">الحد الأدنى للسحب ($)</label><input type="number" value="50" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
-          <button class="act-btn-primary" onclick="showToast('تم حفظ الإعدادات ✓')" id="set-save-btn">💾 حفظ الإعدادات</button>
+          <div class="form-g"><label id="set-sitename-l">اسم الموقع</label><input id="set-sitename" type="text" value="Crysanto" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
+          <div class="form-g"><label id="set-email-l">البريد الإلكتروني</label><input id="set-email" type="email" value="support@crysanto.io" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
+          <div class="form-g"><label id="set-min-dep-l">الحد الأدنى للإيداع ($)</label><input id="set-min-dep" type="number" value="100" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
+          <div class="form-g"><label id="set-min-wd-l">الحد الأدنى للسحب ($)</label><input id="set-min-wd" type="number" value="50" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
+          <div class="form-g"><label id="set-ref-rate-l">نسبة عمولة الإحالة (%)</label><input id="set-ref-rate" type="number" value="5" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
+          <button class="act-btn-primary" onclick="saveSiteSettings()" id="set-save-btn">💾 حفظ الإعدادات</button>
         </div>
         <div class="panel">
           <div class="panel-head"><span id="set-sec-title">إعدادات الأمان</span></div>
-          <div class="form-g"><label id="set-pass-l">كلمة مرور الإدارة</label><input type="password" placeholder="••••••••" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
-          <div class="form-g"><label id="set-newpass-l">كلمة مرور جديدة</label><input type="password" placeholder="••••••••" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
+          <div class="form-g"><label id="set-pass-l">كلمة مرور الإدارة الحالية</label><input id="set-pass-cur" type="password" placeholder="••••••••" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
+          <div class="form-g"><label id="set-newpass-l">كلمة مرور جديدة</label><input id="set-pass-new" type="password" placeholder="••••••••" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--dark);border-radius:8px;margin-bottom:12px">
             <span style="font-size:13px" id="set-maint-l">وضع الصيانة</span>
             <label style="position:relative;width:44px;height:24px;cursor:pointer">
@@ -678,15 +679,16 @@ body.ltr .toast{left:auto;right:24px;}
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--dark);border-radius:8px;margin-bottom:12px">
             <span style="font-size:13px" id="set-reg-l">السماح بالتسجيل</span>
             <label style="position:relative;width:44px;height:24px;cursor:pointer">
-              <input type="checkbox" checked style="opacity:0;width:0;height:0">
-              <span style="position:absolute;inset:0;background:var(--green);border-radius:12px"></span>
-              <span style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%"></span>
+              <input type="checkbox" id="reg-toggle" checked style="opacity:0;width:0;height:0" onchange="toggleRegistration()">
+              <span id="reg-toggle-track" style="position:absolute;inset:0;background:var(--green);border-radius:12px;transition:.3s"></span>
+              <span id="reg-toggle-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.3s"></span>
             </label>
           </div>
-          <button class="act-btn-primary" onclick="showToast('تم حفظ إعدادات الأمان ✓')" id="set-sec-save">🔐 حفظ إعدادات الأمان</button>
+          <button class="act-btn-primary" onclick="saveAdminPassword()" id="set-sec-save">🔐 حفظ إعدادات الأمان</button>
         </div>
       </div>
     </div>
+
 
   </div><!-- /main -->
 </div><!-- /app -->
@@ -1016,7 +1018,7 @@ function renderCurrentSection(){
     's-withdrawals':renderWithdrawals,'s-investments':renderInvestments,
     's-kyc':renderKYC,'s-referrals':renderReferrals,'s-profits':renderProfits,
     's-packages':renderPackages,'s-notifs':renderNotifs,'s-wallets':renderWallets,
-    's-stats':renderStats,'s-settings':()=>{}
+    's-stats':renderStats,'s-settings':renderSettings
   };
   if(renders[currentSection]) renders[currentSection]();
 }
@@ -1845,14 +1847,88 @@ function showToast(msg){
   setTimeout(()=>el.classList.remove('show'),2800);
 }
 
-function toggleMaint(){
-  const on=document.getElementById('maint-toggle').checked;
+async function renderSettings(){
+  const keys = ['site_name','support_email','min_deposit','min_withdrawal','referral_rate','maintenance_mode','registration_open'];
+  const { data, error } = await sdb.from('settings').select('key,value').in('key', keys);
+  if (error) { console.error('renderSettings error:', error); showToast((lang==='ar'?'✗ فشل تحميل الإعدادات: ':'✗ Failed to load settings: ')+error.message); return; }
+  const byKey = {}; (data||[]).forEach(r => byKey[r.key] = r.value);
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v!==undefined) el.value = v; };
+  setVal('set-sitename', byKey.site_name);
+  setVal('set-email', byKey.support_email);
+  setVal('set-min-dep', byKey.min_deposit);
+  setVal('set-min-wd', byKey.min_withdrawal);
+  setVal('set-ref-rate', byKey.referral_rate);
+
+  const maintOn = byKey.maintenance_mode === 'true';
+  const maintToggle = document.getElementById('maint-toggle');
+  if (maintToggle) maintToggle.checked = maintOn;
+  const track = document.getElementById('toggle-track'); const thumb = document.getElementById('toggle-thumb');
+  if (track) track.style.background = maintOn ? 'var(--red)' : 'var(--border2)';
+  if (thumb) { thumb.style.right = maintOn ? '3px' : ''; thumb.style.left = maintOn ? '' : '3px'; }
+
+  const regOn = byKey.registration_open !== 'false';
+  const regToggle = document.getElementById('reg-toggle');
+  if (regToggle) regToggle.checked = regOn;
+  const regTrack = document.getElementById('reg-toggle-track'); const regThumb = document.getElementById('reg-toggle-thumb');
+  if (regTrack) regTrack.style.background = regOn ? 'var(--green)' : 'var(--border2)';
+  if (regThumb) { regThumb.style.left = regOn ? '3px' : ''; regThumb.style.right = regOn ? '' : '3px'; }
+}
+
+async function saveSiteSettings(){
+  const updates = [
+    { key: 'site_name', value: document.getElementById('set-sitename').value.trim() },
+    { key: 'support_email', value: document.getElementById('set-email').value.trim() },
+    { key: 'min_deposit', value: document.getElementById('set-min-dep').value },
+    { key: 'min_withdrawal', value: document.getElementById('set-min-wd').value },
+    { key: 'referral_rate', value: document.getElementById('set-ref-rate').value },
+  ];
+  for (const u of updates) {
+    const { error } = await sdb.from('settings').update({ value: u.value, updated_at: new Date().toISOString() }).eq('key', u.key);
+    if (error) { showToast((lang==='ar'?'✗ فشل حفظ الإعدادات: ':'✗ Failed to save settings: ')+error.message); console.error('saveSiteSettings error:', error); return; }
+  }
+  showToast(lang==='ar'?'✓ تم حفظ الإعدادات':'✓ Settings saved');
+}
+
+async function toggleMaint(){
+  const on = document.getElementById('maint-toggle').checked;
   const track=document.getElementById('toggle-track');
   const thumb=document.getElementById('toggle-thumb');
   track.style.background=on?'var(--red)':'var(--border2)';
   thumb.style.right=on?'3px':'';
   thumb.style.left=on?'':'3px';
-  showToast(on?(lang==='ar'?'⚠️ وضع الصيانة نشط':'⚠️ Maintenance mode ON'):(lang==='ar'?'✓ الموقع يعمل بشكل طبيعي':'✓ Site is live'));
+  const { error } = await sdb.from('settings').update({ value: on?'true':'false', updated_at: new Date().toISOString() }).eq('key','maintenance_mode');
+  if (error) { showToast((lang==='ar'?'✗ فشل التحديث: ':'✗ Failed to update: ')+error.message); console.error('toggleMaint error:', error); return; }
+  showToast(on?(lang==='ar'?'⚠️ وضع الصيانة نشط — العملاء هيشوفوا صفحة الصيانة':'⚠️ Maintenance mode ON — clients will see the maintenance page'):(lang==='ar'?'✓ الموقع يعمل بشكل طبيعي':'✓ Site is live'));
+}
+
+async function toggleRegistration(){
+  const on = document.getElementById('reg-toggle').checked;
+  const track=document.getElementById('reg-toggle-track');
+  const thumb=document.getElementById('reg-toggle-thumb');
+  track.style.background=on?'var(--green)':'var(--border2)';
+  thumb.style.left=on?'3px':'';
+  thumb.style.right=on?'':'3px';
+  const { error } = await sdb.from('settings').update({ value: on?'true':'false', updated_at: new Date().toISOString() }).eq('key','registration_open');
+  if (error) { showToast((lang==='ar'?'✗ فشل التحديث: ':'✗ Failed to update: ')+error.message); console.error('toggleRegistration error:', error); return; }
+  showToast(on?(lang==='ar'?'✓ التسجيل مفتوح':'✓ Registration open'):(lang==='ar'?'⛔ التسجيل مغلق':'⛔ Registration closed'));
+}
+
+async function saveAdminPassword(){
+  const curPass = document.getElementById('set-pass-cur').value;
+  const newPass = document.getElementById('set-pass-new').value;
+  if (!curPass || !newPass) { showToast(lang==='ar'?'املأ كلمة المرور الحالية والجديدة':'Fill in current and new password'); return; }
+  if (newPass.length < 8) { showToast(lang==='ar'?'كلمة المرور الجديدة لازم تكون 8 حروف على الأقل':'New password must be at least 8 characters'); return; }
+  const { data: sessionData } = await sdb.auth.getSession();
+  const email = sessionData?.session?.user?.email;
+  if (!email) { showToast(lang==='ar'?'لازم تسجل دخول الأول':'You must be logged in'); return; }
+  // نتأكد من كلمة المرور الحالية الأول قبل أي تغيير (إعادة تسجيل دخول بنفس الإيميل)
+  const { error: verifyError } = await sdb.auth.signInWithPassword({ email, password: curPass });
+  if (verifyError) { showToast(lang==='ar'?'✗ كلمة المرور الحالية غلط':'✗ Current password is incorrect'); return; }
+  const { error } = await sdb.auth.updateUser({ password: newPass });
+  if (error) { showToast((lang==='ar'?'✗ فشل تغيير كلمة المرور: ':'✗ Failed to change password: ')+error.message); console.error('saveAdminPassword error:', error); return; }
+  document.getElementById('set-pass-cur').value = '';
+  document.getElementById('set-pass-new').value = '';
+  showToast(lang==='ar'?'✓ تم تغيير كلمة المرور بنجاح':'✓ Password changed successfully');
 }
 
 window.addEventListener('resize',()=>{
@@ -2495,6 +2571,12 @@ async function confirmBalanceEdit(userId, name) {
     console.error('confirmBalanceEdit RPC error:', error);
     return;
   }
+  await sdb.from('notifications').insert({
+    user_id: userId,
+    title: lang==='ar'?'💰 تم تحديث رصيدك':'💰 Your balance was updated',
+    body: lang==='ar'?`رصيدك الجديد: $${newBal.toLocaleString()}`:`Your new balance: $${newBal.toLocaleString()}`,
+    type: 'info'
+  });
   showToast(lang==='ar'?`✓ تم تحديث رصيد ${name} إلى $${newBal.toLocaleString()}`:`✓ ${name} balance updated to $${newBal.toLocaleString()}`);
   await loadRealUsers();
 }
