@@ -1146,6 +1146,33 @@ const coins = [
   {sym:'TRX',name:'TRON',price:0.142,change:-0.8,cap:'$12B',vol:'$1.2B',icon:'T',color:'#e84940'},
 ];
 
+// ── إعدادات الموقع (حقيقية من جدول settings — نفس المصدر اللي لوحة الأدمن بتتحكم فيه) ──
+// قيم افتراضية (fallback) لو فشل التحميل، عشان الموقع يفضل شغال عادي
+const siteSettings = {
+  site_name: 'Crysanto', support_email: 'support@crysanto.io',
+  min_deposit: 100, min_withdrawal: 50, referral_rate: 5,
+  maintenance_mode: false, registration_open: true,
+};
+async function fetchSiteSettingsFromDB() {
+  try {
+    const { data, error } = await db.from('settings').select('key,value');
+    if (error) { console.error('fetchSiteSettingsFromDB error:', error.message || error); return; }
+    (data||[]).forEach(r => {
+      if (r.key === 'maintenance_mode' || r.key === 'registration_open') siteSettings[r.key] = r.value === 'true';
+      else if (r.key === 'min_deposit' || r.key === 'min_withdrawal' || r.key === 'referral_rate') siteSettings[r.key] = parseFloat(r.value) || siteSettings[r.key];
+      else if (siteSettings.hasOwnProperty(r.key)) siteSettings[r.key] = r.value;
+    });
+  } catch(e) { console.error('fetchSiteSettingsFromDB exception:', e.message || e); }
+}
+function applyMaintenanceMode() {
+  if (!siteSettings.maintenance_mode) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'maintenance-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#0a0a0f;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:var(--font, sans-serif);color:#fff';
+  const msg = { ar:'الموقع تحت الصيانة حاليًا، حاول مرة أخرى بعد قليل', en:'Site is currently under maintenance, please check back soon', tr:'Site şu anda bakımda, lütfen daha sonra tekrar deneyin' };
+  overlay.innerHTML = `<div style="font-size:48px;margin-bottom:16px">🛠️</div><h2 style="margin-bottom:10px">${msg[lang]||msg.ar}</h2>`;
+  document.body.appendChild(overlay);
+}
 // عناوين افتراضية (fallback) — تُستبدل تلقائيًا بالعناوين الحقيقية من جدول settings عند تحميل الصفحة
 // ده نفس المصدر اللي لوحة الأدمن بتعدّل فيه، فأي تغيير من الأدمن يظهر هنا فورًا
 const wallets = {
@@ -1428,6 +1455,9 @@ async function doRegister() {
   }
   if(!terms) {
     showErr(errEl,{ar:'يجب الموافقة على الشروط',en:'Must agree to terms',tr:'Şartları kabul edin'}); return;
+  }
+  if(!siteSettings.registration_open) {
+    showErr(errEl,{ar:'التسجيل مغلق مؤقتًا، حاول لاحقًا',en:'Registration is temporarily closed',tr:'Kayıt geçici olarak kapalı'}); return;
   }
 
   if(btn) { btn.textContent = '⏳'; btn.disabled = true; }
@@ -1842,7 +1872,7 @@ async function submitDeposit() {
   const hash=document.getElementById('dep-hash').value.trim();
   const amount=parseFloat(document.getElementById('dep-amount').value);
   if(!hash){showToast(lang==='ar'?'أدخل رقم التحويل TX Hash':'Enter TX Hash','err');return;}
-  if(!amount||amount<100){showToast(lang==='ar'?'الحد الأدنى للإيداع $100':'Minimum deposit $100','err');return;}
+  if(!amount||amount<siteSettings.min_deposit){showToast(lang==='ar'?`الحد الأدنى للإيداع $${siteSettings.min_deposit}`:`Minimum deposit $${siteSettings.min_deposit}`,'err');return;}
   try {
     const activeBtn=document.querySelector('#dw-dep .coin-btn.active');
     const coinKey=activeBtn?activeBtn.getAttribute('onclick').match(/'([^']+)'/)[1]:'USDT-TRC20';
@@ -1872,7 +1902,7 @@ async function submitWithdrawal() {
   const addr=document.getElementById('wd-addr').value.trim();
   const amount=parseFloat(document.getElementById('wd-amount').value);
   if(!addr){showToast(lang==='ar'?'أدخل عنوان محفظتك':'Enter wallet address','err');return;}
-  if(!amount||amount<50){showToast(lang==='ar'?'الحد الأدنى للسحب $50':'Minimum withdrawal $50','err');return;}
+  if(!amount||amount<siteSettings.min_withdrawal){showToast(lang==='ar'?`الحد الأدنى للسحب $${siteSettings.min_withdrawal}`:`Minimum withdrawal $${siteSettings.min_withdrawal}`,'err');return;}
 
   // نحسب الرصيد المتاح الحقيقي = الرصيد الكلي ناقص أي فلوس مقفولة في استثمار نشط
   const { data: activeInvData } = await db.from('investments').select('amount').eq('user_id',userProfile.id).eq('status','active');
@@ -2094,6 +2124,7 @@ function init(){
   setLang(lang);
   buildTicker();buildMarkets();buildLivePrices();buildFaq();buildFeatures();buildPlans();calcProfit();
   fetchWalletsFromDB().then(()=>{ refreshActiveDepositCoin(); renderWalletDashboardList(); });
+  fetchSiteSettingsFromDB().then(applyMaintenanceMode);
   setInterval(updatePrices,5000);
   setInterval(()=>{
     const v1=document.getElementById('ls1v');
