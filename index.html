@@ -196,17 +196,36 @@ body.ltr .toast{right:auto;left:24px;}
 footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;text-align:center;position:relative;z-index:1;}
 .footer-logo{font-family:var(--en);font-size:26px;font-weight:800;color:var(--gold);margin-bottom:8px;}
 .footer-copy{font-size:11px;color:var(--muted);}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;text-align:left;}
+body:not(.ltr) .footer-grid{text-align:right;}
 
 @media(max-width:900px){
-  .stats-strip,.plans-grid,.stat-cards,.dash-row,.contact-grid,.about-grid,.team-grid{grid-template-columns:1fr!important;}
+  .stats-strip,.plans-grid,.stat-cards,.dash-row,.contact-grid,.about-grid,.team-grid,.footer-grid{grid-template-columns:1fr!important;}
   .dash-grid{grid-template-columns:1fr;}
   .sidebar{position:static;}
-  nav{padding:0 16px;}
+  nav{padding:0 12px;gap:6px;}
   .nav-links{display:none;}
   .section,.dashboard-wrap{padding:40px 16px;}
   .stats-strip{margin:0 16px 40px;}
-  #page-about [style*="grid-template-columns:repeat(4"]{grid-template-columns:1fr 1fr!important;}
-  #page-home [style*="grid-template-columns:repeat(3"]{grid-template-columns:1fr!important;}
+  /* أي قسم في الصفحة معمول له grid أعمدة inline (مهما كان عددها) بيرجع عمود واحد على الموبايل — قاعدة عامة بدل ما نلحق كل صفحة لوحدها */
+  .page [style*="grid-template-columns:repeat"]{grid-template-columns:1fr!important;}
+  .page [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;}
+  /* الـ nav: مساحة ضيقة، فبنخفي مبدّل اللغة من الشريط العلوي (موجود جوه المنيو بدل منه) ونصغّر بطاقة اليوزر */
+  .nav-right{gap:6px;}
+  .nav-right .lang-sw{display:none;}
+  #user-menu{gap:4px!important;}
+  #user-menu > div{padding:5px 8px!important;}
+  #user-name-nav{display:none;}
+  #logout-btn{padding:6px 9px!important;font-size:0!important;}
+  #logout-btn::after{content:'⎋';font-size:14px;}
+}
+
+@media(max-width:480px){
+  .logo span{font-size:18px;}
+  nav{height:60px;}
+  .page{padding-top:60px;}
+  .hero{padding:40px 16px;}
+  .modal{padding:24px 20px;}
 }
 
 /* ── MOBILE MENU ── */
@@ -271,6 +290,11 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
 
 <!-- MOBILE MENU -->
 <div class="mobile-menu" id="mobile-menu">
+  <div style="display:flex;gap:6px;margin-bottom:10px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:4px;">
+    <button class="lb" id="m-lb-ar" onclick="setLang('ar')" style="flex:1;padding:8px;border-radius:5px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;">عربي</button>
+    <button class="lb on" id="m-lb-en" onclick="setLang('en')" style="flex:1;padding:8px;border-radius:5px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;">EN</button>
+    <button class="lb" id="m-lb-tr" onclick="setLang('tr')" style="flex:1;padding:8px;border-radius:5px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;">TR</button>
+  </div>
   <a onclick="showPage('home',this);closeMobileMenu()" data-ar="الرئيسية" data-en="Home" data-tr="Ana Sayfa">Home</a>
   <a onclick="showPage('about',this);closeMobileMenu()" data-ar="من نحن" data-en="About" data-tr="Hakkımızda">About</a>
   <a onclick="showPage('plans',this);closeMobileMenu()" data-ar="الباقات" data-en="Plans" data-tr="Planlar">Plans</a>
@@ -789,7 +813,7 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
 </div>
 
 <footer style="padding:50px 40px 30px">
-  <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;max-width:1100px;margin:0 auto 40px">
+  <div class="footer-grid" style="gap:40px;max-width:1100px;margin:0 auto 40px">
     <div>
       <div class="footer-logo" style="margin-bottom:12px;text-align:left">Crysanto</div>
       <p style="font-size:12px;color:var(--muted);line-height:1.9;max-width:280px" id="footer-desc" data-ar="منصة استثمار رقمي رائدة توفر عوائد يومية مضمونة لعملاء في أكثر من 50 دولة." data-en="A leading digital investment platform providing guaranteed daily returns for clients in 50+ countries." data-tr="50'den fazla ülkede müşterilere garantili günlük getiri sunan önde gelen dijital yatırım platformu.">A leading digital investment platform providing guaranteed daily returns for clients in 50+ countries.</p>
@@ -810,10 +834,10 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
     <div>
       <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text)" id="footer-legal" data-ar="قانوني" data-en="Legal" data-tr="Yasal">Legal</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <a href="#" style="font-size:12px;color:var(--muted);text-decoration:none" id="fl-terms" data-ar="شروط الاستخدام" data-en="Terms of Service" data-tr="Kullanım Şartları">Terms of Service</a>
-        <a href="#" style="font-size:12px;color:var(--muted);text-decoration:none" id="fl-privacy" data-ar="سياسة الخصوصية" data-en="Privacy Policy" data-tr="Gizlilik Politikası">Privacy Policy</a>
-        <a href="#" style="font-size:12px;color:var(--muted);text-decoration:none" id="fl-aml" data-ar="سياسة AML" data-en="AML Policy" data-tr="AML Politikası">AML Policy</a>
-        <a href="#" style="font-size:12px;color:var(--muted);text-decoration:none" id="fl-risk" data-ar="إفصاح المخاطر" data-en="Risk Disclosure" data-tr="Risk Açıklaması">Risk Disclosure</a>
+        <a href="#" style="font-size:12px;color:var(--muted);text-decoration:none" id="fl-terms" data-ar="شروط الاستخدام" data-en="Terms of Service" data-tr="Kullanım Şartları" onclick="openLegal('terms');return false;">Terms of Service</a>
+        <a href="#" style="font-size:12px;color:var(--muted);text-decoration:none" id="fl-privacy" data-ar="سياسة الخصوصية" data-en="Privacy Policy" data-tr="Gizlilik Politikası" onclick="openLegal('privacy');return false;">Privacy Policy</a>
+        <a href="#" style="font-size:12px;color:var(--muted);text-decoration:none" id="fl-aml" data-ar="سياسة AML" data-en="AML Policy" data-tr="AML Politikası" onclick="openLegal('aml');return false;">AML Policy</a>
+        <a href="#" style="font-size:12px;color:var(--muted);text-decoration:none" id="fl-risk" data-ar="إفصاح المخاطر" data-en="Risk Disclosure" data-tr="Risk Açıklaması" onclick="openLegal('risk');return false;">Risk Disclosure</a>
       </div>
     </div>
     <div>
@@ -863,7 +887,7 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
       <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="reg-title" data-ar="إنشاء حساب" data-en="Create Account" data-tr="Hesap Oluştur">Create Account</h3>
     </div>
     <div class="err-msg" id="reg-err"></div>
-    <div class="form-group"><label id="rl1" data-ar="الاسم الكامل" data-en="Full Name" data-tr="Ad Soyad">Full Name</label><input type="text" id="reg-name" placeholder="Ahmed Mohamed"></div>
+    <div class="form-group"><label id="rl1" data-ar="الاسم الكامل" data-en="Full Name" data-tr="Ad Soyad">Full Name</label><input type="text" id="reg-name"></div>
     <div class="form-group"><label id="rl2" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">Email</label><input type="email" id="reg-email" placeholder="example@mail.com"></div>
     <div class="form-group">
       <label id="rl3" data-ar="كلمة المرور" data-en="Password" data-tr="Şifre">Password</label>
@@ -905,6 +929,133 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;t
   </div>
 </div>
 
+<!-- ── LEGAL MODALS: محتوى نموذجي عام — يُنصح باستبداله بنص مُراجَع قانونيًا قبل التشغيل الفعلي ── -->
+<div class="modal-overlay" id="modal-terms">
+  <div class="modal" style="max-width:600px">
+    <button class="modal-close" onclick="closeModal('terms')">✕</button>
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:18px" data-ar="شروط الاستخدام" data-en="Terms of Service" data-tr="Kullanım Şartları">Terms of Service</h3>
+    <div class="legal-body" style="font-size:13px;color:var(--muted);line-height:2;max-height:60vh;overflow-y:auto;padding-left:4px">
+      <div class="legal-ar" style="display:none">
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">1. قبول الشروط</strong><br>باستخدامك لمنصة Crysanto فإنك توافق على الالتزام بهذه الشروط وبجميع القوانين واللوائح المعمول بها. إذا كنت لا توافق على أي من هذه الشروط، يُرجى عدم استخدام المنصة.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">2. الأهلية</strong><br>يجب أن تكون قد أتممت 18 عامًا على الأقل لاستخدام خدماتنا. باستخدامك للمنصة، فإنك تقر بأنك تستوفي هذا الشرط وأنك تتحمل المسؤولية القانونية الكاملة عن استثماراتك.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">3. الحساب والأمان</strong><br>أنت مسؤول عن الحفاظ على سرية بيانات حسابك وكلمة المرور الخاصة بك، وعن جميع الأنشطة التي تتم من خلال حسابك. يجب إبلاغنا فورًا بأي استخدام غير مصرح به لحسابك.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">4. الإيداعات والسحوبات</strong><br>تخضع جميع طلبات الإيداع والسحب للمراجعة والموافقة الإدارية. تحتفظ المنصة بالحق في طلب مستندات إضافية للتحقق من الهوية أو مصدر الأموال قبل معالجة أي معاملة.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">5. تعديل الشروط</strong><br>نحتفظ بالحق في تعديل هذه الشروط في أي وقت. سيتم إخطار المستخدمين بأي تغييرات جوهرية، ويُعد استمرارك في استخدام المنصة بعد التعديل موافقة ضمنية على الشروط المحدّثة.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">6. إنهاء الحساب</strong><br>نحتفظ بالحق في تعليق أو إنهاء أي حساب يُشتبه في انتهاكه لهذه الشروط أو في استخدامه لأغراض احتيالية أو غير قانونية.</p>
+      </div>
+      <div class="legal-en" style="display:none">
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">1. Acceptance of Terms</strong><br>By using the Crysanto platform, you agree to be bound by these terms and all applicable laws and regulations. If you do not agree with any of these terms, please do not use the platform.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">2. Eligibility</strong><br>You must be at least 18 years old to use our services. By using the platform, you confirm that you meet this requirement and accept full legal responsibility for your investments.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">3. Account & Security</strong><br>You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account. You must notify us immediately of any unauthorized use of your account.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">4. Deposits & Withdrawals</strong><br>All deposit and withdrawal requests are subject to administrative review and approval. The platform reserves the right to request additional documentation to verify identity or source of funds before processing any transaction.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">5. Changes to Terms</strong><br>We reserve the right to modify these terms at any time. Users will be notified of any material changes, and continued use of the platform after such changes constitutes acceptance of the updated terms.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">6. Account Termination</strong><br>We reserve the right to suspend or terminate any account suspected of violating these terms or of being used for fraudulent or illegal purposes.</p>
+      </div>
+      <div class="legal-tr" style="display:none">
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">1. Şartların Kabulü</strong><br>Crysanto platformunu kullanarak bu şartlara ve geçerli tüm yasalara uymayı kabul edersiniz. Bu şartlardan herhangi birini kabul etmiyorsanız lütfen platformu kullanmayın.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">2. Uygunluk</strong><br>Hizmetlerimizi kullanmak için en az 18 yaşında olmalısınız. Platformu kullanarak bu şartı karşıladığınızı ve yatırımlarınızdan tam yasal sorumluluk taşıdığınızı onaylarsınız.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">3. Hesap ve Güvenlik</strong><br>Hesap bilgilerinizin gizliliğini korumaktan ve hesabınız altında gerçekleşen tüm faaliyetlerden siz sorumlusunuz. Yetkisiz kullanım durumunda bizi derhal bilgilendirmelisiniz.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">4. Yatırma ve Çekme İşlemleri</strong><br>Tüm yatırma ve çekme talepleri idari incelemeye ve onaya tabidir. Platform, herhangi bir işlemi gerçekleştirmeden önce kimlik veya fon kaynağı doğrulaması için ek belge talep etme hakkını saklı tutar.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">5. Şartlarda Değişiklik</strong><br>Bu şartları herhangi bir zamanda değiştirme hakkını saklı tutarız. Önemli değişiklikler kullanıcılara bildirilecektir ve platformun kullanılmaya devam edilmesi güncellenmiş şartların kabulü anlamına gelir.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">6. Hesap Sonlandırma</strong><br>Bu şartları ihlal ettiğinden veya dolandırıcılık/yasa dışı amaçlarla kullanıldığından şüphelenilen herhangi bir hesabı askıya alma veya sonlandırma hakkını saklı tutarız.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-privacy">
+  <div class="modal" style="max-width:600px">
+    <button class="modal-close" onclick="closeModal('privacy')">✕</button>
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:18px" data-ar="سياسة الخصوصية" data-en="Privacy Policy" data-tr="Gizlilik Politikası">Privacy Policy</h3>
+    <div class="legal-body" style="font-size:13px;color:var(--muted);line-height:2;max-height:60vh;overflow-y:auto;padding-left:4px">
+      <div class="legal-ar" style="display:none">
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">1. البيانات التي نجمعها</strong><br>نقوم بجمع المعلومات التي تقدمها عند التسجيل (الاسم، البريد الإلكتروني)، بيانات التحقق من الهوية (KYC)، وبيانات المعاملات المالية (الإيداعات والسحوبات) اللازمة لتقديم خدماتنا.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">2. كيفية استخدام بياناتك</strong><br>نستخدم بياناتك لإدارة حسابك، معالجة المعاملات، التحقق من هويتك امتثالًا للوائح مكافحة غسل الأموال، والتواصل معك بخصوص حسابك أو التحديثات الهامة.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">3. مشاركة البيانات</strong><br>لا نبيع بياناتك الشخصية لأطراف ثالثة. قد تتم مشاركة بيانات محدودة مع مزودي خدمات موثوقين (مثل معالجي الدفع) أو الجهات التنظيمية عند الاقتضاء القانوني.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">4. أمان البيانات</strong><br>نطبق إجراءات تقنية وتنظيمية معقولة لحماية بياناتك من الوصول غير المصرح به، بما في ذلك التشفير وضوابط الوصول المقيدة.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">5. حقوقك</strong><br>يحق لك طلب الوصول إلى بياناتك الشخصية، تصحيحها، أو طلب حذفها (مع مراعاة الالتزامات القانونية والتنظيمية التي قد تتطلب الاحتفاظ ببعض البيانات).</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">6. ملفات تعريف الارتباط</strong><br>قد نستخدم ملفات تعريف الارتباط لتحسين تجربتك على المنصة وتذكر تفضيلاتك مثل اللغة المختارة.</p>
+      </div>
+      <div class="legal-en" style="display:none">
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">1. Data We Collect</strong><br>We collect information you provide during registration (name, email), identity verification (KYC) data, and financial transaction data (deposits and withdrawals) necessary to provide our services.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">2. How We Use Your Data</strong><br>We use your data to manage your account, process transactions, verify your identity in compliance with anti-money-laundering regulations, and communicate with you about your account or important updates.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">3. Data Sharing</strong><br>We do not sell your personal data to third parties. Limited data may be shared with trusted service providers (such as payment processors) or regulatory authorities where legally required.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">4. Data Security</strong><br>We apply reasonable technical and organizational measures to protect your data from unauthorized access, including encryption and restricted access controls.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">5. Your Rights</strong><br>You have the right to request access to your personal data, correct it, or request deletion (subject to legal and regulatory obligations that may require retaining certain data).</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">6. Cookies</strong><br>We may use cookies to improve your experience on the platform and remember your preferences such as selected language.</p>
+      </div>
+      <div class="legal-tr" style="display:none">
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">1. Topladığımız Veriler</strong><br>Kayıt sırasında sağladığınız bilgileri (ad, e-posta), kimlik doğrulama (KYC) verilerini ve hizmetlerimizi sunmak için gerekli finansal işlem verilerini (yatırma ve çekme) topluyoruz.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">2. Verilerinizi Nasıl Kullanıyoruz</strong><br>Verilerinizi hesabınızı yönetmek, işlemleri gerçekleştirmek, kara para aklamayla mücadele düzenlemelerine uygun olarak kimliğinizi doğrulamak ve hesabınız veya önemli güncellemeler hakkında sizinle iletişim kurmak için kullanırız.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">3. Veri Paylaşımı</strong><br>Kişisel verilerinizi üçüncü taraflara satmıyoruz. Sınırlı veriler, güvenilir hizmet sağlayıcılarla (ödeme işlemcileri gibi) veya yasal olarak gerekli olduğunda düzenleyici kurumlarla paylaşılabilir.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">4. Veri Güvenliği</strong><br>Verilerinizi yetkisiz erişimden korumak için şifreleme ve kısıtlı erişim kontrolleri dahil makul teknik ve organizasyonel önlemler uyguluyoruz.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">5. Haklarınız</strong><br>Kişisel verilerinize erişim talep etme, düzeltme veya silinmesini talep etme hakkına sahipsiniz (bazı verilerin saklanmasını gerektirebilecek yasal ve düzenleyici yükümlülüklere tabi olarak).</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">6. Çerezler</strong><br>Platformdaki deneyiminizi geliştirmek ve seçilen dil gibi tercihlerinizi hatırlamak için çerezler kullanabiliriz.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-aml">
+  <div class="modal" style="max-width:600px">
+    <button class="modal-close" onclick="closeModal('aml')">✕</button>
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:18px" data-ar="سياسة مكافحة غسل الأموال (AML)" data-en="AML Policy" data-tr="AML Politikası">AML Policy</h3>
+    <div class="legal-body" style="font-size:13px;color:var(--muted);line-height:2;max-height:60vh;overflow-y:auto;padding-left:4px">
+      <div class="legal-ar" style="display:none">
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">1. التزامنا</strong><br>تلتزم Crysanto بمنع استخدام منصتها لأغراض غسل الأموال أو تمويل الإرهاب أو أي نشاط مالي غير مشروع، وفقًا للوائح ومعايير مكافحة غسل الأموال المعمول بها.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">2. إجراءات اعرف عميلك (KYC)</strong><br>نطلب من جميع المستخدمين إكمال إجراءات التحقق من الهوية قبل السماح بسحب الأموال أو تجاوز حدود معاملات معينة، بما يشمل تقديم وثيقة هوية رسمية سارية وصورة تحقق شخصي.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">3. مراقبة المعاملات</strong><br>نراقب المعاملات بشكل مستمر لاكتشاف الأنماط غير الاعتيادية أو المشبوهة. يحتفظ فريقنا بالحق في تعليق أي معاملة أو حساب يثير الشبهات لحين استكمال المراجعة.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">4. مصدر الأموال</strong><br>قد نطلب من المستخدمين توضيح مصدر الأموال المودعة في حالات معينة، خصوصًا للمبالغ الكبيرة أو الأنماط غير المعتادة.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">5. الإبلاغ</strong><br>نتعاون مع الجهات التنظيمية والقانونية المختصة، ونحتفظ بالحق في الإبلاغ عن أي نشاط يُشتبه في كونه مرتبطًا بغسل الأموال وفقًا للقوانين المعمول بها.</p>
+      </div>
+      <div class="legal-en" style="display:none">
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">1. Our Commitment</strong><br>Crysanto is committed to preventing the use of its platform for money laundering, terrorist financing, or any unlawful financial activity, in accordance with applicable AML regulations and standards.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">2. Know Your Customer (KYC)</strong><br>We require all users to complete identity verification before withdrawing funds or exceeding certain transaction limits, including submission of a valid official ID and a personal verification photo.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">3. Transaction Monitoring</strong><br>We continuously monitor transactions to detect unusual or suspicious patterns. Our team reserves the right to suspend any transaction or account that raises concerns pending review.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">4. Source of Funds</strong><br>We may request users to clarify the source of deposited funds in certain cases, particularly for large amounts or unusual patterns.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">5. Reporting</strong><br>We cooperate with relevant regulatory and legal authorities, and reserve the right to report any activity suspected of being linked to money laundering in accordance with applicable laws.</p>
+      </div>
+      <div class="legal-tr" style="display:none">
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">1. Taahhüdümüz</strong><br>Crysanto, geçerli AML düzenlemeleri ve standartlarına uygun olarak platformunun kara para aklama, terörün finansmanı veya herhangi bir yasa dışı finansal faaliyet için kullanılmasını önlemeye kararlıdır.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">2. Müşterini Tanı (KYC)</strong><br>Tüm kullanıcılardan, fonları çekmeden veya belirli işlem limitlerini aşmadan önce, geçerli bir resmi kimlik belgesi ve kişisel doğrulama fotoğrafı dahil kimlik doğrulama işlemlerini tamamlamalarını isteriz.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">3. İşlem İzleme</strong><br>Olağandışı veya şüpheli kalıpları tespit etmek için işlemleri sürekli izleriz. Ekibimiz, inceleme tamamlanana kadar endişe yaratan herhangi bir işlemi veya hesabı askıya alma hakkını saklı tutar.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">4. Fon Kaynağı</strong><br>Özellikle büyük tutarlar veya olağandışı kalıplar için, bazı durumlarda kullanıcılardan yatırılan fonların kaynağını açıklamalarını isteyebiliriz.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">5. Raporlama</strong><br>İlgili düzenleyici ve yasal makamlarla işbirliği yaparız ve geçerli yasalara uygun olarak kara para aklamayla bağlantılı olduğundan şüphelenilen herhangi bir faaliyeti bildirme hakkını saklı tutarız.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-risk">
+  <div class="modal" style="max-width:600px">
+    <button class="modal-close" onclick="closeModal('risk')">✕</button>
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:18px" data-ar="إفصاح المخاطر" data-en="Risk Disclosure" data-tr="Risk Açıklaması">Risk Disclosure</h3>
+    <div class="legal-body" style="font-size:13px;color:var(--muted);line-height:2;max-height:60vh;overflow-y:auto;padding-left:4px">
+      <div class="legal-ar" style="display:none">
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">1. مخاطر تقلب السوق</strong><br>تخضع أسعار العملات الرقمية لتقلبات حادة وغير متوقعة. القيمة السوقية للأصول الرقمية يمكن أن ترتفع أو تنخفض بشكل كبير خلال فترة زمنية قصيرة، مما قد يؤدي إلى خسارة جزء أو كل رأس المال المستثمر.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">2. لا ضمانات للأرباح</strong><br>أي عوائد أو نسب أرباح معروضة على المنصة تمثل توقعات أو أهدافًا تشغيلية وليست ضمانًا مؤكدًا. الأداء السابق لا يضمن نتائج مستقبلية مماثلة.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">3. المخاطر التقنية</strong><br>قد تتأثر الخدمة بمخاطر تقنية تشمل أعطال الشبكة، مشاكل في البنية التحتية للبلوكتشين، أو هجمات إلكترونية، رغم الإجراءات الأمنية المطبقة لتقليل هذه المخاطر.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">4. المخاطر التنظيمية</strong><br>قد تتغير اللوائح والقوانين المتعلقة بالعملات الرقمية في مختلف الدول، وقد يؤثر ذلك على إمكانية الوصول للخدمة أو على وضعها القانوني.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">5. مسؤولية المستخدم</strong><br>يجب على كل مستخدم تقييم وضعه المالي وقدرته على تحمل المخاطر قبل الاستثمار، والاستثمار فقط بالمبالغ التي يمكنه تحمل خسارتها. يُنصح بطلب استشارة مالية مستقلة عند الحاجة.</p>
+      </div>
+      <div class="legal-en" style="display:none">
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">1. Market Volatility Risk</strong><br>Cryptocurrency prices are subject to sharp and unpredictable fluctuations. The market value of digital assets can rise or fall significantly within a short period, potentially resulting in partial or total loss of invested capital.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">2. No Guaranteed Profits</strong><br>Any returns or profit rates displayed on the platform represent projections or operational targets, not a guaranteed outcome. Past performance does not guarantee similar future results.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">3. Technical Risk</strong><br>The service may be affected by technical risks including network outages, blockchain infrastructure issues, or cyberattacks, despite security measures in place to mitigate these risks.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">4. Regulatory Risk</strong><br>Regulations and laws related to cryptocurrencies may change across different countries, which may affect access to the service or its legal status.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">5. User Responsibility</strong><br>Each user should assess their financial situation and risk tolerance before investing, and only invest amounts they can afford to lose. Independent financial advice is recommended where needed.</p>
+      </div>
+      <div class="legal-tr" style="display:none">
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">1. Piyasa Oynaklığı Riski</strong><br>Kripto para fiyatları keskin ve öngörülemez dalgalanmalara tabidir. Dijital varlıkların piyasa değeri kısa bir süre içinde önemli ölçüde artabilir veya azalabilir, bu da yatırılan sermayenin kısmen veya tamamen kaybedilmesine yol açabilir.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">2. Garanti Edilen Kar Yoktur</strong><br>Platformda gösterilen herhangi bir getiri veya kar oranı, garanti edilen bir sonuç değil, projeksiyon veya operasyonel hedefleri temsil eder. Geçmiş performans, benzer gelecekteki sonuçları garanti etmez.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">3. Teknik Risk</strong><br>Hizmet, bu riskleri azaltmak için uygulanan güvenlik önlemlerine rağmen, ağ kesintileri, blok zinciri altyapı sorunları veya siber saldırılar dahil teknik risklerden etkilenebilir.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">4. Düzenleyici Risk</strong><br>Kripto paralarla ilgili düzenlemeler ve yasalar farklı ülkelerde değişebilir, bu da hizmete erişimi veya yasal durumunu etkileyebilir.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">5. Kullanıcı Sorumluluğu</strong><br>Her kullanıcı, yatırım yapmadan önce finansal durumunu ve risk toleransını değerlendirmeli ve yalnızca kaybetmeyi göze alabileceği miktarları yatırmalıdır. Gerektiğinde bağımsız finansal danışmanlık alınması önerilir.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // Global error handler — يمنع خطأ واحد من إيقاف كل JS
 window.addEventListener('error', function(e){
@@ -936,6 +1087,12 @@ function withTimeout(promise, ms = 15000) {
 }
 function timeoutMsg(l) {
   return {ar:'انتهت مهلة الاتصال — تحقق من الإنترنت وحاول تاني', en:'Connection timed out — check your internet and try again', tr:'Bağlantı zaman aşımına uğradı — internetinizi kontrol edin'}[l] || 'Connection timed out — try again';
+}
+
+// ── SECURITY: تنظيف أي نص قبل حقنه في innerHTML — يمنع XSS ──
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 let lang = localStorage.getItem('crysanto_lang') || "en";
@@ -1086,6 +1243,19 @@ function showPage(id, el) {
 }
 
 function openModal(type) { const m=document.getElementById('modal-'+type); if(m) m.classList.add('open'); }
+function openLegal(type) {
+  // بتفتح الـ modal القانوني وبتظهر محتوى اللغة الحالية بس
+  const m = document.getElementById('modal-' + type);
+  if (!m) return;
+  // إخفاء كل اللغات وإظهار اللغة الحالية بس
+  m.querySelectorAll('.legal-ar,.legal-en,.legal-tr').forEach(el => el.style.display = 'none');
+  const active = m.querySelector('.legal-' + lang);
+  if (active) active.style.display = 'block';
+  // تحديث عنوان الـ modal بناءً على اللغة
+  const title = m.querySelector('h3');
+  if (title && title.dataset[lang]) title.textContent = title.dataset[lang];
+  m.classList.add('open');
+}
 function closeModal(type) {
   const modal = document.getElementById('modal-'+type);
   if(modal) modal.classList.remove('open');
@@ -1154,7 +1324,8 @@ async function doLogin() {
     const { data: prof, error: profErr } = await withTimeout(db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle());
 
     if(profErr) {
-      showErr(errEl, {ar:'خطأ DB: '+profErr.message, en:'DB error: '+profErr.message, tr:'DB hatası: '+profErr.message});
+      console.error('login/profile fetch error:', profErr);
+      showErr(errEl, genericErrMsg());
       if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
       _authHandled = false;
       return;
@@ -1172,7 +1343,8 @@ async function doLogin() {
       }).select().single());
 
       if(insErr) {
-        showErr(errEl, {ar:'خطأ الملف الشخصي: '+insErr.message, en:'Profile error: '+insErr.message, tr:'Profil hatası: '+insErr.message});
+        console.error('login/profile insert error:', insErr);
+        showErr(errEl, genericErrMsg());
         if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
         _authHandled = false;
         return;
@@ -1189,7 +1361,8 @@ async function doLogin() {
   } catch(e) {
     _authHandled = false;
     if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
-    showErr(errEl, e.message === 'TIMEOUT' ? {ar:timeoutMsg('ar'),en:timeoutMsg('en'),tr:timeoutMsg('tr')} : {ar:'خطأ: '+e.message, en:'Error: '+e.message, tr:'Hata: '+e.message});
+    if(e.message === 'TIMEOUT') { showErr(errEl, {ar:timeoutMsg('ar'),en:timeoutMsg('en'),tr:timeoutMsg('tr')}); }
+    else { console.error('login unexpected error:', e); showErr(errEl, genericErrMsg()); }
   }
 }
 
@@ -1261,7 +1434,8 @@ async function doRegister() {
     }
 
     if(profErr) {
-      showErr(errEl, {ar:'خطأ DB: '+profErr.message, en:'DB error: '+profErr.message, tr:'DB hatası: '+profErr.message});
+      console.error('register/profile fetch error:', profErr);
+      showErr(errEl, genericErrMsg());
       if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
       _authHandled = false;
       return;
@@ -1281,7 +1455,8 @@ async function doRegister() {
       }).select().single());
 
       if(insErr) {
-        showErr(errEl, {ar:'خطأ إنشاء الملف: '+insErr.message, en:'Profile error: '+insErr.message, tr:'Profil hatası: '+insErr.message});
+        console.error('register/profile insert error:', insErr);
+        showErr(errEl, genericErrMsg());
         if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
         _authHandled = false;
         return;
@@ -1298,7 +1473,8 @@ async function doRegister() {
   } catch(e) {
     _authHandled = false;
     if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
-    showErr(errEl, e.message === 'TIMEOUT' ? {ar:timeoutMsg('ar'),en:timeoutMsg('en'),tr:timeoutMsg('tr')} : {ar:'خطأ غير متوقع: '+e.message, en:'Unexpected error: '+e.message, tr:'Beklenmedik hata: '+e.message});
+    if(e.message === 'TIMEOUT') { showErr(errEl, {ar:timeoutMsg('ar'),en:timeoutMsg('en'),tr:timeoutMsg('tr')}); }
+    else { console.error('register unexpected error:', e); showErr(errEl, genericErrMsg()); }
   }
 }
 
@@ -1331,15 +1507,12 @@ async function fetchProfile(retries = 10, delay = 1000) {
       // لو في error من RLS أو غيره، اطبعه
       if(res.error) console.error('fetchProfile error:', res.error);
 
-      // جرب بالـ email كـ fallback
+      // جرب بالـ email كـ fallback — حالة نادرة: trigger التسجيل فشل يربط auth_id من البداية
       if(currentUser.email) {
-        const res2 = await withTimeout(db.from('users').select('*').eq('email', currentUser.email).maybeSingle(), 5000);
-        console.log('fetchProfile by email:', res2.data ? 'FOUND' : 'not found', res2.error ? '| error: '+res2.error.message : '');
-        if(res2 && res2.data) {
-          if(!res2.data.auth_id) {
-            await db.from('users').update({auth_id: currentUser.id}).eq('id', res2.data.id);
-          }
-          userProfile = res2.data;
+        const { data: linkResult, error: linkErr } = await db.rpc('link_auth_id_to_existing_profile');
+        if(linkErr) { console.error('link_auth_id error:', linkErr); }
+        else if(linkResult && linkResult.success && linkResult.profile) {
+          userProfile = linkResult.profile;
           return;
         }
       }
@@ -1439,15 +1612,15 @@ async function loadDashboard() {
       if(activeInvs.length) {
         const now = new Date();
         invBox.innerHTML = '<div class="wallet-list">'+activeInvs.map(inv=>{
-          const start = new Date(inv.started_at);
-          const end   = new Date(inv.ends_at);
+          const start = new Date(inv.start_date);
+          const end   = new Date(inv.end_date);
           const totalDays = Math.max(1, Math.round((end-start)/86400000));
           const dayNum = Math.min(totalDays, Math.floor((now-start)/86400000)+1);
           const msIntoCurrentDay = (now-start) % 86400000;
           const msUntilNextProfit = 86400000 - msIntoCurrentDay;
           const h = Math.floor(msUntilNextProfit/3600000), m = Math.floor((msUntilNextProfit%3600000)/60000);
           return '<div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:var(--gold-dim);color:var(--gold)">💹</div>'+
-          '<div><div class="w-name">'+inv.plan_name+'</div>'+
+          '<div><div class="w-name">'+escapeHtml(inv.plan_name)+'</div>'+
           '<div class="w-addr">'+inv.daily_rate+'%/day · '+(lang==='ar'?'اليوم ':'Day ')+dayNum+(lang==='ar'?' من ':'/')+totalDays+' · ⏱ '+h+'h '+m+'m</div></div></div>'+
           '<div class="w-bal">$'+parseFloat(inv.amount).toLocaleString()+'</div></div>';
         }).join('')+'</div>';
@@ -1490,7 +1663,7 @@ async function loadNotifications() {
     const {data}=await db.from('notifications').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(15);
     if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+(lang==='ar'?'لا توجد إشعارات':'No notifications')+'</div>';return;}
     const icons={info:'💬',success:'✅',warning:'⚠️',profit:'💰',system:'🔔'};
-    el.innerHTML=data.map(n=>'<div style="display:flex;gap:12px;padding:14px;background:var(--dark3);border-radius:10px;border:1px solid var(--border);margin-bottom:8px"><span style="font-size:20px;flex-shrink:0">'+(icons[n.type]||'🔔')+'</span><div><div style="font-weight:600;font-size:13px;margin-bottom:3px">'+n.title+'</div><div style="font-size:12px;color:var(--muted)">'+(n.body||'')+'</div></div></div>').join('');
+    el.innerHTML=data.map(n=>'<div style="display:flex;gap:12px;padding:14px;background:var(--dark3);border-radius:10px;border:1px solid var(--border);margin-bottom:8px"><span style="font-size:20px;flex-shrink:0">'+(icons[n.type]||'🔔')+'</span><div><div style="font-weight:600;font-size:13px;margin-bottom:3px">'+escapeHtml(n.title)+'</div><div style="font-size:12px;color:var(--muted)">'+escapeHtml(n.body||'')+'</div></div></div>').join('');
   } catch(e){}
 }
 
@@ -1502,8 +1675,8 @@ async function loadInvestments() {
     if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">—</div>';return;}
     const statusColors = {active:'var(--green)',completed:'var(--muted)',cancelled:'var(--red)'};
     el.innerHTML=data.map(inv=>{
-      const start = new Date(inv.started_at);
-      const end   = new Date(inv.ends_at);
+      const start = new Date(inv.start_date);
+      const end   = new Date(inv.end_date);
       const now   = new Date();
       const totalMs = end - start;
       const doneMs  = now - start;
@@ -1529,7 +1702,7 @@ async function loadInvestments() {
 
       return '<div style="background:var(--dark3);border-radius:10px;padding:14px;margin-bottom:10px;border:1px solid var(--border)">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
-          '<span style="font-weight:700">'+inv.plan_name+'</span>'+
+          '<span style="font-weight:700">'+escapeHtml(inv.plan_name)+'</span>'+
           '<span style="font-size:11px;color:'+(statusColors[inv.status]||'var(--muted)')+'">● '+(statusLabel[inv.status]||inv.status)+'</span>'+
         '</div>'+
         '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
@@ -1537,13 +1710,13 @@ async function loadInvestments() {
           '<span style="font-size:12px;color:var(--muted)">'+inv.daily_rate+'%/day</span>'+
         '</div>'+
         '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:8px">'+
-          '<span>'+(inv.started_at||'').slice(0,10)+'</span>'+
-          '<span>→ '+(inv.ends_at||'').slice(0,10)+'</span>'+
+          '<span>'+(inv.start_date||'').slice(0,10)+'</span>'+
+          '<span>→ '+(inv.end_date||'').slice(0,10)+'</span>'+
         '</div>'+
         '<div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%;background:linear-gradient(90deg,var(--gold),var(--green))"></div></div>'+
         '<div style="font-size:11px;color:var(--muted);margin-top:5px;display:flex;justify-content:space-between">'+
           '<span>'+pct+'%</span>'+
-          '<span>'+(lang==='ar'?'الربح: ':'Profit: ')+'$'+parseFloat(inv.profit_earned||0).toFixed(2)+'</span>'+
+          '<span>'+(lang==='ar'?'الربح: ':'Profit: ')+'$'+parseFloat(inv.total_profit||0).toFixed(2)+'</span>'+
         '</div>'+nextProfitHtml+
         (inv.status==='active' ? '<button onclick="cancelInvestment(\''+inv.id+'\')" style="width:100%;margin-top:10px;padding:8px;border-radius:8px;border:1px solid var(--red,#e44);background:transparent;color:var(--red,#e44);font-size:12px;font-weight:600;cursor:pointer">'+(lang==='ar'?'إلغاء الاستثمار وتحرير الفلوس':'Cancel Investment & Unlock Funds')+'</button>' : '')
         +'</div>';
@@ -1616,7 +1789,8 @@ async function submitKYC() {
     renderKYCStatus();
     showToast(lang==='ar'?'✓ تم رفع مستنداتك بنجاح':'✓ Documents uploaded successfully');
   } catch(e) {
-    errEl.textContent=(lang==='ar'?'حدث خطأ: ':'Error: ')+e.message;errEl.style.display='block';
+    console.error('KYC submit error:', e);
+    errEl.textContent=(lang==='ar'?'❌ حدث خطأ، حاول مرة أخرى':'❌ Something went wrong, please try again');errEl.style.display='block';
   } finally {
     btn.textContent=(lang==='ar'?'📤 رفع المستندات':'📤 Upload Documents');btn.disabled=false;
   }
@@ -1644,7 +1818,7 @@ async function submitDeposit() {
       }
     }
 
-    await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,hash:hash,status:'pending',plan_id:planId});
+    await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,tx_hash:hash,status:'pending',plan_id:planId});
     await db.from('notifications').insert({user_id:userProfile.id,title:'📥 '+(lang==='ar'?'تم استلام طلب إيداعك':'Deposit request received'),body:(lang==='ar'?'طلب إيداع $':'Deposit request $')+amount+' '+(lang==='ar'?'قيد المراجعة':'under review'),type:'info'});
     showToast(lang==='ar'?'✓ تم إرسال طلب الإيداع بنجاح':'✓ Deposit request submitted');
     document.getElementById('dep-hash').value='';
@@ -1678,7 +1852,7 @@ async function submitWithdrawal() {
 
   try {
     const coin=document.getElementById('wd-coin').value;
-    await db.from('withdrawals').insert({user_id:userProfile.id,amount,coin:coin.split('-')[0],network:coin,wallet_addr:addr,status:'pending'});
+    await db.from('withdrawals').insert({user_id:userProfile.id,amount,coin:coin.split('-')[0],network:coin,wallet_address:addr,status:'pending'});
     await db.from('notifications').insert({user_id:userProfile.id,title:'📤 '+(lang==='ar'?'تم استلام طلب سحبك':'Withdrawal request received'),body:(lang==='ar'?'طلب سحب $':'Withdrawal request $')+amount+' '+(lang==='ar'?'قيد المراجعة':'under review'),type:'info'});
     showToast(lang==='ar'?'✓ تم إرسال طلب السحب':'✓ Withdrawal request sent');
     document.getElementById('wd-addr').value='';
@@ -1722,14 +1896,17 @@ function handlePlanClick(rate) {
   pendingPage={id:'deposit',el:null,planRate:rate}; openModal('login');
 }
 
-function goToDeposit(rate) {
+async function goToDeposit(rate) {
   showPage('deposit',null);
   window.__selectedPlanRate = rate; // هنستخدمها عند تقديم طلب الإيداع لربطه بالباقة فعليًا
-  const names={'2.5':{ar:'الباقة الأساسية',en:'Starter Plan',tr:'Başlangıç'},'4.8':{ar:'الباقة الذهبية',en:'Gold Plan',tr:'Altın Planı'},'8.2':{ar:'باقة VIP',en:'VIP Plan',tr:'VIP Planı'}};
-  const plan=names[rate];if(!plan)return;
+  // بناخد اسم الباقة من نفس الكاش اللي buildPlans بتستخدمه — مفيش تعريف تاني منفصل ممكن يقع من المزامنة
+  if(!__plansCache) __plansCache = await fetchPlansFromDB();
+  const row = (__plansCache||[]).find(r => String(parseFloat(r.daily_rate)) === String(rate));
+  const plan = row ? {ar: row.name_ar, en: row.name_en, tr: row.name_tr} : null;
+  if(!plan)return;
   let b=document.getElementById('plan-banner');
   if(!b){b=document.createElement('div');b.id='plan-banner';b.style.cssText='background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;padding:12px 18px;margin-bottom:16px;font-size:13px;font-weight:600;color:var(--gold);text-align:center;';const dp=document.getElementById('dw-dep');if(dp)dp.insertBefore(b,dp.firstChild);}
-  b.textContent='✦ '+(plan[lang]||plan.en)+' — '+rate+'%/day';b.style.display='block';
+  b.textContent='✦ '+escapeHtml(plan[lang]||plan.en)+' — '+escapeHtml(rate)+'%/day';b.style.display='block';
 }
 
 // ── LANG ──
@@ -1742,6 +1919,14 @@ function setLang(l) {
   document.documentElement.setAttribute('dir',l==='ar'?'rtl':'ltr');
   document.querySelectorAll('[data-'+l+']').forEach(el=>{const v=el.getAttribute('data-'+l);if(el.tagName==='INPUT')el.placeholder=v;else el.textContent=v;});
   buildFaq();buildFeatures();buildPlans();
+  // لو فيه modal قانوني مفتوح حاليًا، نحدّث محتواه باللغة الجديدة
+  ['terms','privacy','aml','risk'].forEach(t=>{
+    const m=document.getElementById('modal-'+t);
+    if(m && m.classList.contains('open')){
+      m.querySelectorAll('.legal-ar,.legal-en,.legal-tr').forEach(el=>el.style.display='none');
+      const a=m.querySelector('.legal-'+l); if(a) a.style.display='block';
+    }
+  });
 }
 
 // ── BUILDERS ──
@@ -1753,15 +1938,55 @@ function buildFaq(){
   document.getElementById('faq-list').innerHTML = data.map(f=>'<div class="faq-item" onclick="this.classList.toggle(\'open\')"><div class="faq-q">'+f.q+'<span class="faq-arrow">▼</span></div><div class="faq-a">'+f.a+'</div></div>').join('');
 }
 function buildFeatures(){document.getElementById('features-grid').innerHTML=(features[lang]||features.ar).map(f=>'<div style="background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:24px;transition:.3s" onmouseover="this.style.borderColor=\'var(--gold)\';this.style.transform=\'translateY(-3px)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.transform=\'\'"><div style="font-size:28px;margin-bottom:12px">'+f.icon+'</div><h4 style="font-size:14px;font-weight:700;margin-bottom:6px">'+f.t+'</h4><p style="font-size:12px;color:var(--muted);line-height:1.8">'+f.d+'</p></div>').join('');}
-function buildPlans(){ const _bp=document.getElementById('plans-grid'); if(!_bp) return;
-  const pl=[
-    {name:{ar:'الباقة الأساسية',en:'Starter Plan',tr:'Başlangıç'},roi:'2.5',dur:{ar:'30 يوم · من $100',en:'30 days · Min $100',tr:'30 gün · Min $100'},feats:{ar:['ربح يومي مضمون','سحب فوري','دعم 24/7'],en:['Daily profit','Instant withdrawal','24/7 Support'],tr:['Günlük kar','Anında çekim','7/24 Destek']}},
-    {name:{ar:'الباقة الذهبية',en:'Gold Plan',tr:'Altın Planı'},roi:'4.8',featured:true,dur:{ar:'60 يوم · من $500',en:'60 days · Min $500',tr:'60 gün · Min $500'},feats:{ar:['ربح يومي مضمون','سحب فوري','مدير حساب خاص','تقارير أسبوعية'],en:['Daily profit','Instant withdrawal','Account manager','Weekly reports'],tr:['Günlük kar','Anında çekim','Hesap yöneticisi','Haftalık raporlar']}},
-    {name:{ar:'باقة VIP',en:'VIP Plan',tr:'VIP Planı'},roi:'8.2',dur:{ar:'90 يوم · من $5,000',en:'90 days · Min $5,000',tr:'90 gün · Min $5.000'},feats:{ar:['عوائد يومية عالية','سحب بلا حدود','فريق VIP','تحليلات مخصصة'],en:['High daily returns','Unlimited withdrawal','VIP team','Custom analytics'],tr:['Yüksek getiri','Sınırsız çekim','VIP ekibi','Özel analizler']}}
+// ── الباقات: بتتجاب من جدول plans في Supabase (مش hardcoded) عشان لو الأدمن غيّر نسبة الربح أو المدة من لوحة التحكم، الواجهة تتحدث أوتوماتيك من غير ما حد يلمس الكود ──
+let __plansCache = null;
+async function fetchPlansFromDB() {
+  try {
+    const { data, error } = await db.from('plans').select('*').eq('is_active', true).order('daily_rate', { ascending: true });
+    if (error) { console.error('fetchPlansFromDB error:', error.message || JSON.stringify(error)); return null; }
+    if (!data || !data.length) { console.error('fetchPlansFromDB: no active plans returned'); return null; }
+    return data;
+  } catch(e) { console.error('fetchPlansFromDB exception:', e.message || e); return null; }
+}
+
+// مميزات العرض لكل مستوى باقة — دي بيانات تسويقية بس (مش أرقام مالية)، فمن المقبول تفضل في الفرونت إند
+const planDisplayMeta = {
+  // المفتاح هو ترتيب الباقة من الأرخص للأغلى (0=أساسية, 1=وسط, 2 فأكثر=VIP)
+  tiers: [
+    { featured:false, feats:{ar:['ربح يومي مضمون','سحب فوري','دعم 24/7'],en:['Daily profit','Instant withdrawal','24/7 Support'],tr:['Günlük kar','Anında çekim','7/24 Destek']} },
+    { featured:true,  feats:{ar:['ربح يومي مضمون','سحب فوري','مدير حساب خاص','تقارير أسبوعية'],en:['Daily profit','Instant withdrawal','Account manager','Weekly reports'],tr:['Günlük kar','Anında çekim','Hesap yöneticisi','Haftalık raporlar']} },
+    { featured:false, feats:{ar:['عوائد يومية عالية','سحب بلا حدود','فريق VIP','تحليلات مخصصة'],en:['High daily returns','Unlimited withdrawal','VIP team','Custom analytics'],tr:['Yüksek getiri','Sınırsız çekim','VIP ekibi','Özel analizler']} }
+  ]
+};
+
+function fmtMoney(n){ return '$'+Number(n).toLocaleString(); }
+
+function planRowToCard(row, idx) {
+  const meta = planDisplayMeta.tiers[Math.min(idx, planDisplayMeta.tiers.length-1)];
+  const name = {ar: row.name_ar, en: row.name_en, tr: row.name_tr};
+  const durTxt = {
+    ar: row.duration_days+' يوم · من '+fmtMoney(row.min_amount),
+    en: row.duration_days+' days · Min '+fmtMoney(row.min_amount),
+    tr: row.duration_days+' gün · Min '+fmtMoney(row.min_amount)
+  };
+  return { name, roi: String(parseFloat(row.daily_rate)), dur: durTxt, feats: meta.feats, featured: meta.featured, planId: row.id };
+}
+
+async function buildPlans(){
+  const _bp=document.getElementById('plans-grid'); if(!_bp) return;
+  if(!__plansCache) __plansCache = await fetchPlansFromDB();
+
+  // fallback: لو فشل الاتصال بالداتابيز لأي سبب، نعرض نفس الباقات الافتراضية (تجربة المستخدم متتأثرش)، لكن النسخة الأساسية هي اللي من القاعدة
+  const rows = __plansCache || [
+    {name_ar:'الباقة الأساسية',name_en:'Starter Plan',name_tr:'Başlangıç',daily_rate:'2.5',duration_days:30,min_amount:100,id:null},
+    {name_ar:'الباقة الذهبية',name_en:'Gold Plan',name_tr:'Altın Planı',daily_rate:'4.8',duration_days:60,min_amount:500,id:null},
+    {name_ar:'باقة VIP',name_en:'VIP Plan',name_tr:'VIP Planı',daily_rate:'8.2',duration_days:90,min_amount:5000,id:null}
   ];
+
+  const pl = rows.map(planRowToCard);
   const popL={ar:'الأكثر شعبية',en:'Most Popular',tr:'En Popüler'};
   const invL={ar:'استثمر الآن',en:'Invest Now',tr:'Şimdi Yatır'};
-  document.getElementById('plans-grid').innerHTML=pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+p.roi+'<span>/day</span></div><div class="plan-dur">'+(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+f+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\')">'+invL[lang]+'</button></div>').join('');
+  document.getElementById('plans-grid').innerHTML=pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>/day</span></div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\')">'+invL[lang]+'</button></div>').join('');
 }
 
 function calcProfit(){const a=parseFloat(document.getElementById('calc-amt').value)||0;const [r,d]=document.getElementById('calc-plan').value.split(',').map(Number);const dl=a*r/100,tot=dl*d,ret=a+tot;document.getElementById('c-daily').textContent='$'+dl.toFixed(2);document.getElementById('c-total').textContent='$'+tot.toFixed(0);document.getElementById('c-return').textContent='$'+ret.toFixed(0);}
@@ -1797,6 +2022,10 @@ async function submitContact() {
 // ── HELPERS ──
 function showToast(msg,type='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type==='err'?' err':'');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 function showErr(el,msgs){el.textContent='❌ '+(msgs[lang]||msgs.ar);el.style.display='block';}
+// رسالة عامة آمنة للعميل بدل تفاصيل الخطأ التقنية الخام (اللي ممكن تسرّب بنية الداتابيز) — التفاصيل بتتسجل في console.error دايمًا
+function genericErrMsg() {
+  return {ar:'حدث خطأ غير متوقع، حاول مرة أخرى أو تواصل مع الدعم', en:'Something went wrong, please try again or contact support', tr:'Beklenmeyen bir hata oluştu, lütfen tekrar deneyin'};
+}
 function checkPassStrength(v){const fill=document.getElementById('pass-strength-fill');const txt=document.getElementById('pass-strength-txt');const sc=[v.length>=8,/[A-Z]/.test(v),/[0-9]/.test(v),/[^A-Za-z0-9]/.test(v)].filter(Boolean).length;const cfg=[{w:'25%',c:'var(--red)',t:{ar:'ضعيفة',en:'Weak',tr:'Zayıf'}},{w:'50%',c:'var(--orange)',t:{ar:'متوسطة',en:'Fair',tr:'Orta'}},{w:'75%',c:'var(--gold)',t:{ar:'جيدة',en:'Good',tr:'İyi'}},{w:'100%',c:'var(--green)',t:{ar:'قوية',en:'Strong',tr:'Güçlü'}}];if(!v){if(fill)fill.style.width='0';if(txt)txt.textContent='';return;}const c=cfg[sc-1]||cfg[0];if(fill){fill.style.width=c.w;fill.style.background=c.c;}if(txt){txt.textContent=c.t[lang];txt.style.color=c.c;}}
 function updatePrices(){coins.forEach(c=>{c.price=Math.max(0.001,c.price*(1+(Math.random()-.49)*.003));c.change=parseFloat((c.change+(Math.random()-.5)*.15).toFixed(2));});buildTicker();buildLivePrices();buildMarkets();}
 
