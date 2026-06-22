@@ -712,6 +712,17 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const { createClient } = supabase;
 const sdb = createClient(SUPA_URL, SUPA_KEY);
 
+// ── SECURITY: تنظيف أي نص قبل حقنه في innerHTML — يمنع XSS لو اسم/إيميل عميل فيه HTML/Script ──
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// نسخة آمنة لتمرير نص جوه onclick="...('${...}')" — بتمنع كسر الـ JS لو فيه quotes
+function escapeJsAttr(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/\n/g,' ');
+}
+
 // ── STATE ──
 let lang = localStorage.getItem('crysanto_admin_lang') || 'ar';
 let currentFilter = { users:'all', dep:'all', wd:'all' };
@@ -1297,9 +1308,9 @@ async function renderKYC(){
       const kd = typeof u.kyc_data === 'string' ? JSON.parse(u.kyc_data||'{}') : (u.kyc_data||{});
       return `
       <tr>
-        <td style="font-weight:600">${u.name||'—'}</td>
-        <td style="color:var(--muted);font-size:12px">${u.email||'—'}</td>
-        <td>${kd.doc_type||'—'}</td>
+        <td style="font-weight:600">${escapeHtml(u.name||'—')}</td>
+        <td style="color:var(--muted);font-size:12px">${escapeHtml(u.email||'—')}</td>
+        <td>${escapeHtml(kd.doc_type||'—')}</td>
         <td style="font-size:12px;color:var(--muted)">${kd.submitted_at?.slice(0,10)||u.created_at?.slice(0,10)||'—'}</td>
         <td>${kycBadge(u.kyc_status)}</td>
         <td>
@@ -2077,19 +2088,19 @@ function renderRealDeposits(data) {
     <tbody>${filtered.map(d => `
       <tr>
         <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.id.slice(0,8)}...</td>
-        <td style="font-weight:600">${d.users?.name || '—'}</td>
-        <td style="font-size:11px;color:var(--muted)">${d.users?.email || '—'}</td>
+        <td style="font-weight:600">${escapeHtml(d.users?.name || '—')}</td>
+        <td style="font-size:11px;color:var(--muted)">${escapeHtml(d.users?.email || '—')}</td>
         <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(d.amount).toLocaleString()}</td>
-        <td><span style="font-family:var(--mono)">${d.coin}</span></td>
-        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.hash ? d.hash.slice(0,16)+'...' : '—'}</td>
-        <td style="font-family:var(--mono);color:var(--blue)">${d.memo || '—'}</td>
+        <td><span style="font-family:var(--mono)">${escapeHtml(d.coin)}</span></td>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.tx_hash ? escapeHtml(d.tx_hash.slice(0,16))+'...' : '—'}</td>
+        <td style="font-family:var(--mono);color:var(--blue)">${escapeHtml(d.memo || '—')}</td>
         <td style="font-size:11px;color:var(--muted)">${d.created_at?.slice(0,16)}</td>
         <td>${statusBadge(d.status)}</td>
         <td>
           ${d.status === 'pending' ? `
           <div style="display:flex;gap:6px">
-            <button class="act-btn green" onclick="approveDeposit('${d.id}','${d.user_id}',${d.amount},'${d.users?.email||''}','${d.users?.name||''}')">${t('approve')}</button>
-            <button class="act-btn red" onclick="rejectDeposit('${d.id}','${d.users?.email||''}','${d.users?.name||''}')">${t('reject')}</button>
+            <button class="act-btn green" onclick="approveDeposit('${d.id}','${d.user_id}',${d.amount},'${escapeJsAttr(d.users?.email||'')}','${escapeJsAttr(d.users?.name||'')}')">${t('approve')}</button>
+            <button class="act-btn red" onclick="rejectDeposit('${d.id}','${escapeJsAttr(d.users?.email||'')}','${escapeJsAttr(d.users?.name||'')}')">${t('reject')}</button>
           </div>` : `<span style="color:var(--muted);font-size:12px">—</span>`}
         </td>
       </tr>`).join('')}
@@ -2097,82 +2108,24 @@ function renderRealDeposits(data) {
 }
 
 // ── الموافقة على إيداع ──
+// بقت بتستدعي RPC function آمنة (admin_approve_deposit) شغالة جوه الداتابيز نفسها:
+//   - بتتأكد إن الكولر أدمن فعلاً (مش بس بتثق في إننا فاتحين صفحة الأدمن)
+//   - كل الخطوات (تحديث الإيداع + الرصيد + الاستثمار + عمولة الإحالة) بتتم في transaction واحدة atomic
+//   - مفيش race condition ممكن يحصل لو ضغط الأدمن "موافقة" مرتين بسرعة
 async function approveDeposit(depositId, userId, amount, email, name) {
   const confirmed = confirm(lang==='ar' ? `موافقة على إيداع $${amount} لـ ${name}؟` : `Approve $${amount} deposit for ${name}?`);
   if (!confirmed) return;
 
   showToast(lang==='ar'?'جارٍ المعالجة...':'Processing...');
 
-  // 1. تحديث حالة الإيداع
-  const { error: e1 } = await sdb.from('deposits').update({ status: 'approved' }).eq('id', depositId);
-  if (e1) { showToast((lang==='ar'?'✗ فشل تحديث الإيداع: ':'✗ Failed to update deposit: ')+e1.message); console.error('approveDeposit/deposits update error:', e1); return; }
-
-  // 2. إضافة المبلغ لرصيد العميل
-  const { data: userData, error: e2 } = await sdb.from('users').select('balance').eq('id', userId).single();
-  if (e2) { showToast((lang==='ar'?'✗ فشل قراءة رصيد العميل: ':'✗ Failed to read user balance: ')+e2.message); console.error('approveDeposit/balance read error:', e2); return; }
-  const newBalance = (parseFloat(userData?.balance) || 0) + parseFloat(amount);
-  const { error: e3 } = await sdb.from('users').update({ balance: newBalance }).eq('id', userId);
-  if (e3) { showToast((lang==='ar'?'✗ فشل تحديث الرصيد: ':'✗ Failed to update balance: ')+e3.message); console.error('approveDeposit/balance update error:', e3); return; }
-
-  // 2.5 لو الإيداع ده مرتبط بباقة استثمار، ننشئ سجل استثمار فعلي عشان الربح اليومي يبدأ يُحسب
-  const { data: depRow } = await sdb.from('deposits').select('plan_id').eq('id', depositId).maybeSingle();
-  if (depRow && depRow.plan_id) {
-    const { data: planRow, error: ePlan } = await sdb.from('plans').select('*').eq('id', depRow.plan_id).maybeSingle();
-    if (ePlan) console.error('approveDeposit/plan read error:', ePlan);
-    if (planRow) {
-      const startedAt = new Date();
-      const endsAt = new Date(startedAt.getTime() + planRow.duration_days * 86400000);
-      const { error: eInv } = await sdb.from('investments').insert({
-        user_id: userId,
-        plan_name: planRow.name_ar || planRow.name_en,
-        amount: amount,
-        daily_rate: planRow.daily_rate,
-        duration: planRow.duration_days,
-        status: 'active',
-        started_at: startedAt.toISOString(),
-        ends_at: endsAt.toISOString()
-      });
-      if (eInv) { console.error('approveDeposit/investment insert error:', eInv); showToast((lang==='ar'?'⚠️ تم قبول الإيداع لكن فشل إنشاء الاستثمار: ':'⚠️ Deposit approved but failed to create investment: ')+eInv.message); }
-    }
+  const { data, error } = await sdb.rpc('admin_approve_deposit', { p_deposit_id: depositId });
+  if (error) {
+    showToast((lang==='ar'?'✗ فشل قبول الإيداع: ':'✗ Failed to approve deposit: ')+error.message);
+    console.error('approveDeposit RPC error:', error);
+    return;
   }
 
-  // 3. إرسال إشعار للعميل في قاعدة البيانات
-  const { error: e4 } = await sdb.from('notifications').insert({
-    user_id: userId,
-    title: lang==='ar' ? '✅ تم قبول إيداعك' : '✅ Deposit Approved',
-    body: lang==='ar' ? `تم إضافة $${amount} لرصيدك بنجاح` : `$${amount} has been added to your balance`,
-    type: 'success'
-  });
-  if (e4) console.error('approveDeposit/notification insert error:', e4); // إشعار فاشل مش لازم يوقف العملية
-
-  // 4.5 عمولة الإحالة: لو العميل ده جاي بإحالة من عميل تاني، نحط له نسبة من المبلغ (محفوظة في جدول settings)
-  try {
-    const { data: depositorRow } = await sdb.from('users').select('referred_by').eq('id', userId).maybeSingle();
-    if (depositorRow && depositorRow.referred_by) {
-      const { data: refRateRow } = await sdb.from('settings').select('value').eq('key', 'referral_rate').maybeSingle();
-      const refRate = parseFloat(refRateRow?.value) || 0;
-      if (refRate > 0) {
-        const { data: referrerRow } = await sdb.from('users').select('id, balance, ref_earnings, ref_count').eq('ref_code', depositorRow.referred_by).maybeSingle();
-        if (referrerRow) {
-          const commission = parseFloat(amount) * refRate / 100;
-          // نتأكد إن دي أول عمولة من هذا العميل المُحال بالذات (عشان نزود ref_count مرة واحدة بس)
-          const { data: existingRef } = await sdb.from('referrals').select('id').eq('referrer_id', referrerRow.id).eq('referred_id', userId).maybeSingle();
-          await sdb.from('referrals').insert({ referrer_id: referrerRow.id, referred_id: userId, commission, status: 'paid' });
-          const { error: eRef } = await sdb.from('users').update({
-            balance: (parseFloat(referrerRow.balance)||0) + commission,
-            ref_earnings: (parseFloat(referrerRow.ref_earnings)||0) + commission,
-            ref_count: existingRef ? (referrerRow.ref_count||0) : (referrerRow.ref_count||0) + 1
-          }).eq('id', referrerRow.id);
-          if (eRef) console.error('approveDeposit/referral credit error:', eRef);
-          else await sdb.from('notifications').insert({ user_id: referrerRow.id, title: lang==='ar'?'🎉 عمولة إحالة جديدة':'🎉 New Referral Commission', body: lang==='ar'?`حصلت على $${commission.toFixed(2)} عمولة إحالة`:`You earned $${commission.toFixed(2)} referral commission`, type:'success' });
-        }
-      }
-    }
-  } catch(eRefOuter) { console.error('approveDeposit/referral block error:', eRefOuter); }
-
-  // 5. إرسال إيميل للعميل عبر Supabase
   await sendEmailNotification(email, name, amount, 'approved');
-
   showToast(lang==='ar' ? `✓ تم قبول إيداع $${amount} وإضافته لحساب ${name}` : `✓ $${amount} deposit approved for ${name}`);
   await loadRealDeposits();
 }
@@ -2180,8 +2133,8 @@ async function approveDeposit(depositId, userId, amount, email, name) {
 // ── رفض إيداع ──
 async function rejectDeposit(depositId, email, name) {
   const reason = prompt(lang==='ar' ? 'سبب الرفض (اختياري):' : 'Rejection reason (optional):') || '';
-  const { error } = await sdb.from('deposits').update({ status: 'rejected' }).eq('id', depositId);
-  if (error) { showToast((lang==='ar'?'✗ فشل رفض الإيداع: ':'✗ Failed to reject deposit: ')+error.message); console.error('rejectDeposit error:', error); return; }
+  const { error } = await sdb.rpc('admin_reject_deposit', { p_deposit_id: depositId, p_reason: reason });
+  if (error) { showToast((lang==='ar'?'✗ فشل رفض الإيداع: ':'✗ Failed to reject deposit: ')+error.message); console.error('rejectDeposit RPC error:', error); return; }
   await sendEmailNotification(email, name, 0, 'rejected', reason);
   showToast(lang==='ar' ? `✗ تم رفض الإيداع` : `✗ Deposit rejected`);
   await loadRealDeposits();
@@ -2238,17 +2191,17 @@ function renderRealWithdrawals(data) {
     <tbody>${filtered.map(w => `
       <tr>
         <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${w.id.slice(0,8)}...</td>
-        <td style="font-weight:600">${w.users?.name || '—'}</td>
+        <td style="font-weight:600">${escapeHtml(w.users?.name || '—')}</td>
         <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(w.amount).toLocaleString()}</td>
-        <td><span style="font-family:var(--mono)">${w.coin}</span></td>
-        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${w.wallet_addr ? w.wallet_addr.slice(0,20)+'...' : '—'}</td>
+        <td><span style="font-family:var(--mono)">${escapeHtml(w.coin)}</span></td>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${w.wallet_address ? escapeHtml(w.wallet_address.slice(0,20))+'...' : '—'}</td>
         <td style="font-size:11px;color:var(--muted)">${w.created_at?.slice(0,16)}</td>
         <td>${statusBadge(w.status)}</td>
         <td>
           ${w.status === 'pending' ? `
           <div style="display:flex;gap:6px">
-            <button class="act-btn green" onclick="approveWithdrawal('${w.id}','${w.user_id}',${w.amount},'${w.users?.name||''}')">${t('approve')}</button>
-            <button class="act-btn red" onclick="rejectWithdrawal('${w.id}','${w.user_id}',${w.amount},'${w.users?.name||''}')">${t('reject')}</button>
+            <button class="act-btn green" onclick="approveWithdrawal('${w.id}','${w.user_id}',${w.amount},'${escapeJsAttr(w.users?.name||'')}')">${t('approve')}</button>
+            <button class="act-btn red" onclick="rejectWithdrawal('${w.id}','${w.user_id}',${w.amount},'${escapeJsAttr(w.users?.name||'')}')">${t('reject')}</button>
           </div>` : `<span style="color:var(--muted);font-size:12px">—</span>`}
         </td>
       </tr>`).join('')}
@@ -2258,24 +2211,19 @@ function renderRealWithdrawals(data) {
 async function approveWithdrawal(wdId, userId, amount, name) {
   const confirmed = confirm(lang==='ar' ? `موافقة على سحب $${amount} لـ ${name}؟` : `Approve $${amount} withdrawal for ${name}?`);
   if (!confirmed) return;
-  const { error: e1 } = await sdb.from('withdrawals').update({ status: 'approved' }).eq('id', wdId);
-  if (e1) { showToast((lang==='ar'?'✗ فشل تحديث السحب: ':'✗ Failed to update withdrawal: ')+e1.message); console.error('approveWithdrawal/withdrawals update error:', e1); return; }
-  // خصم المبلغ من الرصيد
-  const { data: userData, error: e2 } = await sdb.from('users').select('balance').eq('id', userId).single();
-  if (e2) { showToast((lang==='ar'?'✗ فشل قراءة رصيد العميل: ':'✗ Failed to read user balance: ')+e2.message); console.error('approveWithdrawal/balance read error:', e2); return; }
-  const newBalance = Math.max(0, (parseFloat(userData?.balance)||0) - parseFloat(amount));
-  const { error: e3 } = await sdb.from('users').update({ balance: newBalance }).eq('id', userId);
-  if (e3) { showToast((lang==='ar'?'✗ فشل تحديث الرصيد: ':'✗ Failed to update balance: ')+e3.message); console.error('approveWithdrawal/balance update error:', e3); return; }
-  const { error: e4 } = await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'✅ تم قبول طلب السحب':'✅ Withdrawal Approved', body: lang==='ar'?`تم تحويل $${amount} لمحفظتك`:`$${amount} has been sent to your wallet`, type: 'success' });
-  if (e4) console.error('approveWithdrawal/notification insert error:', e4);
+  const { data, error } = await sdb.rpc('admin_approve_withdrawal', { p_withdrawal_id: wdId });
+  if (error) {
+    showToast((lang==='ar'?'✗ فشل قبول السحب: ':'✗ Failed to approve withdrawal: ')+error.message);
+    console.error('approveWithdrawal RPC error:', error);
+    return;
+  }
   showToast(lang==='ar'?`✓ تم قبول سحب $${amount} لـ ${name}`:`✓ $${amount} withdrawal approved for ${name}`);
   await loadRealWithdrawals();
 }
 
 async function rejectWithdrawal(wdId, userId, amount, name) {
-  const { error } = await sdb.from('withdrawals').update({ status: 'rejected' }).eq('id', wdId);
-  if (error) { showToast((lang==='ar'?'✗ فشل رفض السحب: ':'✗ Failed to reject withdrawal: ')+error.message); console.error('rejectWithdrawal error:', error); return; }
-  await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'❌ تم رفض طلب السحب':'❌ Withdrawal Rejected', body: lang==='ar'?`تم رفض طلب سحب $${amount}`:`Withdrawal request of $${amount} was rejected`, type: 'warning' });
+  const { error } = await sdb.rpc('admin_reject_withdrawal', { p_withdrawal_id: wdId, p_reason: '' });
+  if (error) { showToast((lang==='ar'?'✗ فشل رفض السحب: ':'✗ Failed to reject withdrawal: ')+error.message); console.error('rejectWithdrawal RPC error:', error); return; }
   showToast(lang==='ar'?`✗ تم رفض السحب`:`✗ Withdrawal rejected`);
   await loadRealWithdrawals();
 }
@@ -2320,12 +2268,12 @@ function renderRealUsers(data) {
     <tbody>${filtered.map(u=>`
       <tr>
         <td><div style="display:flex;align-items:center;gap:10px">
-          <div class="u-av" style="background:var(--gold-dim);color:var(--gold)">${(u.name||'?')[0]}</div>
-          <span style="font-weight:600">${u.name||'—'}</span>
+          <div class="u-av" style="background:var(--gold-dim);color:var(--gold)">${escapeHtml((u.name||'?')[0])}</div>
+          <span style="font-weight:600">${escapeHtml(u.name||'—')}</span>
         </div></td>
-        <td style="font-size:12px;color:var(--muted)">${u.email}</td>
+        <td style="font-size:12px;color:var(--muted)">${escapeHtml(u.email)}</td>
         <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(u.balance||0).toLocaleString()}</td>
-        <td style="font-family:var(--mono);color:var(--blue);font-size:12px">${u.memo||'—'}</td>
+        <td style="font-family:var(--mono);color:var(--blue);font-size:12px">${escapeHtml(u.memo||'—')}</td>
         <td>${kycBadge(u.kyc_status)}</td>
         <td>${statusBadge(u.status)}</td>
         <td style="font-size:11px;color:var(--muted)">${u.created_at?.slice(0,10)||'—'}</td>
@@ -2333,7 +2281,7 @@ function renderRealUsers(data) {
           ${u.status==='blocked'
             ? `<button class="act-btn green" onclick="toggleUserBlock('${u.id}','active')">${t('unblock')}</button>`
             : `<button class="act-btn red" onclick="toggleUserBlock('${u.id}','blocked')">${t('block')}</button>`}
-          <button class="act-btn blue" onclick="editUserBalance('${u.id}','${u.name}',${u.balance||0})">${lang==='ar'?'تعديل الرصيد':'Edit Balance'}</button>
+          <button class="act-btn blue" onclick="editUserBalance('${u.id}','${escapeJsAttr(u.name||'')}',${u.balance||0})">${lang==='ar'?'تعديل الرصيد':'Edit Balance'}</button>
         </div></td>
       </tr>`).join('')}
     </tbody></table>`;
@@ -2388,7 +2336,12 @@ async function confirmBalanceEdit(userId, name) {
     return;
   }
   document.getElementById('balance-modal-bg')?.remove();
-  await sdb.from('users').update({ balance: newBal }).eq('id', userId);
+  const { error } = await sdb.rpc('admin_set_user_balance', { p_user_id: userId, p_new_balance: newBal });
+  if (error) {
+    showToast((lang==='ar'?'✗ فشل تحديث الرصيد: ':'✗ Failed to update balance: ')+error.message);
+    console.error('confirmBalanceEdit RPC error:', error);
+    return;
+  }
   showToast(lang==='ar'?`✓ تم تحديث رصيد ${name} إلى $${newBal.toLocaleString()}`:`✓ ${name} balance updated to $${newBal.toLocaleString()}`);
   await loadRealUsers();
 }
@@ -2455,9 +2408,9 @@ async function renderRecentTxFromSupabase() {
       <tbody>${all.map(tx=>`
         <tr>
           <td>${tx.txtype==='deposit'?'📥':'📤'} ${tx.id?.slice(0,8)||'—'}</td>
-          <td style="font-weight:600">${tx.users?.name||'—'}</td>
+          <td style="font-weight:600">${escapeHtml(tx.users?.name||'—')}</td>
           <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(tx.amount||0).toLocaleString()}</td>
-          <td style="font-family:var(--mono)">${tx.coin||'—'}</td>
+          <td style="font-family:var(--mono)">${escapeHtml(tx.coin||'—')}</td>
           <td style="font-size:11px;color:var(--muted)">${tx.created_at?.slice(0,16)||'—'}</td>
           <td>${statusBadge(tx.status)}</td>
         </tr>`).join('')}
