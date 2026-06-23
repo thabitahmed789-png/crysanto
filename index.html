@@ -592,6 +592,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <div class="sidebar-item" onclick="switchDash(this,'d-kyc')" data-ar="🪪 KYC" data-en="🪪 KYC" data-tr="🪪 KYC">🪪 KYC</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-notif')" data-ar="🔔 الإشعارات" data-en="🔔 Notifications" data-tr="🔔 Bildirimler">🔔 الإشعارات</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-invest')" data-ar="💹 استثماراتي" data-en="💹 My Investments" data-tr="💹 Yatırımlarım">💹 استثماراتي</div>
+        <div class="sidebar-item" onclick="switchDash(this,'d-security')" data-ar="🔒 الأمان" data-en="🔒 Security" data-tr="🔒 Güvenlik">🔒 الأمان</div>
       </div>
       <div class="dash-main">
         <div id="d-overview">
@@ -635,6 +636,15 @@ body:not(.ltr) .footer-grid{text-align:right;}
         </div>
         <div id="d-notif" style="display:none"><div class="panel"><div class="panel-head" id="notif-h" data-ar="الإشعارات" data-en="Notifications" data-tr="Bildirimler">الإشعارات</div><div id="notif-list"></div></div></div>
         <div id="d-invest" style="display:none"><div class="panel"><div class="panel-head" id="inv-h" data-ar="استثماراتي" data-en="My Investments" data-tr="Yatırımlarım">استثماراتي</div><div id="inv-list"></div></div></div>
+        <div id="d-security" style="display:none">
+          <div class="panel" style="max-width:420px">
+            <div class="panel-head" id="sec-h" data-ar="تغيير كلمة المرور" data-en="Change Password" data-tr="Şifre Değiştir">تغيير كلمة المرور</div>
+            <div class="form-group"><label id="sec-cur-l" data-ar="كلمة المرور الحالية" data-en="Current Password" data-tr="Mevcut Şifre">كلمة المرور الحالية</label><input type="password" id="sec-cur-pass" placeholder="••••••••"></div>
+            <div class="form-group"><label id="sec-new-l" data-ar="كلمة المرور الجديدة" data-en="New Password" data-tr="Yeni Şifre">كلمة المرور الجديدة</label><input type="password" id="sec-new-pass" placeholder="••••••••"></div>
+            <div id="sec-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px"></div>
+            <button class="btn-primary" id="sec-save-btn" onclick="changeMyPassword()" data-ar="💾 حفظ كلمة المرور الجديدة" data-en="💾 Save New Password" data-tr="💾 Yeni Şifreyi Kaydet">💾 حفظ كلمة المرور الجديدة</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -870,6 +880,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
     <div class="err-msg" id="login-err"></div>
     <div class="form-group"><label id="ll1" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">Email</label><input type="email" id="login-email" placeholder="example@mail.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div class="form-group"><label id="ll2" data-ar="كلمة المرور" data-en="Password" data-tr="Şifre">Password</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <p style="text-align:left;margin-bottom:14px"><a href="#" style="color:var(--muted);font-size:12px" onclick="closeModal('login');openModal('forgot')" id="lgo-forgot" data-ar="نسيت كلمة المرور؟" data-en="Forgot password?" data-tr="Şifrenizi mi unuttunuz?">Forgot password?</a></p>
     <button class="btn-primary" style="width:100%;margin-bottom:14px" onclick="doLogin()" id="login-btn-txt" data-ar="دخول" data-en="Sign In" data-tr="Giriş">Sign In</button>
     <p style="text-align:center;font-size:12px;color:var(--muted)">
       <span id="lno-acc" data-ar="ليس لديك حساب؟" data-en="No account?" data-tr="Hesabınız yok mu?">No account?</span>
@@ -878,7 +889,35 @@ body:not(.ltr) .footer-grid{text-align:right;}
   </div>
 </div>
 
-<!-- REGISTER MODAL -->
+<!-- FORGOT PASSWORD MODAL -->
+<div class="modal-overlay" id="modal-forgot">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('forgot')">✕</button>
+    <div style="text-align:center;margin-bottom:22px">
+      <div style="font-family:var(--en);font-size:20px;font-weight:800;color:var(--gold)">Crysanto</div>
+      <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="forgot-title" data-ar="استرجاع كلمة المرور" data-en="Reset Password" data-tr="Şifre Sıfırlama">Reset Password</h3>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px" id="forgot-desc" data-ar="هنبعتلك رابط إعادة تعيين كلمة المرور على بريدك الإلكتروني" data-en="We'll send a password reset link to your email" data-tr="Şifre sıfırlama bağlantısını e-postanıza göndereceğiz">We'll send a password reset link to your email</p>
+    </div>
+    <div class="err-msg" id="forgot-err"></div>
+    <div class="form-group"><label id="fl1" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">Email</label><input type="email" id="forgot-email" placeholder="example@mail.com" onkeydown="if(event.key==='Enter')sendPasswordReset()"></div>
+    <button class="btn-primary" style="width:100%" onclick="sendPasswordReset()" id="forgot-btn-txt" data-ar="إرسال رابط الاسترجاع" data-en="Send Reset Link" data-tr="Sıfırlama Bağlantısı Gönder">Send Reset Link</button>
+  </div>
+</div>
+
+<!-- SET NEW PASSWORD MODAL (يظهر تلقائيًا بعد الضغط على رابط الإيميل) -->
+<div class="modal-overlay" id="modal-reset-password">
+  <div class="modal">
+    <div style="text-align:center;margin-bottom:22px">
+      <div style="font-family:var(--en);font-size:20px;font-weight:800;color:var(--gold)">Crysanto</div>
+      <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="reset-title" data-ar="تعيين كلمة مرور جديدة" data-en="Set New Password" data-tr="Yeni Şifre Belirle">Set New Password</h3>
+    </div>
+    <div class="err-msg" id="reset-err"></div>
+    <div class="form-group"><label id="rl1" data-ar="كلمة المرور الجديدة" data-en="New Password" data-tr="Yeni Şifre">New Password</label><input type="password" id="reset-pass1" placeholder="••••••••"></div>
+    <div class="form-group"><label id="rl2" data-ar="تأكيد كلمة المرور" data-en="Confirm Password" data-tr="Şifreyi Onayla">Confirm Password</label><input type="password" id="reset-pass2" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmPasswordReset()"></div>
+    <button class="btn-primary" style="width:100%" onclick="confirmPasswordReset()" id="reset-btn-txt" data-ar="حفظ كلمة المرور" data-en="Save Password" data-tr="Şifreyi Kaydet">Save Password</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-register">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('register')">✕</button>
@@ -1111,7 +1150,7 @@ db.auth.onAuthStateChange(async (event, session) => {
   // SIGNED_IN = بعد login جديد (عبر onAuthStateChange مش doLogin)
   if((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session && !isLoggedIn) {
     currentUser = session.user;
-    await fetchProfile(4, 600);
+    await fetchProfile(3, 500);
     if(userProfile) afterLogin();
   } else if(event === 'SIGNED_OUT') {
     isLoggedIn = false; currentUser = null; userProfile = null;
@@ -1120,6 +1159,9 @@ db.auth.onAuthStateChange(async (event, session) => {
     const bR=document.getElementById('btnRegister'); if(bR) bR.style.display='';
     const uM=document.getElementById('user-menu'); if(uM) uM.style.display='none';
     showPage('home', null);
+  } else if(event === 'PASSWORD_RECOVERY') {
+    // المستخدم ضغط على رابط إعادة تعيين كلمة المرور من الإيميل
+    openModal('reset-password');
   }
 
   if(event === 'INITIAL_SESSION') {
@@ -1137,6 +1179,21 @@ db.auth.onAuthStateChange(async (event, session) => {
     }
   }
 });
+
+// detectSessionInUrl متقفل عمدًا في إعدادات العميل (db) فوق، فلازم نتعامل مع رابط استرجاع كلمة المرور يدويًا هنا
+async function checkPasswordRecoveryLink(){
+  const hash = window.location.hash;
+  if(!hash || hash.indexOf('type=recovery') === -1) return;
+  const params = new URLSearchParams(hash.substring(1));
+  const access_token = params.get('access_token');
+  const refresh_token = params.get('refresh_token');
+  if(!access_token || !refresh_token) return;
+  // ننظّف الهاش من الرابط فورًا عشان مايتكررش لو حصل ريفريش للصفحة
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+  const { error } = await db.auth.setSession({ access_token, refresh_token });
+  if(!error) openModal('reset-password');
+}
+checkPasswordRecoveryLink();
 
 const coins = [
   {sym:'BTC',name:'Bitcoin',price:67420,change:2.4,cap:'$1.32T',vol:'$38B',icon:'₿',color:'#f7931a'},
@@ -1325,7 +1382,8 @@ function openLegal(type) {
 function closeModal(type) {
   const modal = document.getElementById('modal-'+type);
   if(modal) modal.classList.remove('open');
-  const e = document.getElementById(type==='login'?'login-err':type==='register'?'reg-err':'kyc-upload-err');
+  const errMap = {login:'login-err', register:'reg-err', kyc:'kyc-upload-err', forgot:'forgot-err', 'reset-password':'reset-err'};
+  const e = document.getElementById(errMap[type]);
   if(e) e.style.display='none';
 }
 document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
@@ -1333,7 +1391,7 @@ document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click
 function switchDash(el, id) {
   document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
   el.classList.add('active');
-  ['d-overview','d-wallet','d-history','d-kyc','d-notif','d-invest'].forEach(d=>{const e=document.getElementById(d);if(e)e.style.display='none';});
+  ['d-overview','d-wallet','d-history','d-kyc','d-notif','d-invest','d-security'].forEach(d=>{const e=document.getElementById(d);if(e)e.style.display='none';});
   const p=document.getElementById(id); if(p) p.style.display='';
   if(id==='d-history') loadTransactions();
   if(id==='d-notif') loadNotifications();
@@ -1565,29 +1623,27 @@ async function doLogout() {
   showToast({ar:'تم تسجيل الخروج بنجاح',en:'Logged out successfully',tr:'Başarıyla çıkış yapıldı'}[lang]);
 }
 
-async function fetchProfile(retries = 10, delay = 1000) {
+async function fetchProfile(retries = 3, delay = 500) {
   if(!currentUser) { console.warn('fetchProfile: no currentUser'); return; }
   console.log('fetchProfile: starting for', currentUser.email);
   for(let i = 0; i < retries; i++) {
     try {
-      const res = await withTimeout(db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle(), 5000);
+      const res = await withTimeout(db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle(), 6000);
       console.log('fetchProfile attempt', i+1, ':', res.data ? 'FOUND' : 'not found', res.error ? '| error: '+res.error.message : '');
       if(res && res.data) { userProfile = res.data; return; }
-
-      // لو في error من RLS أو غيره، اطبعه
       if(res.error) console.error('fetchProfile error:', res.error);
-
-      // جرب بالـ email كـ fallback — حالة نادرة: trigger التسجيل فشل يربط auth_id من البداية
-      if(currentUser.email) {
-        const { data: linkResult, error: linkErr } = await db.rpc('link_auth_id_to_existing_profile');
-        if(linkErr) { console.error('link_auth_id error:', linkErr); }
-        else if(linkResult && linkResult.success && linkResult.profile) {
-          userProfile = linkResult.profile;
-          return;
-        }
-      }
     } catch(e) { console.error('fetchProfile exception:', e); }
     if(i < retries - 1) await new Promise(r => setTimeout(r, delay));
+  }
+
+  // محاولة احتياطية واحدة بس بعد ما كل المحاولات المباشرة فشلت
+  // (قبل كده كانت بتتنفّذ جوه كل تكرار من اللوب فوق، وده كان بيضاعف وقت التحميل لحد 25-30 ثانية)
+  if(currentUser.email) {
+    try {
+      const { data: linkResult, error: linkErr } = await withTimeout(db.rpc('link_auth_id_to_existing_profile'), 6000);
+      if(linkErr) console.error('link_auth_id error:', linkErr);
+      else if(linkResult && linkResult.success && linkResult.profile) { userProfile = linkResult.profile; return; }
+    } catch(e) { console.error('link_auth_id exception:', e); }
   }
   console.error('fetchProfile: FAILED after', retries, 'attempts');
 }
@@ -1948,6 +2004,68 @@ function setCoin(el, coin) {
 function copyDepAddr() {
   navigator.clipboard.writeText(document.getElementById('dep-addr').textContent).catch(()=>{});
   showToast(lang==='ar'?'✓ تم نسخ العنوان':'✓ Copied');
+}
+
+// ── تغيير كلمة المرور (للمستخدم الداخل في حسابه) ──
+async function changeMyPassword(){
+  const errEl = document.getElementById('sec-err');
+  errEl.style.display = 'none';
+  const curPass = document.getElementById('sec-cur-pass').value;
+  const newPass = document.getElementById('sec-new-pass').value;
+  if (!curPass || !newPass) { showErr(errEl, {ar:'املأ كل الحقول', en:'Fill all fields', tr:'Tüm alanları doldurun'}); return; }
+  if (newPass.length < 8) { showErr(errEl, {ar:'كلمة المرور الجديدة 8 أحرف على الأقل', en:'New password must be at least 8 characters', tr:'Yeni şifre en az 8 karakter olmalı'}); return; }
+  if (!userProfile || !currentUser?.email) { showErr(errEl, {ar:'لازم تسجل دخول الأول', en:'You must be logged in', tr:'Önce giriş yapmalısınız'}); return; }
+  const btn = document.getElementById('sec-save-btn');
+  if (btn) btn.disabled = true;
+  try {
+    // نتأكد من كلمة المرور الحالية الأول قبل أي تغيير
+    const { error: verifyError } = await db.auth.signInWithPassword({ email: currentUser.email, password: curPass });
+    if (verifyError) { showErr(errEl, {ar:'كلمة المرور الحالية غلط', en:'Current password is incorrect', tr:'Mevcut şifre yanlış'}); return; }
+    const { error } = await db.auth.updateUser({ password: newPass });
+    if (error) { console.error('changeMyPassword error:', error); showErr(errEl, genericErrMsg()); return; }
+    document.getElementById('sec-cur-pass').value = '';
+    document.getElementById('sec-new-pass').value = '';
+    showToast(lang==='ar'?'✓ تم تغيير كلمة المرور بنجاح':'✓ Password changed successfully');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ── نسيت كلمة المرور (إرسال رابط إعادة تعيين بالإيميل) ──
+async function sendPasswordReset(){
+  const email = document.getElementById('forgot-email').value.trim();
+  const errEl = document.getElementById('forgot-err');
+  errEl.style.display = 'none';
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showErr(errEl, {ar:'أدخل بريد إلكتروني صحيح', en:'Enter a valid email', tr:'Geçerli bir e-posta girin'}); return;
+  }
+  const btn = document.getElementById('forgot-btn-txt');
+  if (btn) { btn.textContent = '⏳'; }
+  try {
+    const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    // مش بنفرق في الرسالة بين إيميل موجود أو لأ، عشان الأمان (منع تخمين إيميلات مسجلة)
+    closeModal('forgot');
+    showToast(lang==='ar'?'✓ لو الإيميل ده مسجّل، هتستقبل رابط إعادة تعيين كلمة المرور':'✓ If this email is registered, you will receive a reset link');
+  } catch(e) {
+    showErr(errEl, {ar:'حدث خطأ، حاول مرة أخرى', en:'An error occurred, please try again', tr:'Bir hata oluştu, lütfen tekrar deneyin'});
+  } finally {
+    if (btn) btn.textContent = lang==='ar'?'إرسال رابط الاسترجاع':(lang==='en'?'Send Reset Link':'Sıfırlama Bağlantısı Gönder');
+  }
+}
+
+// ── تأكيد كلمة مرور جديدة (بعد الضغط على رابط الإيميل) ──
+async function confirmPasswordReset(){
+  const errEl = document.getElementById('reset-err');
+  errEl.style.display = 'none';
+  const p1 = document.getElementById('reset-pass1').value;
+  const p2 = document.getElementById('reset-pass2').value;
+  if (!p1 || !p2) { showErr(errEl, {ar:'املأ الحقلين', en:'Fill both fields', tr:'Her iki alanı doldurun'}); return; }
+  if (p1.length < 8) { showErr(errEl, {ar:'كلمة المرور 8 أحرف على الأقل', en:'Password must be at least 8 characters', tr:'Şifre en az 8 karakter olmalı'}); return; }
+  if (p1 !== p2) { showErr(errEl, {ar:'كلمتا المرور غير متطابقتين', en:'Passwords do not match', tr:'Şifreler eşleşmiyor'}); return; }
+  const { error } = await db.auth.updateUser({ password: p1 });
+  if (error) { console.error('confirmPasswordReset error:', error); showErr(errEl, genericErrMsg()); return; }
+  closeModal('reset-password');
+  showToast(lang==='ar'?'✓ تم تعيين كلمة المرور الجديدة بنجاح':'✓ New password set successfully');
 }
 
 function copyRef() {
