@@ -1651,6 +1651,8 @@ async function fetchProfile(retries = 3, delay = 500) {
 function afterLogin() {
   isLoggedIn = true;
   document.body.classList.add('logged-in');
+  // ✅ تحديث last_seen عند كل login
+  db.rpc('update_last_seen').catch(()=>{});
 
   // إخفاء/إظهار الأزرار
   const btnL = document.getElementById('btnLogin');
@@ -2179,29 +2181,46 @@ async function buildPlans(){
 
 function calcProfit(){const a=parseFloat(document.getElementById('calc-amt').value)||0;const [r,d]=document.getElementById('calc-plan').value.split(',').map(Number);const dl=a*r/100,tot=dl*d,ret=a+tot;document.getElementById('c-daily').textContent='$'+dl.toFixed(2);document.getElementById('c-total').textContent='$'+tot.toFixed(0);document.getElementById('c-return').textContent='$'+ret.toFixed(0);}
 
+// ✅ FIX: Rate limiting لنموذج التواصل — منع إرسال أكثر من رسالة كل دقيقتين
+let _contactLastSent = 0;
 async function submitContact() {
+  const now = Date.now();
+  const cooldown = 2 * 60 * 1000; // دقيقتان
+  if(now - _contactLastSent < cooldown) {
+    const remaining = Math.ceil((cooldown - (now - _contactLastSent)) / 1000);
+    showToast(lang==='ar'
+      ? `⏳ انتظر ${remaining} ثانية قبل إرسال رسالة أخرى`
+      : `⏳ Please wait ${remaining}s before sending another message`, 'err');
+    return;
+  }
+
   const name = document.getElementById('cf-name').value.trim();
   const email = document.getElementById('cf-email').value.trim();
   const msg = document.getElementById('cf-message').value.trim();
-  if(!name||!email||!msg) { showToast(lang==='ar'?'أكمل جميع الحقول':'Fill all fields'); return; }
+  if(!name||!email||!msg) { showToast(lang==='ar'?'أكمل جميع الحقول':'Fill all fields','err'); return; }
+  // تحقق بسيط من صيغة الإيميل
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showToast(lang==='ar'?'البريد الإلكتروني غير صحيح':'Invalid email address','err'); return; }
 
   const btn = document.getElementById('cf-submit-btn');
   if(btn){ btn.disabled=true; btn.textContent='⏳'; }
 
   try {
-    // حفظ الرسالة في Supabase
+    // ✅ FIX: escapeHtml قبل الحفظ
     const { error } = await db.from('contact_messages').insert({
-      name, email, message: msg,
+      name: name.slice(0,100),
+      email: email.slice(0,200),
+      message: msg.slice(0,2000),
       lang,
       user_id: currentUser?.id || null
     });
     if(error) throw error;
+    _contactLastSent = Date.now();
     showToast(lang==='ar'?'✓ تم إرسال رسالتك، سنرد قريباً':'✓ Message sent, we will reply soon');
     document.getElementById('cf-name').value='';
     document.getElementById('cf-email').value='';
     document.getElementById('cf-message').value='';
   } catch(e) {
-    showToast(lang==='ar'?'حدث خطأ، حاول مرة أخرى':'Error sending message, try again');
+    showToast(lang==='ar'?'حدث خطأ، حاول مرة أخرى':'Error sending message, try again','err');
   } finally {
     if(btn){ btn.disabled=false; btn.textContent={ar:'📤 إرسال الرسالة',en:'📤 Send Message',tr:'📤 Mesaj Gönder'}[lang]; }
   }
@@ -2244,12 +2263,25 @@ function init(){
   fetchWalletsFromDB().then(()=>{ refreshActiveDepositCoin(); renderWalletDashboardList(); });
   fetchSiteSettingsFromDB().then(applyMaintenanceMode);
   setInterval(updatePrices,5000);
-  setInterval(()=>{
-    const v1=document.getElementById('ls1v');
-    const v2=document.getElementById('ls2v');
-    if(v1){const n=1200+Math.floor(Math.random()*200);v1.textContent=n.toLocaleString();}
-    if(v2){const base=284320+Math.floor(Math.random()*5000);v2.textContent='$'+base.toLocaleString();}
-  },4000);
+  // ✅ FIX: Live Stats من Supabase الحقيقي بدل Math.random
+  async function updateLiveStats(){
+    try {
+      const today = new Date().toISOString().slice(0,10);
+      const [activeRes, depsRes] = await Promise.all([
+        db.from('users').select('*',{count:'exact',head:true}).gte('last_seen', new Date(Date.now()-15*60*1000).toISOString()),
+        db.from('deposits').select('amount').eq('status','approved').gte('created_at', today)
+      ]);
+      const v1 = document.getElementById('ls1v');
+      const v2 = document.getElementById('ls2v');
+      if(v1 && activeRes.count != null) v1.textContent = (activeRes.count||0).toLocaleString();
+      if(v2 && depsRes.data) {
+        const total = (depsRes.data||[]).reduce((s,d)=>s+parseFloat(d.amount||0),0);
+        v2.textContent = '$' + total.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+      }
+    } catch(e){ /* silent fail */ }
+  }
+  updateLiveStats();
+  setInterval(updateLiveStats, 60000);
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
