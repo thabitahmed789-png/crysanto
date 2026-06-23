@@ -1033,7 +1033,8 @@ function initApp(){
 
 // ── OVERVIEW ──
 function renderOverview(){
-  renderRecentTx();
+  // ✅ FIX: بدل renderRecentTx الوهمية، استدعي الـ Supabase مباشرة
+  renderRecentTxFromSupabase();
   setTimeout(()=>{ drawRevChart(); drawDistChart(); },100);
 }
 
@@ -1061,15 +1062,23 @@ function renderRecentTx(){
     </tbody></table>`;
 }
 
-// ── USERS ──
+// ✅ FIX: renderUsers تستخدم window.realUsers من Supabase + escapeHtml + Pagination
+let usersPage = 0;
+const usersPageSize = 50;
 function renderUsers(){
   const search = (document.getElementById('user-search')||{}).value||'';
   const filter = currentFilter.users;
-  let data = users.filter(u=>{
-    const matchFilter = filter==='all'||u.status===filter;
-    const matchSearch = !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
+  const allData = window.realUsers || [];
+  let data = allData.filter(u=>{
+    const s = u.status||'active';
+    const matchFilter = filter==='all'||s===filter;
+    const matchSearch = !search || (u.name||'').toLowerCase().includes(search.toLowerCase()) || (u.email||'').toLowerCase().includes(search.toLowerCase());
     return matchFilter && matchSearch;
   });
+  const total = data.length;
+  const totalPages = Math.ceil(total / usersPageSize);
+  if(usersPage >= totalPages) usersPage = Math.max(0, totalPages-1);
+  const paged = data.slice(usersPage * usersPageSize, (usersPage+1) * usersPageSize);
   const wrap = document.getElementById('users-table-wrap');
   wrap.innerHTML = `<table>
     <thead><tr>
@@ -1077,33 +1086,42 @@ function renderUsers(){
       <th>${lang==='ar'?'الدولة':lang==='en'?'Country':'Ülke'}</th>
       <th>${lang==='ar'?'الرصيد':lang==='en'?'Balance':'Bakiye'}</th>
       <th>${lang==='ar'?'الباقة':lang==='en'?'Plan':'Plan'}</th>
-      <th>${lang==='ar'?'KYC':lang==='en'?'KYC':'KYC'}</th>
+      <th>KYC</th>
       <th>${lang==='ar'?'الحالة':lang==='en'?'Status':'Durum'}</th>
       <th>${lang==='ar'?'الإجراءات':lang==='en'?'Actions':'İşlemler'}</th>
     </tr></thead>
-    <tbody>${data.map(u=>`
+    <tbody>${paged.map(u=>`
       <tr>
         <td>
           <div style="display:flex;align-items:center;gap:10px">
-            <div class="u-av" style="background:var(--gold-dim);color:var(--gold)">${u.name[0]}</div>
-            <div><div style="font-weight:600;font-size:13px">${u.name}</div><div style="font-size:11px;color:var(--muted)">${u.email}</div></div>
+            <div class="u-av" style="background:var(--gold-dim);color:var(--gold)">${escapeHtml((u.name||'?')[0].toUpperCase())}</div>
+            <div><div style="font-weight:600;font-size:13px">${escapeHtml(u.name||'—')}</div><div style="font-size:11px;color:var(--muted)">${escapeHtml(u.email||'—')}</div></div>
           </div>
         </td>
-        <td>${u.country}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${u.bal.toLocaleString()}</td>
-        <td>${u.plan}</td>
-        <td>${kycBadge(u.kyc)}</td>
-        <td>${statusBadge(u.status)}</td>
+        <td>${escapeHtml(u.country||'—')}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(u.balance||0).toLocaleString()}</td>
+        <td>${escapeHtml(u.plan||'—')}</td>
+        <td>${kycBadge(u.kyc_status||'—')}</td>
+        <td>${statusBadge(u.status||'active')}</td>
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="act-btn blue" onclick="showUserModal(${u.id})">${t('details')}</button>
-            ${u.status==='blocked'
-              ? `<button class="act-btn green" onclick="toggleBlock(${u.id})">${t('unblock')}</button>`
-              : `<button class="act-btn red" onclick="toggleBlock(${u.id})">${t('block')}</button>`}
+            <button class="act-btn blue" onclick="showUserModal('${escapeJsAttr(u.id)}')">${t('details')}</button>
+            ${(u.status||'active')==='blocked'
+              ? `<button class="act-btn green" onclick="toggleBlock('${escapeJsAttr(u.id)}')">${t('unblock')}</button>`
+              : `<button class="act-btn red" onclick="toggleBlock('${escapeJsAttr(u.id)}')">${t('block')}</button>`}
+            <button class="act-btn" style="border-color:var(--gold);color:var(--gold)" onclick="openBalanceModal('${escapeJsAttr(u.id)}','${escapeJsAttr(u.name||'')}',${parseFloat(u.balance||0)})">${lang==='ar'?'تعديل الرصيد':'Edit Balance'}</button>
           </div>
         </td>
       </tr>`).join('')}
-    </tbody></table>`;
+    </tbody></table>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 4px;font-size:12px;color:var(--muted)">
+      <span>${lang==='ar'?`عرض ${paged.length} من أصل ${total} مستخدم`:`Showing ${paged.length} of ${total} users`}</span>
+      <div style="display:flex;gap:6px">
+        <button class="act-btn" onclick="usersPage=Math.max(0,usersPage-1);renderUsers()" ${usersPage===0?'disabled':''} style="opacity:${usersPage===0?'0.4':'1'}">◀</button>
+        <span style="padding:4px 10px;background:var(--dark3);border-radius:6px">${usersPage+1} / ${totalPages||1}</span>
+        <button class="act-btn" onclick="usersPage=Math.min(${totalPages-1},usersPage+1);renderUsers()" ${usersPage>=totalPages-1?'disabled':''} style="opacity:${usersPage>=totalPages-1?'0.4':'1'}">▶</button>
+      </div>
+    </div>`;
 }
 
 function filterUsers(el,f){
@@ -1113,12 +1131,22 @@ function filterUsers(el,f){
   renderUsers();
 }
 
-function toggleBlock(id){
-  const u = users.find(u=>u.id===id);
+// ✅ FIX: toggleBlock الآن بتستخدم Supabase الحقيقي
+async function toggleBlock(id){
+  const u = (window.realUsers||[]).find(u=>u.id===id);
   if(!u) return;
-  u.status = u.status==='blocked'?'active':'blocked';
-  renderUsers();
-  showToast(u.status==='blocked' ? (lang==='ar'?'تم حظر المستخدم':'User blocked') : (lang==='ar'?'تم رفع الحظر':'User unblocked'));
+  const newStatus = u.status==='blocked'?'active':'blocked';
+  const action = newStatus==='blocked'
+    ? (lang==='ar'?'حظر':'block')
+    : (lang==='ar'?'رفع الحظر عن':'unblock');
+  const confirmed = confirm(lang==='ar'
+    ? `هل تريد ${action} المستخدم "${u.name}"؟`
+    : `Are you sure you want to ${action} "${u.name}"?`);
+  if(!confirmed) return;
+  const { error } = await sdb.from('users').update({ status: newStatus }).eq('id', id);
+  if(error){ showToast((lang==='ar'?'✗ فشل التحديث: ':'✗ Failed: ')+error.message); return; }
+  showToast(newStatus==='blocked' ? (lang==='ar'?'✓ تم حظر المستخدم':'✓ User blocked') : (lang==='ar'?'✓ تم رفع الحظر':'✓ User unblocked'));
+  loadRealUsers();
 }
 
 function showUserModal(id){
@@ -1215,19 +1243,23 @@ function buildTxTable(data,type){
     </tbody></table>`;
 }
 
-function approveTx(type,id){
-  const arr = type==='deposit'?deposits:withdrawals;
-  const tx = arr.find(t=>t.id===id);
-  if(tx) tx.status='approved';
-  renderCurrentSection();
+// ✅ FIX: approveTx و rejectTx الآن بتستخدمان Supabase (لو مش withdrawal أو deposit حقيقي)
+async function approveTx(type,id){
+  const confirmed = confirm(lang==='ar' ? `تأكيد قبول ${id}؟` : `Confirm approve ${id}?`);
+  if(!confirmed) return;
+  const table = type==='deposit'?'deposits':'withdrawals';
+  const { error } = await sdb.from(table).update({ status:'approved' }).eq('id', id);
+  if(error){ showToast((lang==='ar'?'✗ فشل: ':'✗ Failed: ')+error.message); return; }
   showToast(lang==='ar'?`✓ تم قبول ${id}`:`✓ ${id} approved`);
+  if(type==='deposit') loadRealDeposits(); else loadRealWithdrawals();
 }
-function rejectTx(type,id){
-  const arr = type==='deposit'?deposits:withdrawals;
-  const tx = arr.find(t=>t.id===id);
-  if(tx) tx.status='rejected';
-  renderCurrentSection();
+async function rejectTx(type,id){
+  const reason = prompt(lang==='ar' ? 'سبب الرفض (اختياري):' : 'Rejection reason (optional):') || '';
+  const table = type==='deposit'?'deposits':'withdrawals';
+  const { error } = await sdb.from(table).update({ status:'rejected', reject_reason: reason }).eq('id', id);
+  if(error){ showToast((lang==='ar'?'✗ فشل: ':'✗ Failed: ')+error.message); return; }
   showToast(lang==='ar'?`✗ تم رفض ${id}`:`✗ ${id} rejected`);
+  if(type==='deposit') loadRealDeposits(); else loadRealWithdrawals();
 }
 
 // ── INVESTMENTS ──
@@ -2056,21 +2088,7 @@ document.addEventListener('keydown', e => {
   };
 })();
 
-// ── CONFIRM DANGEROUS ACTIONS ──
-(function(){
-  const origToggleBlock = window.toggleBlock;
-  window.toggleBlock = function(id){
-    const u = users.find(u=>u.id===id);
-    if(!u) return;
-    const action = u.status==='blocked'
-      ? (lang==='ar'?'رفع الحظر عن':'unblock')
-      : (lang==='ar'?'حظر':'block');
-    const confirmed = confirm(lang==='ar'
-      ? `هل تريد ${action} المستخدم "${u.name}"؟`
-      : `Are you sure you want to ${action} "${u.name}"?`);
-    if(confirmed) origToggleBlock(id);
-  };
-})();
+// ✅ toggleBlock الـ confirmation متضمن فيها فوق (مش محتاجين patch تاني)
 
 // ── EXPORT TABLE AS CSV ──
 function exportCSV(section){
@@ -2158,20 +2176,7 @@ function toggleAutoDist(){
   // already handled via oninput on search input
 })();
 
-// ── DEPOSIT APPROVAL WITH BALANCE UPDATE ──
-(function(){
-  const origApprove = window.approveTx;
-  window.approveTx = function(type, id){
-    if(type==='deposit'){
-      const tx = deposits.find(d=>d.id===id);
-      if(tx && tx.status==='pending'){
-        const u = users.find(u=>u.name===tx.user);
-        if(u) u.bal += tx.amount;
-      }
-    }
-    origApprove(type, id);
-  };
-})();
+// ✅ approveDeposit الحقيقية موجودة فوق وبتستخدم RPC آمن — مفيش حاجة للـ patch ده
 
 // ── SEND NOTIF TO SPECIFIC USER (from user modal) ──
 async function sendNotifToUser(userId){
