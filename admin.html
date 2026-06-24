@@ -403,6 +403,9 @@ body.ltr .toast{left:auto;right:24px;}
     <div class="sb-item" onclick="switchSection('s-settings')" id="sb-settings">
       <span class="sb-icon">🔧</span><span class="sb-lbl" data-ar="الإعدادات" data-en="Settings" data-tr="Ayarlar">الإعدادات</span>
     </div>
+    <div class="sb-item" onclick="switchSection('s-audit')" id="sb-audit">
+      <span class="sb-icon">📋</span><span class="sb-lbl" data-ar="سجل العمليات" data-en="Audit Log" data-tr="İşlem Kaydı">سجل العمليات</span>
+    </div>
   </div>
 
   <!-- MAIN -->
@@ -690,6 +693,18 @@ body.ltr .toast{left:auto;right:24px;}
     </div>
 
 
+
+    <!-- ══ AUDIT LOG ══ -->
+    <div id="s-audit" class="section-wrap" style="display:none">
+      <div class="section-title" id="audit-title">سجل العمليات</div>
+      <div class="panel">
+        <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between">
+          <span id="audit-ph">آخر 200 عملية إدارية</span>
+          <button class="act-btn" onclick="renderAuditLog()" style="font-size:12px">🔄 تحديث</button>
+        </div>
+        <div class="tbl-wrap" id="audit-table-wrap"></div>
+      </div>
+    </div>
   </div><!-- /main -->
 </div><!-- /app -->
 
@@ -1018,7 +1033,7 @@ function renderCurrentSection(){
     's-withdrawals':renderWithdrawals,'s-investments':renderInvestments,
     's-kyc':renderKYC,'s-referrals':renderReferrals,'s-profits':renderProfits,
     's-packages':renderPackages,'s-notifs':renderNotifs,'s-wallets':renderWallets,
-    's-stats':renderStats,'s-settings':renderSettings
+    's-stats':renderStats,'s-settings':renderSettings,'s-audit':renderAuditLog
   };
   if(renders[currentSection]) renders[currentSection]();
 }
@@ -1294,10 +1309,11 @@ async function renderInvestments(){
       <th>${lang==='ar'?'النهاية':'End'}</th>
       <th>${lang==='ar'?'إجمالي الربح':'Total Profit'}</th>
       <th>${lang==='ar'?'الحالة':'Status'}</th>
+      <th>${lang==='ar'?'الإجراءات':'Actions'}</th>
     </tr></thead>
     <tbody>${data.map(inv=>`
       <tr>
-        <td style="font-weight:600">${escapeHtml(inv.users?.name || '—')}</td>
+        <td style="font-weight:600">${escapeHtml(inv.users?.name || '—')}<div style="font-size:11px;color:var(--muted)">${escapeHtml(inv.users?.email||'')}</div></td>
         <td>${escapeHtml(inv.plan_name || '—')}</td>
         <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(inv.amount).toLocaleString()}</td>
         <td style="color:var(--green);font-family:var(--mono)">${inv.daily_rate}%</td>
@@ -1305,8 +1321,22 @@ async function renderInvestments(){
         <td style="font-size:12px;color:var(--muted)">${inv.end_date||'—'}</td>
         <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(inv.total_profit||0).toLocaleString()}</td>
         <td>${statusLabel(inv.status)}</td>
+        <td>${inv.status==='active'
+          ? `<button class="act-btn red" onclick="cancelInvestment('${escapeJsAttr(inv.id)}','${escapeJsAttr(inv.plan_name||'')}')">${lang==='ar'?'إلغاء':'Cancel'}</button>`
+          : '—'}</td>
       </tr>`).join('')}
     </tbody></table>`;
+}
+
+// ✅ إلغاء استثمار من لوحة الأدمن مع إرجاع رأس المال
+async function cancelInvestment(id, planName){
+  const reason = prompt(lang==='ar'?`سبب إلغاء استثمار "${planName}" (اختياري):`:`Reason for cancelling "${planName}" investment (optional):`)||'';
+  const confirmed = confirm(lang==='ar'?`تأكيد إلغاء الاستثمار وإرجاع رأس المال للمستخدم؟`:`Confirm cancel investment and refund capital to user?`);
+  if(!confirmed) return;
+  const { data, error } = await sdb.rpc('admin_cancel_investment', { p_investment_id: id, p_reason: reason });
+  if(error){ showToast((lang==='ar'?'✗ فشل الإلغاء: ':'✗ Cancel failed: ')+error.message); return; }
+  showToast(lang==='ar'?'✓ تم إلغاء الاستثمار وإرجاع رأس المال':'✓ Investment cancelled and capital refunded');
+  renderInvestments();
 }
 
 // ── KYC — Supabase ──
@@ -2660,27 +2690,90 @@ async function renderRecentTxFromSupabase() {
 
 
 
-// ── Realtime — تحديث الأدمن تلقائياً ──
+// ── Realtime — تحديث الأدمن تلقائياً بـ filters آمنة ──
 function setupRealtime() {
-  sdb.channel('admin-realtime')
-    .on('postgres_changes', {event:'INSERT', schema:'public', table:'deposits'}, () => {
-      loadRealOverviewStats(); // يحدّث الـ badges دايماً
+  // ✅ FIX: كل channel منفصل بـ filter محدد بدل channel واحد بدون filter
+  sdb.channel('admin-deposits-insert')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'deposits', filter:'status=eq.pending'}, () => {
+      loadRealOverviewStats();
       if(currentSection==='s-deposits') loadRealDeposits();
+      showToast(lang==='ar'?'🔔 طلب إيداع جديد':'🔔 New deposit request');
     })
-    .on('postgres_changes', {event:'INSERT', schema:'public', table:'withdrawals'}, () => {
+    .subscribe();
+
+  sdb.channel('admin-withdrawals-insert')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'withdrawals', filter:'status=eq.pending'}, () => {
       loadRealOverviewStats();
       if(currentSection==='s-withdrawals') loadRealWithdrawals();
+      showToast(lang==='ar'?'🔔 طلب سحب جديد':'🔔 New withdrawal request');
     })
+    .subscribe();
+
+  sdb.channel('admin-users-update')
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'users'}, () => {
       if(currentSection==='s-users') loadRealUsers();
       if(currentSection==='s-kyc') renderKYC();
     })
+    .subscribe();
+
+  sdb.channel('admin-users-insert')
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'users'}, () => {
       loadRealOverviewStats();
+      showToast(lang==='ar'?'👤 مستخدم جديد سجّل':'👤 New user registered');
     })
     .subscribe();
 }
 
+
+
+// ── AUDIT LOG ──
+async function renderAuditLog(){
+  const wrap = document.getElementById('audit-table-wrap');
+  if(!wrap) return;
+  showTableSkeleton('audit-table-wrap', 6);
+  const { data, error } = await sdb
+    .from('audit_log')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if(error || !data){
+    wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:30px">${lang==='ar'?'لا توجد سجلات':'No audit records'}</div>`;
+    return;
+  }
+  if(!data.length){
+    wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:30px">${lang==='ar'?'لا توجد عمليات مسجّلة بعد':'No recorded operations yet'}</div>`;
+    return;
+  }
+  const actionIcon = {
+    set_user_balance: '💰',
+    cancel_investment: '❌',
+    block_user: '🚫',
+    unblock_user: '✅',
+    approve_deposit: '✅',
+    reject_deposit: '❌',
+    approve_withdrawal: '✅',
+    reject_withdrawal: '❌',
+  };
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>${lang==='ar'?'الوقت':'Time'}</th>
+      <th>${lang==='ar'?'العملية':'Action'}</th>
+      <th>${lang==='ar'?'الجدول':'Table'}</th>
+      <th>${lang==='ar'?'البيانات القديمة':'Old Data'}</th>
+      <th>${lang==='ar'?'البيانات الجديدة':'New Data'}</th>
+    </tr></thead>
+    <tbody>${data.map(row=>`
+      <tr>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap">${(row.created_at||'').slice(0,16).replace('T',' ')}</td>
+        <td><span style="display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:12px">
+          ${actionIcon[row.action]||'🔧'} ${escapeHtml(row.action||'—')}
+        </span></td>
+        <td style="font-size:12px;color:var(--muted)">${escapeHtml(row.table_name||'—')}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis">${row.old_data?escapeHtml(JSON.stringify(row.old_data)):'—'}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--gold);max-width:200px;overflow:hidden;text-overflow:ellipsis">${row.new_data?escapeHtml(JSON.stringify(row.new_data)):'—'}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
 
 console.log('%cCrysanto Admin Panel — Loaded ✓', 'color:#C9A84C;font-size:16px;font-weight:bold;');
 </script>
