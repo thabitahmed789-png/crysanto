@@ -384,6 +384,11 @@ body.ltr .toast{left:auto;right:24px;}
       <span class="sb-icon">🎁</span><span class="sb-lbl" data-ar="الإحالات" data-en="Referrals" data-tr="Referanslar">الإحالات</span>
     </div>
 
+    <div class="sb-item" onclick="switchSection('s-contact')" id="sb-contact">
+      <span class="sb-icon">✉️</span><span class="sb-lbl" data-ar="رسائل التواصل" data-en="Contact Messages" data-tr="İletişim Mesajları">رسائل التواصل</span>
+      <span class="sb-badge" id="contact-badge" style="background:var(--red);display:none">0</span>
+    </div>
+
     <div class="sb-section" id="sb-s3">التحكم</div>
     <div class="sb-item" onclick="switchSection('s-profits')" id="sb-profits">
       <span class="sb-icon">⚙️</span><span class="sb-lbl" data-ar="التحكم بالأرباح" data-en="Profit Control" data-tr="Kar Kontrolü">التحكم بالأرباح</span>
@@ -442,6 +447,7 @@ body.ltr .toast{left:auto;right:24px;}
 
     <!-- ══ USERS ══ -->
     <div id="s-users" class="section-wrap" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="act-btn" onclick="exportCSV('users')" style="font-size:12px">📥 تصدير CSV</button></div>
       <div class="section-title" id="users-title">إدارة المستخدمين <span id="users-count-lbl">48,214 مستخدم</span></div>
       <div class="filter-tabs">
         <button class="ft on" onclick="filterUsers(this,'all')" id="fu-all">الكل</button>
@@ -460,6 +466,7 @@ body.ltr .toast{left:auto;right:24px;}
 
     <!-- ══ DEPOSITS ══ -->
     <div id="s-deposits" class="section-wrap" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="act-btn" onclick="exportCSV('deposits')" style="font-size:12px">📥 تصدير CSV</button></div>
       <div class="section-title" id="dep-title">طلبات الإيداع <span id="dep-pending-lbl">12 معلق</span></div>
       <div class="alert-bar" id="dep-alert">⏳ يوجد 12 طلب إيداع ينتظر المراجعة والموافقة</div>
       <div class="filter-tabs">
@@ -475,6 +482,7 @@ body.ltr .toast{left:auto;right:24px;}
 
     <!-- ══ WITHDRAWALS ══ -->
     <div id="s-withdrawals" class="section-wrap" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="act-btn" onclick="exportCSV('withdrawals')" style="font-size:12px">📥 تصدير CSV</button></div>
       <div class="section-title" id="wd-title">طلبات السحب <span id="wd-pending-lbl">27 معلق</span></div>
       <div class="alert-bar red" id="wd-alert">🔴 يوجد 27 طلب سحب يحتاج مراجعة عاجلة</div>
       <div class="filter-tabs">
@@ -693,6 +701,22 @@ body.ltr .toast{left:auto;right:24px;}
     </div>
 
 
+
+    <!-- ══ CONTACT MESSAGES ══ -->
+    <div id="s-contact" class="section-wrap" style="display:none">
+      <div class="section-title" id="contact-title">رسائل التواصل</div>
+      <div class="panel">
+        <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <span id="contact-ph">رسائل العملاء</span>
+          <div style="display:flex;gap:8px">
+            <button class="ft on" onclick="filterContact(this,'all')" id="ct-all">الكل</button>
+            <button class="ft" onclick="filterContact(this,'unread')" id="ct-unread">غير مقروء</button>
+            <button class="act-btn" onclick="renderContactMessages()" style="font-size:12px">🔄 تحديث</button>
+          </div>
+        </div>
+        <div class="tbl-wrap" id="contact-table-wrap"><div style="color:var(--muted);text-align:center;padding:40px">جاري التحميل...</div></div>
+      </div>
+    </div>
 
     <!-- ══ AUDIT LOG ══ -->
     <div id="s-audit" class="section-wrap" style="display:none">
@@ -1012,12 +1036,13 @@ function renderCurrentSection(){
   if(currentSection==='s-users') { loadRealUsers(); return; }
   if(currentSection==='s-kyc') { renderKYC(); return; }
   if(currentSection==='s-overview') { renderOverview(); loadRealOverviewStats(); return; }
+  if(currentSection==='s-contact') { renderContactMessages(); return; }
   const renders = {
     's-overview':renderOverview,'s-users':renderUsers,'s-deposits':loadRealDeposits,
     's-withdrawals':loadRealWithdrawals,'s-investments':renderInvestments,
     's-kyc':renderKYC,'s-referrals':renderReferrals,'s-profits':renderProfits,
     's-packages':renderPackages,'s-notifs':renderNotifs,'s-wallets':renderWallets,
-    's-stats':renderStats,'s-settings':renderSettings,'s-audit':renderAuditLog
+    's-stats':renderStats,'s-settings':renderSettings,'s-audit':renderAuditLog,'s-contact':renderContactMessages
   };
   if(renders[currentSection]) renders[currentSection]();
 }
@@ -1143,7 +1168,13 @@ function showUserModal(id){
     </div>
     <div style="display:flex;gap:10px">
       <button class="act-btn-primary" onclick="sendNotifToUser('${u.id}')">${lang==='ar'?'إرسال إشعار':'Send Notification'}</button>
+      <button class="act-btn" style="background:var(--gold);color:#000" onclick="adminAddProfit('${u.id}','${u.name?.replace(/'/g,\"\'\")}');closeModal()">💰 ${lang==='ar'?'إضافة ربح':'Add Profit'}</button>
       <button class="act-btn red" onclick="toggleUserBlock('${u.id}','${u.status==='blocked'?'active':'blocked'}');closeModal()">${u.status==='blocked'?t('unblock'):t('block')}</button>
+    </div>
+    <div style="margin-top:12px;padding:12px;background:var(--dark);border-radius:8px;font-size:11px;color:var(--muted)">
+      <b style="color:var(--gold)">إجمالي الأرباح:</b> $${parseFloat(u.total_profit||0).toFixed(2)} &nbsp;|&nbsp;
+      <b style="color:var(--gold)">عمولات الإحالة:</b> $${parseFloat(u.ref_earnings||0).toFixed(2)} &nbsp;|&nbsp;
+      <b style="color:var(--gold)">آخر نشاط:</b> ${(u.last_seen||'').slice(0,16).replace('T',' ')||'—'}
     </div>`;
   document.getElementById('user-modal').classList.add('open');
 }
@@ -2564,35 +2595,45 @@ async function confirmBalanceEdit(userId, name) {
 // ── إحصائيات الـ Overview من Supabase ──
 async function loadRealOverviewStats() {
   try {
-    // عدد المستخدمين
-    const {count: userCount} = await sdb.from('users').select('*', {count:'exact',head:true});
-    const sc2v = document.getElementById('sc2v'); if(sc2v) sc2v.textContent = (userCount||0).toLocaleString();
+    const { data: stats, error } = await sdb.rpc('get_admin_overview_stats');
+    if (error) { console.error('Overview stats error:', error); return; }
 
-    // إيداعات اليوم
-    const today = new Date().toISOString().slice(0,10);
-    const {data: todayDeps} = await sdb.from('deposits').select('amount').eq('status','approved').gte('created_at', today);
-    const todayTotal = (todayDeps||[]).reduce((s,d)=>s+parseFloat(d.amount||0),0);
+    const s = stats;
+    const sc2v = document.getElementById('sc2v'); if(sc2v) sc2v.textContent = (s.total_users||0).toLocaleString();
+
+    const todayTotal = 0; // already in daily stats
     const sc3v = document.getElementById('sc3v');
     if(sc3v) {
-      if(todayTotal >= 1000) sc3v.textContent = '$'+(todayTotal/1000).toFixed(1)+'K';
-      else sc3v.textContent = '$'+todayTotal.toLocaleString();
+      const dep = s.total_deposited || 0;
+      if(dep >= 1000000) sc3v.textContent = '$'+(dep/1000000).toFixed(1)+'M';
+      else if(dep >= 1000) sc3v.textContent = '$'+(dep/1000).toFixed(1)+'K';
+      else sc3v.textContent = '$'+dep.toLocaleString();
     }
 
-    // سحوبات معلقة
-    const {count: wdCount} = await sdb.from('withdrawals').select('*',{count:'exact',head:true}).eq('status','pending');
-    const sc4v = document.getElementById('sc4v'); if(sc4v) sc4v.textContent = (wdCount||0).toString();
+    const sc4v = document.getElementById('sc4v'); if(sc4v) sc4v.textContent = (s.pending_withdrawals||0).toString();
+    const sc6v = document.getElementById('sc6v'); if(sc6v) sc6v.textContent = (s.pending_kyc||0).toString();
 
-    // طلبات KYC
-    const {count: kycCount} = await sdb.from('users').select('*',{count:'exact',head:true}).eq('kyc_status','pending').not('kyc_data','is',null);
-    const sc6v = document.getElementById('sc6v'); if(sc6v) sc6v.textContent = (kycCount||0).toString();
+    // stat cards extra
+    const el1 = document.getElementById('sc1v'); if(el1) {
+      const inv = s.total_invested||0;
+      if(inv>=1000000) el1.textContent='$'+(inv/1000000).toFixed(1)+'M';
+      else if(inv>=1000) el1.textContent='$'+(inv/1000).toFixed(1)+'K';
+      else el1.textContent='$'+inv.toLocaleString();
+    }
 
-    // تحديث الـ badges في السايدبار
+    // Sidebar badges
     const depBadge = document.getElementById('dep-badge');
-    const {count: depPending} = await sdb.from('deposits').select('*',{count:'exact',head:true}).eq('status','pending');
-    if(depBadge) depBadge.textContent = depPending||0;
-
+    if(depBadge) depBadge.textContent = s.pending_deposits||0;
     const wdBadge = document.getElementById('wd-badge');
-    if(wdBadge) wdBadge.textContent = wdCount||0;
+    if(wdBadge) wdBadge.textContent = s.pending_withdrawals||0;
+
+    // Contact badge
+    const cBadge = document.getElementById('contact-badge');
+    if(cBadge) {
+      const unread = s.contact_unread || 0;
+      cBadge.textContent = unread;
+      cBadge.style.display = unread > 0 ? 'inline' : 'none';
+    }
 
     // آخر المعاملات
     renderRecentTxFromSupabase();
@@ -2666,6 +2707,14 @@ function setupRealtime() {
       showToast(lang==='ar'?'👤 مستخدم جديد سجّل':'👤 New user registered');
     })
     .subscribe();
+
+  sdb.channel('admin-contact-insert')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'contact_messages'}, () => {
+      loadRealOverviewStats();
+      if(currentSection==='s-contact') renderContactMessages();
+      showToast(lang==='ar'?'✉️ رسالة تواصل جديدة':'✉️ New contact message');
+    })
+    .subscribe();
 }
 
 
@@ -2691,6 +2740,7 @@ async function renderAuditLog(){
   const actionIcon = {
     set_user_balance: '💰',
     cancel_investment: '❌',
+    manual_profit: '💰',
     block_user: '🚫',
     unblock_user: '✅',
     approve_deposit: '✅',
@@ -2717,6 +2767,127 @@ async function renderAuditLog(){
         <td style="font-family:var(--mono);font-size:11px;color:var(--gold);max-width:200px;overflow:hidden;text-overflow:ellipsis">${row.new_data?escapeHtml(JSON.stringify(row.new_data)):'—'}</td>
       </tr>`).join('')}
     </tbody></table>`;
+}
+
+
+// ══════════════════════════════════════════════
+// CONTACT MESSAGES
+// ══════════════════════════════════════════════
+let contactFilter = 'all';
+function filterContact(el, f) {
+  contactFilter = f;
+  document.querySelectorAll('#s-contact .ft').forEach(b => b.classList.remove('on'));
+  if(el) el.classList.add('on');
+  renderContactMessages();
+}
+
+async function renderContactMessages() {
+  const wrap = document.getElementById('contact-table-wrap');
+  if(!wrap) return;
+  wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px">${lang==='ar'?'جاري التحميل...':'Loading...'}</div>`;
+
+  let query = sdb.from('contact_messages').select('*').order('created_at', {ascending: false}).limit(100);
+  if(contactFilter === 'unread') query = query.eq('is_read', false);
+
+  const { data, error } = await query;
+  if(error) { wrap.innerHTML = `<div style="color:var(--red);padding:20px">✗ ${escapeHtml(error.message)}</div>`; return; }
+  if(!data || !data.length) {
+    wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px">${lang==='ar'?'لا توجد رسائل':'No messages found'}</div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px;padding:4px">
+    ${data.map(m => `
+      <div style="background:var(--dark);border:1px solid ${m.is_read ? 'var(--border2)' : 'var(--gold)'};border-radius:10px;padding:16px;transition:.2s" id="cmsg-${m.id}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <div>
+            <span style="font-weight:700;font-size:14px">${escapeHtml(m.name||'—')}</span>
+            <span style="color:var(--muted);font-size:12px;margin-right:10px;margin-left:10px">•</span>
+            <a href="mailto:${escapeHtml(m.email||'')}" style="color:var(--gold);font-size:12px;text-decoration:none">${escapeHtml(m.email||'—')}</a>
+            ${!m.is_read ? '<span style="background:var(--gold);color:#000;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;margin-right:8px;margin-left:8px">جديد</span>' : ''}
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="color:var(--muted);font-size:11px">${(m.created_at||'').slice(0,16).replace('T',' ')}</span>
+            ${!m.is_read ? `<button class="act-btn" onclick="markContactRead('${m.id}')" style="font-size:11px;padding:4px 10px">✓ تعليم كمقروء</button>` : ''}
+            <a href="mailto:${escapeHtml(m.email||'')}?subject=Re: رسالتك على Crysanto" class="act-btn green" style="font-size:11px;padding:4px 10px;text-decoration:none">↩ رد</a>
+          </div>
+        </div>
+        <div style="color:var(--text);font-size:13px;line-height:1.8;background:var(--dark2);border-radius:8px;padding:12px">${escapeHtml(m.message||'—')}</div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+async function markContactRead(id) {
+  const { error } = await sdb.rpc('mark_contact_read', { p_message_id: id });
+  if(error) { showToast('✗ ' + error.message); return; }
+  const el = document.getElementById('cmsg-'+id);
+  if(el) el.style.borderColor = 'var(--border2)';
+  loadRealOverviewStats();
+  renderContactMessages();
+}
+
+// ══════════════════════════════════════════════
+// EXPORT CSV
+// ══════════════════════════════════════════════
+async function exportCSV(type) {
+  const fnMap = { users: 'export_users_csv', deposits: 'export_deposits_csv', withdrawals: 'export_withdrawals_csv' };
+  const fnName = fnMap[type];
+  if(!fnName) return;
+  showToast(lang==='ar'?'⏳ جاري التصدير...':'⏳ Exporting...');
+  const { data, error } = await sdb.rpc(fnName);
+  if(error) { showToast('✗ ' + error.message); return; }
+  const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `crysanto_${type}_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(lang==='ar'?`✓ تم تصدير ${type} بنجاح`:`✓ Exported ${type} successfully`);
+}
+
+// ══════════════════════════════════════════════
+// MANUAL PROFIT (داخل user modal)
+// ══════════════════════════════════════════════
+async function adminAddProfit(userId, userName) {
+  const amtStr = prompt(lang==='ar'?`أضف ربح يدوي لـ "${userName}" (بالدولار):`:`Add manual profit for "${userName}" (in USD):`);
+  if(!amtStr) return;
+  const amt = parseFloat(amtStr);
+  if(isNaN(amt) || amt <= 0) { showToast(lang==='ar'?'✗ أدخل مبلغ صحيح أكبر من صفر':'✗ Enter a valid positive amount'); return; }
+  const desc = prompt(lang==='ar'?'سبب إضافة الربح (اختياري):':'Profit description (optional):') || 'Manual profit adjustment by admin';
+  const { data, error } = await sdb.rpc('admin_manual_profit', { p_user_id: userId, p_amount: amt, p_description: desc });
+  if(error) { showToast('✗ ' + error.message); return; }
+  showToast(lang==='ar'?`✓ تم إضافة $${amt} لـ ${userName}`:`✓ Added $${amt} to ${userName}`);
+  loadRealOverviewStats();
+}
+
+// ══════════════════════════════════════════════
+// STATS — دمج مع RPC الجديد
+// ══════════════════════════════════════════════
+async function renderStats() {
+  // بيانات حقيقية من RPC
+  try {
+    const { data: mStats } = await sdb.rpc('admin_get_monthly_stats');
+    const monthly = mStats?.monthly || [];
+    if(monthly.length) {
+      const labels = monthly.map(m => m.month_label || m.month);
+      const depVals = monthly.map(m => parseFloat(m.deposits)||0);
+      const wdVals = monthly.map(m => parseFloat(m.withdrawals)||0);
+      // رسم depositsشهرياً
+      setTimeout(() => {
+        drawBarChart('monthly-canvas', labels, depVals, '#C9A84C');
+        drawBarChart('reg-canvas', labels, monthly.map(m=>parseInt(m.new_users)||0), '#10D9A0');
+      }, 100);
+    } else {
+      setTimeout(() => { drawMonthlyChart(); drawRegChart(); }, 100);
+    }
+  } catch(e) {
+    setTimeout(() => { drawMonthlyChart(); drawRegChart(); }, 100);
+  }
+  setTimeout(() => { drawCoinsChart(); drawGeo(); }, 150);
 }
 
 console.log('%cCrysanto Admin Panel — Loaded ✓', 'color:#C9A84C;font-size:16px;font-weight:bold;');
