@@ -759,24 +759,8 @@ const users = [
   {id:8, name:'Ali Hassan', email:'ali@mail.com', bal:1200, invested:1000, plan:'Starter', status:'pending', country:'LB', kyc:'pending', ref:1, joined:'2025-05-10'},
 ];
 
-const deposits = [
-  {id:'D001', user:'Ahmed Khalid', amount:500, coin:'USDT', hash:'0xab3f...9d2c', date:'2025-05-26 10:23', status:'pending'},
-  {id:'D002', user:'Sara Yilmaz', amount:2000, coin:'BTC', hash:'bc1q...r7x2', date:'2025-05-26 09:11', status:'approved'},
-  {id:'D003', user:'John Walker', amount:100, coin:'ETH', hash:'0xcc4e...a8f1', date:'2025-05-25 22:40', status:'pending'},
-  {id:'D004', user:'Maria Lopez', amount:5000, coin:'USDT', hash:'TXkm...8b2z', date:'2025-05-25 18:05', status:'approved'},
-  {id:'D005', user:'Chen Wei', amount:10000, coin:'BTC', hash:'bc1q...p9w4', date:'2025-05-25 14:30', status:'pending'},
-  {id:'D006', user:'Fatima Al-Zahra', amount:800, coin:'BNB', hash:'bnb1...x4r2', date:'2025-05-24 11:20', status:'rejected'},
-  {id:'D007', user:'Ali Hassan', amount:200, coin:'TRX', hash:'TBau...k3m1', date:'2025-05-24 08:45', status:'pending'},
-];
-
-const withdrawals = [
-  {id:'W001', user:'Ahmed Khalid', amount:300, coin:'USDT', wallet:'TXkm...bH9k', date:'2025-05-26 11:05', status:'pending'},
-  {id:'W002', user:'Sara Yilmaz', amount:1500, coin:'ETH', wallet:'0x71C...f3e', date:'2025-05-26 09:30', status:'pending'},
-  {id:'W003', user:'Maria Lopez', amount:5000, coin:'BTC', wallet:'bc1q...8a8', date:'2025-05-25 20:10', status:'approved'},
-  {id:'W004', user:'Chen Wei', amount:8000, coin:'USDT', wallet:'TBau...xZ1', date:'2025-05-25 16:00', status:'pending'},
-  {id:'W005', user:'Fatima Al-Zahra', amount:400, coin:'BNB', wallet:'bnb1...g9z', date:'2025-05-25 12:30', status:'rejected'},
-  {id:'W006', user:'Ali Hassan', amount:50, coin:'TRX', wallet:'TXkm...2a1', date:'2025-05-24 09:00', status:'pending'},
-];
+// 🗑️ REMOVED: arrays الإيداعات والسحوبات الوهمية (deposits/withdrawals) كانت السبب في بق خطير —
+// أزرار الفلاتر كانت بترندر منها بدل بيانات Supabase الحقيقية. شيلتها نهائي عشان البق ميرجعش تاني.
 
 // investments بقت بتتحمّل من جدول investments الحقيقي في renderInvestments() — مفيش بيانات وهمية تاني
 
@@ -1029,8 +1013,8 @@ function renderCurrentSection(){
   if(currentSection==='s-kyc') { renderKYC(); return; }
   if(currentSection==='s-overview') { renderOverview(); loadRealOverviewStats(); return; }
   const renders = {
-    's-overview':renderOverview,'s-users':renderUsers,'s-deposits':renderDeposits,
-    's-withdrawals':renderWithdrawals,'s-investments':renderInvestments,
+    's-overview':renderOverview,'s-users':renderUsers,'s-deposits':loadRealDeposits,
+    's-withdrawals':loadRealWithdrawals,'s-investments':renderInvestments,
     's-kyc':renderKYC,'s-referrals':renderReferrals,'s-profits':renderProfits,
     's-packages':renderPackages,'s-notifs':renderNotifs,'s-wallets':renderWallets,
     's-stats':renderStats,'s-settings':renderSettings,'s-audit':renderAuditLog
@@ -1053,29 +1037,7 @@ function renderOverview(){
   setTimeout(()=>{ drawRevChart(); drawDistChart(); },100);
 }
 
-function renderRecentTx(){
-  const wrap = document.getElementById('recent-tx-wrap');
-  const all = [...deposits.slice(0,3),...withdrawals.slice(0,3)].slice(0,6);
-  wrap.innerHTML = `<table>
-    <thead><tr>
-      <th>${lang==='ar'?'النوع':lang==='en'?'Type':'Tür'}</th>
-      <th>${lang==='ar'?'المستخدم':lang==='en'?'User':'Kullanıcı'}</th>
-      <th>${lang==='ar'?'المبلغ':lang==='en'?'Amount':'Miktar'}</th>
-      <th>${lang==='ar'?'العملة':lang==='en'?'Coin':'Coin'}</th>
-      <th>${lang==='ar'?'التاريخ':lang==='en'?'Date':'Tarih'}</th>
-      <th>${lang==='ar'?'الحالة':lang==='en'?'Status':'Durum'}</th>
-    </tr></thead>
-    <tbody>${all.map(tx=>`
-      <tr>
-        <td>${tx.id.startsWith('D')?'📥':'📤'} ${tx.id}</td>
-        <td>${tx.user}</td>
-        <td style="font-family:var(--mono)">$${tx.amount.toLocaleString()}</td>
-        <td><span style="font-family:var(--mono);color:var(--gold)">${tx.coin}</span></td>
-        <td style="color:var(--muted);font-size:12px">${tx.date}</td>
-        <td>${statusBadge(tx.status)}</td>
-      </tr>`).join('')}
-    </tbody></table>`;
-}
+// 🗑️ REMOVED: renderRecentTx الوهمية (كانت بتستخدم arrays deposits/withdrawals المحذوفة) — استبدلها renderRecentTxFromSupabase
 
 // ✅ FIX: renderUsers تستخدم window.realUsers من Supabase + escapeHtml + Pagination
 let usersPage = 0;
@@ -1196,86 +1158,27 @@ function infoRow(label,val){
 function closeModal(){ document.getElementById('user-modal').classList.remove('open'); }
 
 // ── DEPOSITS ──
-function renderDeposits(){
-  const filter = currentFilter.dep;
-  const data = filter==='all'?deposits:deposits.filter(d=>d.status===filter);
-  const wrap = document.getElementById('dep-table-wrap');
-  wrap.innerHTML = buildTxTable(data,'deposit');
-}
-
+// ✅ FIX: الفلاتر بقت بتستخدم البيانات الحقيقية من Supabase (window.realDeposits)
+// مش mock array قديم — ده كان البق اللي بيخلي approve/reject تتنفذ على IDs وهمية
 function filterDep(el,f){
   currentFilter.dep=f;
   document.querySelectorAll('#s-deposits .ft').forEach(b=>b.classList.remove('on'));
   el.classList.add('on');
-  renderDeposits();
+  renderRealDeposits(window.realDeposits||[]);
 }
 
 // ── WITHDRAWALS ──
-function renderWithdrawals(){
-  const filter = currentFilter.wd;
-  const data = filter==='all'?withdrawals:withdrawals.filter(w=>w.status===filter);
-  const wrap = document.getElementById('wd-table-wrap');
-  wrap.innerHTML = buildTxTable(data,'withdrawal');
-}
-
 function filterWd(el,f){
   currentFilter.wd=f;
   document.querySelectorAll('#s-withdrawals .ft').forEach(b=>b.classList.remove('on'));
   el.classList.add('on');
-  renderWithdrawals();
+  renderRealWithdrawals(window.realWithdrawals||[]);
 }
 
-function buildTxTable(data,type){
-  const isDep = type==='deposit';
-  return `<table>
-    <thead><tr>
-      <th>ID</th>
-      <th>${lang==='ar'?'المستخدم':'User'}</th>
-      <th>${lang==='ar'?'المبلغ':'Amount'}</th>
-      <th>${lang==='ar'?'العملة':'Coin'}</th>
-      <th>${isDep?(lang==='ar'?'Hash التحويل':'TX Hash'):(lang==='ar'?'محفظة السحب':'Wallet')}</th>
-      <th>${lang==='ar'?'التاريخ':'Date'}</th>
-      <th>${lang==='ar'?'الحالة':'Status'}</th>
-      <th>${lang==='ar'?'الإجراء':'Action'}</th>
-    </tr></thead>
-    <tbody>${data.map((tx,i)=>`
-      <tr>
-        <td style="font-family:var(--mono);color:var(--muted);font-size:11px">${tx.id}</td>
-        <td style="font-weight:600">${tx.user}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${tx.amount.toLocaleString()}</td>
-        <td><span style="font-family:var(--mono)">${tx.coin}</span></td>
-        <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${isDep?tx.hash:tx.wallet}</td>
-        <td style="font-size:11px;color:var(--muted)">${tx.date}</td>
-        <td>${statusBadge(tx.status)}</td>
-        <td>
-          ${tx.status==='pending'?`
-          <div style="display:flex;gap:6px">
-            <button class="act-btn green" onclick="approveTx('${type}','${tx.id}')">${t('approve')}</button>
-            <button class="act-btn red" onclick="rejectTx('${type}','${tx.id}')">${t('reject')}</button>
-          </div>`:`<span style="color:var(--muted);font-size:12px">—</span>`}
-        </td>
-      </tr>`).join('')}
-    </tbody></table>`;
-}
-
-// ✅ FIX: approveTx و rejectTx الآن بتستخدمان Supabase (لو مش withdrawal أو deposit حقيقي)
-async function approveTx(type,id){
-  const confirmed = confirm(lang==='ar' ? `تأكيد قبول ${id}؟` : `Confirm approve ${id}?`);
-  if(!confirmed) return;
-  const table = type==='deposit'?'deposits':'withdrawals';
-  const { error } = await sdb.from(table).update({ status:'approved' }).eq('id', id);
-  if(error){ showToast((lang==='ar'?'✗ فشل: ':'✗ Failed: ')+error.message); return; }
-  showToast(lang==='ar'?`✓ تم قبول ${id}`:`✓ ${id} approved`);
-  if(type==='deposit') loadRealDeposits(); else loadRealWithdrawals();
-}
-async function rejectTx(type,id){
-  const reason = prompt(lang==='ar' ? 'سبب الرفض (اختياري):' : 'Rejection reason (optional):') || '';
-  const table = type==='deposit'?'deposits':'withdrawals';
-  const { error } = await sdb.from(table).update({ status:'rejected', reject_reason: reason }).eq('id', id);
-  if(error){ showToast((lang==='ar'?'✗ فشل: ':'✗ Failed: ')+error.message); return; }
-  showToast(lang==='ar'?`✗ تم رفض ${id}`:`✗ ${id} rejected`);
-  if(type==='deposit') loadRealDeposits(); else loadRealWithdrawals();
-}
+// 🗑️ REMOVED: buildTxTable/approveTx/rejectTx الوهمية — كانت بتعمل update مباشر على الجدول
+// (متجاوزة الـ RPC functions الآمنة admin_approve_deposit/admin_approve_withdrawal)
+// فمكنتش بتحدّث الرصيد، الاستثمار، أو العمولات. استبدلتها approveDeposit/rejectDeposit و
+// approveWithdrawal/rejectWithdrawal الحقيقية اللي بتستخدم RPC.
 
 // ── INVESTMENTS ──
 async function renderInvestments(){
@@ -1371,13 +1274,54 @@ async function renderKYC(){
         <td>
           ${u.kyc_status==='pending'?`
           <div style="display:flex;gap:6px">
+            <button class="act-btn" onclick="viewKycDocs('${u.id}', '${escapeHtml((u.name||'').replace(/'/g,"\\'"))}')">${lang==='ar'?'👁️ عرض':'👁️ View'}</button>
             <button class="act-btn green" onclick="approveKyc('${u.id}')">${t('approve')}</button>
             <button class="act-btn red" onclick="rejectKyc('${u.id}')">${t('reject')}</button>
-          </div>`:`<span style="color:var(--muted);font-size:12px">—</span>`}
+          </div>`:`<button class="act-btn" onclick="viewKycDocs('${u.id}', '${escapeHtml((u.name||'').replace(/'/g,"\\'"))}')">${lang==='ar'?'👁️ عرض':'👁️ View'}</button>`}
         </td>
       </tr>`;
     }).join('')}
     </tbody></table>`;
+  // نخزن بيانات الـ KYC مؤقتًا عشان viewKycDocs تقدر توصلها من غير كويري تاني
+  window.__kycDataCache = {};
+  data.forEach(u => { window.__kycDataCache[u.id] = u.kyc_data; });
+}
+
+// ✅ FIX: الأدمن كان بيقدر يقبل/يرفض KYC من غير ما يشوف الصور المرفوعة خالص!
+// الفانكشن دي بتجيب signed URLs (الـ bucket خاص) وتعرض الصور في نفس مودال تفاصيل اليوزر
+async function viewKycDocs(userId, userName){
+  const raw = window.__kycDataCache ? window.__kycDataCache[userId] : null;
+  const kd = typeof raw === 'string' ? JSON.parse(raw||'{}') : (raw||{});
+  const files = kd.files || [];
+  document.getElementById('modal-user-name').textContent = (lang==='ar'?'مستندات KYC — ':'KYC Documents — ') + userName;
+  const body = document.getElementById('modal-user-body');
+  if(!files.length){
+    body.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center">${lang==='ar'?'لا توجد ملفات':'No files'}</div>`;
+    document.getElementById('user-modal').classList.add('open');
+    return;
+  }
+  body.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center">${lang==='ar'?'⏳ جارٍ تحميل الصور...':'⏳ Loading images...'}</div>`;
+  document.getElementById('user-modal').classList.add('open');
+
+  const labels = {front:(lang==='ar'?'الوجه الأمامي':'Front Side'), back:(lang==='ar'?'الوجه الخلفي':'Back Side'), selfie:(lang==='ar'?'سيلفي':'Selfie')};
+  const cards = [];
+  for(const f of files){
+    try {
+      const { data, error } = await sdb.storage.from('kyc-documents').createSignedUrl(f.path, 600);
+      if(error || !data) { cards.push(`<div style="color:var(--red)">${escapeHtml(f.name)}: ${lang==='ar'?'فشل تحميل الملف':'failed to load'}</div>`); continue; }
+      const isPdf = /\.pdf$/i.test(f.path);
+      cards.push(`
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${labels[f.name]||escapeHtml(f.name)}</div>
+          ${isPdf
+            ? `<a href="${data.signedUrl}" target="_blank" rel="noopener" class="act-btn">${lang==='ar'?'📄 فتح ملف PDF':'📄 Open PDF'}</a>`
+            : `<a href="${data.signedUrl}" target="_blank" rel="noopener"><img src="${data.signedUrl}" style="max-width:100%;border-radius:10px;border:1px solid var(--border)"></a>`}
+        </div>`);
+    } catch(e) {
+      cards.push(`<div style="color:var(--red)">${escapeHtml(f.name)}: ${lang==='ar'?'خطأ':'error'}</div>`);
+    }
+  }
+  body.innerHTML = cards.join('') || `<div style="color:var(--muted)">${lang==='ar'?'لا توجد صور':'No images'}</div>`;
 }
 async function approveKyc(userId){
   const { error } = await sdb.from('users').update({ kyc_status:'verified' }).eq('id', userId);
