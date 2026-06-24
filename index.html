@@ -1207,7 +1207,7 @@ const coins = [
 // قيم افتراضية (fallback) لو فشل التحميل، عشان الموقع يفضل شغال عادي
 const siteSettings = {
   site_name: 'Crysanto', support_email: 'support@crysanto.io',
-  min_deposit: 100, min_withdrawal: 50, referral_rate: 5,
+  min_deposit: 100, min_withdrawal: 50, max_withdrawal: 50000, referral_rate: 5,
   maintenance_mode: false, registration_open: true,
 };
 async function fetchSiteSettingsFromDB() {
@@ -1216,19 +1216,35 @@ async function fetchSiteSettingsFromDB() {
     if (error) { console.error('fetchSiteSettingsFromDB error:', error.message || error); return; }
     (data||[]).forEach(r => {
       if (r.key === 'maintenance_mode' || r.key === 'registration_open') siteSettings[r.key] = r.value === 'true';
-      else if (r.key === 'min_deposit' || r.key === 'min_withdrawal' || r.key === 'referral_rate') siteSettings[r.key] = parseFloat(r.value) || siteSettings[r.key];
+      else if (['min_deposit','min_withdrawal','max_withdrawal','referral_rate'].includes(r.key)) siteSettings[r.key] = parseFloat(r.value) || siteSettings[r.key];
       else if (siteSettings.hasOwnProperty(r.key)) siteSettings[r.key] = r.value;
     });
   } catch(e) { console.error('fetchSiteSettingsFromDB exception:', e.message || e); }
 }
+// ✅ صفحة صيانة كاملة واحترافية
 function applyMaintenanceMode() {
   if (!siteSettings.maintenance_mode) return;
+  if (document.getElementById('maintenance-overlay')) return;
   const overlay = document.createElement('div');
   overlay.id = 'maintenance-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:#0a0a0f;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:var(--font, sans-serif);color:#fff';
-  const msg = { ar:'الموقع تحت الصيانة حاليًا، حاول مرة أخرى بعد قليل', en:'Site is currently under maintenance, please check back soon', tr:'Site şu anda bakımda, lütfen daha sonra tekrar deneyin' };
-  overlay.innerHTML = `<div style="font-size:48px;margin-bottom:16px">🛠️</div><h2 style="margin-bottom:10px">${msg[lang]||msg.ar}</h2>`;
+  overlay.style.cssText = 'position:fixed;inset:0;background:var(--dark,#080C12);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:var(--font,sans-serif);color:#fff';
+  const ttl = {ar:'الموقع تحت الصيانة',en:'Under Maintenance',tr:'Bakım Çalışması'};
+  const sub = {ar:'نقوم بتحسين المنصة لتجربة أفضل. سنعود قريباً.',en:"We're improving the platform. We'll be back soon.",tr:'Platformu geliştiriyoruz. Çok yakında geri döneceğiz.'};
+  const em  = {ar:'للتواصل:',en:'Contact us:',tr:'İletişim:'};
+  overlay.innerHTML = `<div style="max-width:480px">
+    <div style="font-size:64px;margin-bottom:20px">🛠️</div>
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);padding:5px 16px;border-radius:100px;font-size:12px;color:#C9A84C;margin-bottom:20px">
+      <span style="width:6px;height:6px;background:#f97316;border-radius:50%;display:inline-block"></span>
+      ${lang==='ar'?'وضع الصيانة نشط':lang==='tr'?'Bakım Modu Aktif':'Maintenance Mode Active'}
+    </div>
+    <h1 style="font-size:clamp(28px,5vw,44px);font-weight:900;letter-spacing:-1px;margin-bottom:14px;color:#C9A84C">${ttl[lang]||ttl.en}</h1>
+    <p style="font-size:15px;color:#8B93A8;line-height:1.8;margin-bottom:24px">${sub[lang]||sub.en}</p>
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;font-size:13px;color:#8B93A8">
+      ${em[lang]||em.en} <a href="mailto:${siteSettings.support_email}" style="color:#C9A84C;text-decoration:none">${siteSettings.support_email}</a>
+    </div>
+  </div>`;
   document.body.appendChild(overlay);
+  document.querySelectorAll('nav,.page,#toast').forEach(el=>el.style.display='none');
 }
 // عناوين افتراضية (fallback) — تُستبدل تلقائيًا بالعناوين الحقيقية من جدول settings عند تحميل الصفحة
 // ده نفس المصدر اللي لوحة الأدمن بتعدّل فيه، فأي تغيير من الأدمن يظهر هنا فورًا
@@ -1764,24 +1780,81 @@ async function loadDashboard() {
   } catch(e) { console.error('loadDashboard error', e); }
 }
 
-async function loadTransactions() {
+// ✅ FIX: loadTransactions شاملة — إيداع، سحب، أرباح، إحالات — مع filter وpagination
+let txPage = 0;
+const txPageSize = 20;
+let txAllData = [];
+let txFilter = 'all';
+
+async function loadTransactions(resetPage=true) {
   if(!userProfile) return;
+  if(resetPage){ txPage=0; txAllData=[]; }
   const el=document.getElementById('tx-list');
-  el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">⏳</div>';
+  el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">⏳ '+(lang==='ar'?'جاري التحميل...':'Loading...')+'</div>';
   try {
-    const [depRes, wdRes] = await Promise.all([
-      db.from('deposits').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(15),
-      db.from('withdrawals').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(15)
+    const [depRes,wdRes,txRes]=await Promise.all([
+      db.from('deposits').select('id,amount,coin,status,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(100),
+      db.from('withdrawals').select('id,amount,coin,status,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(100),
+      db.from('transactions').select('id,amount,type,description,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(200)
     ]);
-    const deps = (depRes.data||[]).map(d=>({...d,type:'deposit'}));
-    const wds  = (wdRes.data||[]).map(w=>({...w,type:'withdrawal'}));
-    const all  = [...deps,...wds].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-    if(!all.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+(lang==='ar'?'لا توجد معاملات':'No transactions')+'</div>';return;}
-    const icons={deposit:'📥',withdrawal:'📤'};
-    const colors={deposit:'var(--green)',withdrawal:'var(--red)'};
-    const statusLabel={pending:lang==='ar'?'معلق':'Pending',approved:lang==='ar'?'مقبول':'Approved',rejected:lang==='ar'?'مرفوض':'Rejected'};
-    el.innerHTML=all.map(tx=>'<div class="tx-item"><div class="tx-left"><span style="font-size:18px">'+(icons[tx.type]||'💱')+'</span><div><div class="tx-type">'+(tx.type==='deposit'?(lang==='ar'?'إيداع':'Deposit'):(lang==='ar'?'سحب':'Withdrawal'))+(tx.coin?' — '+tx.coin:'')+'</div><div class="tx-date">'+(tx.created_at||'').slice(0,10)+' · '+(statusLabel[tx.status]||tx.status)+'</div></div></div><div class="tx-amt" style="color:'+(colors[tx.type]||'var(--text)')+'\">'+(tx.type==='withdrawal'?'-':'+')+' $'+parseFloat(tx.amount).toLocaleString()+'</div></div>').join('');
-  } catch(e){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">—</div>';}
+    const deps=(depRes.data||[]).map(d=>({...d,txType:'deposit'}));
+    const wds=(wdRes.data||[]).map(w=>({...w,txType:'withdrawal'}));
+    const txs=(txRes.data||[]).filter(t=>['profit','referral','bonus'].includes(t.type)).map(t=>({...t,txType:t.type,status:'approved'}));
+    txAllData=[...deps,...wds,...txs].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    renderTransactionsList();
+  } catch(e){
+    el.innerHTML='<div style="color:var(--red);font-size:13px;text-align:center;padding:30px">'+(lang==='ar'?'حدث خطأ في التحميل':'Error loading transactions')+'</div>';
+  }
+}
+
+function renderTransactionsList(){
+  const el=document.getElementById('tx-list');
+  const icons={deposit:'📥',withdrawal:'📤',profit:'💰',referral:'👥',bonus:'🎁'};
+  const colors={deposit:'var(--green)',withdrawal:'var(--red)',profit:'var(--gold)',referral:'var(--blue)',bonus:'var(--orange)'};
+  const typeLabel={
+    deposit:{ar:'إيداع',en:'Deposit',tr:'Yatırım'},
+    withdrawal:{ar:'سحب',en:'Withdrawal',tr:'Çekim'},
+    profit:{ar:'ربح يومي',en:'Daily Profit',tr:'Günlük Kâr'},
+    referral:{ar:'إحالة',en:'Referral',tr:'Referans'},
+    bonus:{ar:'مكافأة',en:'Bonus',tr:'Bonus'},
+  };
+  const statusLabel={
+    pending:{ar:'معلق',en:'Pending',tr:'Beklemede'},
+    approved:{ar:'مقبول',en:'Approved',tr:'Onaylandı'},
+    rejected:{ar:'مرفوض',en:'Rejected',tr:'Reddedildi'},
+  };
+  const filters=['all','deposit','withdrawal','profit','referral','bonus'];
+  const fLabels={all:{ar:'الكل',en:'All',tr:'Tümü'},deposit:{ar:'إيداع',en:'Deposits',tr:'Yatırım'},withdrawal:{ar:'سحب',en:'Withdrawals',tr:'Çekim'},profit:{ar:'أرباح',en:'Profits',tr:'Kâr'},referral:{ar:'إحالات',en:'Referrals',tr:'Referans'},bonus:{ar:'مكافآت',en:'Bonuses',tr:'Bonuslar'}};
+  const filtered=txFilter==='all'?txAllData:txAllData.filter(t=>t.txType===txFilter);
+  const total=filtered.length;
+  const totalPages=Math.ceil(total/txPageSize)||1;
+  if(txPage>=totalPages) txPage=Math.max(0,totalPages-1);
+  const paged=filtered.slice(txPage*txPageSize,(txPage+1)*txPageSize);
+  if(!paged.length){
+    el.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+filters.map(f=>`<button onclick="txFilter='${f}';txPage=0;renderTransactionsList()" style="padding:5px 12px;border-radius:20px;border:1px solid ${txFilter===f?'var(--gold)':'var(--border)'};background:${txFilter===f?'var(--gold-dim)':'transparent'};color:${txFilter===f?'var(--gold)':'var(--muted)'};cursor:pointer;font-size:12px;font-family:inherit">${(fLabels[f][lang]||fLabels[f].en)}</button>`).join('')+'</div><div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">'+(lang==='ar'?'لا توجد معاملات':'No transactions')+'</div>';
+    return;
+  }
+  el.innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">${filters.map(f=>`<button onclick="txFilter='${f}';txPage=0;renderTransactionsList()" style="padding:5px 12px;border-radius:20px;border:1px solid ${txFilter===f?'var(--gold)':'var(--border)'};background:${txFilter===f?'var(--gold-dim)':'transparent'};color:${txFilter===f?'var(--gold)':'var(--muted)'};cursor:pointer;font-size:12px;font-family:inherit">${(fLabels[f][lang]||fLabels[f].en)}</button>`).join('')}</div>
+${paged.map(tx=>`<div class="tx-item">
+  <div class="tx-left">
+    <span style="font-size:20px">${icons[tx.txType]||'💱'}</span>
+    <div>
+      <div class="tx-type">${((typeLabel[tx.txType]||{})[lang])||tx.txType}${tx.coin?' — '+escapeHtml(tx.coin):tx.description?' — '+escapeHtml((tx.description||'').slice(0,45)):''}</div>
+      <div class="tx-date">${(tx.created_at||'').slice(0,16).replace('T',' ')} · <span style="color:${tx.status==='approved'?'var(--green)':tx.status==='rejected'?'var(--red)':'var(--orange)'}">${((statusLabel[tx.status]||{})[lang])||tx.status||''}</span></div>
+    </div>
+  </div>
+  <div class="tx-amt" style="color:${colors[tx.txType]||'var(--text)'}">
+    ${tx.txType==='withdrawal'?'−':'+'}$${parseFloat(tx.amount||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+  </div>
+</div>`).join('')}
+<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 4px;margin-top:8px;font-size:12px;color:var(--muted)">
+  <span>${lang==='ar'?`${paged.length} من ${total} معاملة`:`${paged.length} of ${total}`}</span>
+  <div style="display:flex;gap:6px">
+    <button onclick="txPage=Math.max(0,txPage-1);renderTransactionsList()" ${txPage===0?'disabled':''} style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--dark3);color:var(--text);cursor:pointer;opacity:${txPage===0?'0.4':'1'}">◀</button>
+    <span style="padding:4px 10px;background:var(--dark3);border-radius:6px;border:1px solid var(--border)">${txPage+1}/${totalPages}</span>
+    <button onclick="txPage=Math.min(${totalPages-1},txPage+1);renderTransactionsList()" ${txPage>=totalPages-1?'disabled':''} style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--dark3);color:var(--text);cursor:pointer;opacity:${txPage>=totalPages-1?'0.4':'1'}">▶</button>
+  </div>
+</div>`;
 }
 
 async function loadNotifications() {
@@ -1961,6 +2034,8 @@ async function submitWithdrawal() {
   const amount=parseFloat(document.getElementById('wd-amount').value);
   if(!addr){showToast(lang==='ar'?'أدخل عنوان محفظتك':'Enter wallet address','err');return;}
   if(!amount||amount<siteSettings.min_withdrawal){showToast(lang==='ar'?`الحد الأدنى للسحب $${siteSettings.min_withdrawal}`:`Minimum withdrawal $${siteSettings.min_withdrawal}`,'err');return;}
+  // ✅ FIX: التحقق من الحد الأقصى للسحب
+  if(amount > siteSettings.max_withdrawal){showToast(lang==='ar'?`الحد الأقصى للسحب $${siteSettings.max_withdrawal.toLocaleString()}`:`Maximum withdrawal $${siteSettings.max_withdrawal.toLocaleString()}`,'err');return;}
 
   // نحسب الرصيد المتاح الحقيقي = الرصيد الكلي ناقص أي فلوس مقفولة في استثمار نشط
   const { data: activeInvData } = await db.from('investments').select('amount').eq('user_id',userProfile.id).eq('status','active');
