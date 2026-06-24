@@ -1195,13 +1195,44 @@ async function checkPasswordRecoveryLink(){
 }
 checkPasswordRecoveryLink();
 
-const coins = [
+// ── بيانات العملات — تُحدَّث من CoinGecko مع fallback ──
+let coins = [
   {sym:'BTC',name:'Bitcoin',price:67420,change:2.4,cap:'$1.32T',vol:'$38B',icon:'₿',color:'#f7931a'},
   {sym:'ETH',name:'Ethereum',price:3842,change:-1.2,cap:'$461B',vol:'$18B',icon:'Ξ',color:'#627eea'},
   {sym:'USDT',name:'Tether',price:1.00,change:0.01,cap:'$118B',vol:'$72B',icon:'₮',color:'#26a17b'},
   {sym:'BNB',name:'BNB',price:618,change:3.1,cap:'$90B',vol:'$2.8B',icon:'B',color:'#f0b90b'},
   {sym:'TRX',name:'TRON',price:0.142,change:-0.8,cap:'$12B',vol:'$1.2B',icon:'T',color:'#e84940'},
 ];
+const COIN_GECKO_IDS = {BTC:'bitcoin',ETH:'ethereum',USDT:'tether',BNB:'binancecoin',TRX:'tron'};
+
+async function fetchLivePrices() {
+  try {
+    const ids = Object.values(COIN_GECKO_IDS).join(',');
+    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`;
+    const res = await fetch(url, {signal: AbortSignal.timeout(8000)});
+    if(!res.ok) throw new Error('CoinGecko HTTP '+res.status);
+    const data = await res.json();
+    coins.forEach(c => {
+      const id = COIN_GECKO_IDS[c.sym];
+      if(!id || !data[id]) return;
+      const d = data[id];
+      c.price = d.usd || c.price;
+      c.change = parseFloat((d.usd_24h_change||0).toFixed(2));
+      if(d.usd_market_cap) {
+        const mc = d.usd_market_cap;
+        c.cap = mc >= 1e12 ? '$'+(mc/1e12).toFixed(2)+'T' : mc >= 1e9 ? '$'+(mc/1e9).toFixed(1)+'B' : '$'+(mc/1e6).toFixed(0)+'M';
+      }
+      if(d.usd_24h_vol) {
+        const vol = d.usd_24h_vol;
+        c.vol = vol >= 1e9 ? '$'+(vol/1e9).toFixed(1)+'B' : '$'+(vol/1e6).toFixed(0)+'M';
+      }
+    });
+    buildTicker(); buildLivePrices(); buildMarkets();
+  } catch(e) {
+    // CoinGecko غير متاح — نستخدم المحاكاة العشوائية كـ fallback
+    console.log('CoinGecko fallback:', e.message);
+  }
+}
 
 // ── إعدادات الموقع (حقيقية من جدول settings — نفس المصدر اللي لوحة الأدمن بتتحكم فيه) ──
 // قيم افتراضية (fallback) لو فشل التحميل، عشان الموقع يفضل شغال عادي
@@ -1869,10 +1900,12 @@ async function loadNotifications() {
 }
 
 async function loadInvestments() {
+  window.__myInvestments = []; // reset cache
   if(!userProfile) return;
   const el=document.getElementById('inv-list');
   try {
     const {data}=await db.from('investments').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false});
+    window.__myInvestments = data || [];
     if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">—</div>';return;}
     const statusColors = {active:'var(--green)',completed:'var(--muted)',cancelled:'var(--red)'};
     el.innerHTML=data.map(inv=>{
@@ -1926,13 +1959,34 @@ async function loadInvestments() {
 }
 
 async function cancelInvestment(investmentId) {
+  // نتحقق إن الاستثمار فعلاً active وتابع لليوزر الحالي
+  const inv = (window.__myInvestments||[]).find(i=>i.id===investmentId && i.status==='active');
+  if(!inv) { showToast(lang==='ar'?'✗ الاستثمار غير موجود أو تم معالجته مسبقاً':'✗ Investment not found or already processed','err'); return; }
   const ok = confirm(lang==='ar'
-    ? 'هل أنت متأكد؟ إلغاء الاستثمار سيوقف الربح اليومي عنه، وسيتم تحرير المبلغ المستثمر فيه ليصبح متاحًا للسحب.'
-    : 'Are you sure? Cancelling will stop daily profit on this investment and unlock the invested amount for withdrawal.');
+    ? `هل أنت متأكد من إلغاء استثمارك في "${inv.plan_name}"؟\nسيتوقف الربح اليومي ويُرجع المبلغ لرصيدك.`
+    : `Cancel your investment in "${inv.plan_name}"?\nDaily profit will stop and amount will be refunded.`);
   if (!ok) return;
+  // الـ trigger protect_investment_fields يحمي الحقول المهمة — فقط status يتغير
   const { error } = await db.from('investments').update({ status: 'cancelled' }).eq('id', investmentId).eq('user_id', userProfile.id);
-  if (error) { showToast(lang==='ar'?'✗ فشل إلغاء الاستثمار':'✗ Failed to cancel investment','err'); console.error('cancelInvestment error:', error); return; }
-  showToast(lang==='ar'?'✓ تم إلغاء الاستثمار — الفلوس متاحة للسحب الآن':'✓ Investment cancelled — funds now available for withdrawal');
+  if (error) { showToast(lang==='ar'?'✗ فشل إلغاء الاستثمار: '+error.message:'✗ Failed: '+error.message,'err'); return; }
+  // إرجاع المبلغ يدوي (الـ trigger مش بيعمله — بس الأدمن لو عمل cancel بالـ RPC بيرجعه)
+  // نعمله manual هنا للـ user cancel
+  await db.from('users').update({
+    balance: userProfile.balance + parseFloat(inv.amount||0),
+    updated_at: new Date().toISOString()
+  }).eq('id', userProfile.id);
+  await db.from('transactions').insert({
+    user_id: userProfile.id, type:'deposit', amount: parseFloat(inv.amount||0),
+    description: (lang==='ar'?'إرجاع رأس مال استثمار ملغي — ':'Refund for cancelled investment — ') + inv.plan_name,
+    ref_id: investmentId
+  });
+  await db.from('notifications').insert({
+    user_id: userProfile.id,
+    title: lang==='ar'?'⚠️ تم إلغاء استثمارك':'⚠️ Investment Cancelled',
+    body: (lang==='ar'?'تم إلغاء استثمارك في "':'Your investment in "') + inv.plan_name + (lang==='ar'?'" وإرجاع $':'" refunded $') + inv.amount,
+    type:'warning'
+  });
+  showToast(lang==='ar'?'✓ تم إلغاء الاستثمار — تم رجوع الفلوس لرصيدك':'✓ Investment cancelled — funds refunded to balance');
   await loadInvestments();
   await loadDashboard();
 }
@@ -2281,6 +2335,12 @@ async function submitContact() {
 
   try {
     // ✅ FIX: escapeHtml قبل الحفظ
+    // فحص rate limiting (RPC موجود في DB)
+    const { data: rlCheck, error: rlErr } = await db.rpc('check_contact_rate_limit');
+    if(rlErr || rlCheck === false) {
+      showToast(lang==='ar'?'✗ أرسلت رسالة مؤخراً، انتظر قليلاً قبل الإرسال مرة أخرى':'✗ You sent a message recently, please wait before sending again','err');
+      return;
+    }
     const { error } = await db.from('contact_messages').insert({
       name: name.slice(0,100),
       email: email.slice(0,200),
@@ -2335,9 +2395,13 @@ document.addEventListener('click',function(e){
 function init(){
   setLang(lang);
   buildTicker();buildMarkets();buildLivePrices();buildFaq();buildFeatures();buildPlans();calcProfit();
+  // جلب الأسعار الحقيقية من CoinGecko بعد 1 ثانية (عشان الصفحة تحمّل أول)
+  setTimeout(fetchLivePrices, 1000);
+  // تحديث الأسعار كل 60 ثانية (CoinGecko rate limit)
+  setInterval(fetchLivePrices, 60000);
   fetchWalletsFromDB().then(()=>{ refreshActiveDepositCoin(); renderWalletDashboardList(); });
   fetchSiteSettingsFromDB().then(applyMaintenanceMode);
-  setInterval(updatePrices,5000);
+  setInterval(updatePrices, 8000); // محاكاة بسيطة بين استدعاءات CoinGecko
   // ✅ FIX: Live Stats من Supabase الحقيقي بدل Math.random
   async function updateLiveStats(){
     try {
