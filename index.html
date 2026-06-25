@@ -4,6 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Crysanto — Digital Investment Platform</title>
+<meta name="description" content="Crysanto is a digital crypto investment platform offering secure deposits, withdrawals, referral rewards, and daily profit plans in Arabic, English, and Turkish.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#080C12">
+<link rel="canonical" href="https://crysanto.io/">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Crysanto">
+<meta property="og:title" content="Crysanto — Digital Investment Platform">
+<meta property="og:description" content="Secure crypto deposits, withdrawals, referral rewards, and daily profit plans — available in Arabic, English, and Turkish.">
+<meta property="og:url" content="https://crysanto.io/">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Crysanto — Digital Investment Platform">
+<meta name="twitter:description" content="Secure crypto deposits, withdrawals, referral rewards, and daily profit plans.">
+<!-- Basic CSP hardening (defense-in-depth; complements server/host headers) -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.coingecko.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230F1520"/><rect width="32" height="32" rx="7" fill="none" stroke="%23C9A84C" stroke-width="1.5"/><path d="M18 6 A10 10 0 1 0 18 26 L16.5 23.5 A7 7 0 1 1 16.5 8.5 Z" fill="%23C9A84C"/><rect x="18.5" y="6" width="2.2" height="20" rx="1" fill="%23C9A84C"/><path d="M20.7 6 Q28 6 28 12 Q28 18 20.7 18 L20.7 15.5 Q25.5 15.5 25.5 12 Q25.5 8.5 20.7 8.5 Z" fill="%23C9A84C"/><path d="M20.7 16.5 L28.5 26 L26 26 L18.5 17 Z" fill="%23C9A84C"/></svg>">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1482,7 +1498,7 @@ function showPage(id, el) {
     if(!authReady) {
       // لسه بنتأكد فيه جلسة محفوظة ولا لأ — منستعجلش بإظهار صفحة تسجيل الدخول
       pendingPage = {id, el};
-      showToast(lang==='ar'?'⏳ لحظة...':'⏳ One moment...');
+      showToast(lang==='ar'?'⏳ لحظة...':lang==='tr'?'⏳ Bir dakika...':'⏳ One moment...');
       return;
     }
     pendingPage={id,el}; openModal('login'); return;
@@ -2025,7 +2041,7 @@ ${paged.map(tx=>`<div class="tx-item">
   </div>
 </div>`).join('')}
 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 4px;margin-top:8px;font-size:12px;color:var(--muted)">
-  <span>${lang==='ar'?`${paged.length} من ${total} معاملة`:`${paged.length} of ${total}`}</span>
+  <span>${lang==='ar'?`${paged.length} من ${total} معاملة`:lang==='tr'?`${paged.length} / ${total}`:`${paged.length} of ${total}`}</span>
   <div style="display:flex;gap:6px">
     <button onclick="txPage=Math.max(0,txPage-1);renderTransactionsList()" ${txPage===0?'disabled':''} style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--dark3);color:var(--text);cursor:pointer;opacity:${txPage===0?'0.4':'1'}">◀</button>
     <span style="padding:4px 10px;background:var(--dark3);border-radius:6px;border:1px solid var(--border)">${txPage+1}/${totalPages}</span>
@@ -2039,7 +2055,7 @@ async function loadNotifications() {
   const el=document.getElementById('notif-list');
   try {
     const {data}=await db.from('notifications').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(15);
-    if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+(lang==='ar'?'لا توجد إشعارات':'No notifications')+'</div>';return;}
+    if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+(lang==='ar'?'لا توجد إشعارات':lang==='tr'?'Bildirim yok':'No notifications')+'</div>';return;}
     const icons={info:'💬',success:'✅',warning:'⚠️',profit:'💰',system:'🔔'};
     el.innerHTML=data.map(n=>'<div style="display:flex;gap:12px;padding:14px;background:var(--dark3);border-radius:10px;border:1px solid var(--border);margin-bottom:8px"><span style="font-size:20px;flex-shrink:0">'+(icons[n.type]||'🔔')+'</span><div><div style="font-weight:600;font-size:13px;margin-bottom:3px">'+escapeHtml(n.title)+'</div><div style="font-size:12px;color:var(--muted)">'+escapeHtml(n.body||'')+'</div></div></div>').join('');
   } catch(e){}
@@ -2061,7 +2077,7 @@ async function loadInvestments() {
       const totalMs = end - start;
       const doneMs  = now - start;
       const pct = Math.min(100, Math.max(0, Math.round((doneMs/totalMs)*100)));
-      const statusLabel = {active:lang==='ar'?'نشط':'Active', completed:lang==='ar'?'منتهي':'Completed', cancelled:lang==='ar'?'ملغي':'Cancelled'};
+      const statusLabel = {active:lang==='ar'?'نشط':lang==='tr'?'Aktif':'Active', completed:lang==='ar'?'منتهي':lang==='tr'?'Tamamlandı':'Completed', cancelled:lang==='ar'?'ملغي':lang==='tr'?'İptal Edildi':'Cancelled'};
 
       // حساب اليوم الحالي من إجمالي الأيام + موعد الربح القادم (ربح يومي ثابت كل 24 ساعة من بداية الاستثمار)
       const totalDays = Math.max(1, Math.round(totalMs / 86400000));
@@ -2076,7 +2092,7 @@ async function loadInvestments() {
         const m = Math.floor((msUntilNextProfit % 3600000) / 60000);
         nextProfitHtml = '<div style="font-size:11px;color:var(--gold);margin-top:6px;display:flex;justify-content:space-between">' +
           '<span>📅 '+({ar:'اليوم ',en:'Day ',tr:'Gün '}[lang]||'Day ')+dayNum+({ar:' من ',en:' of ',tr:'/'}[lang]||' of ')+totalDays+'</span>' +
-          '<span>⏱ '+(lang==='ar'?'الربح القادم بعد ':'Next profit in ')+h+'h '+m+'m</span>' +
+          '<span>⏱ '+(lang==='ar'?'الربح القادم بعد ':lang==='tr'?'Sonraki kâr ':'Next profit in ')+h+'h '+m+'m</span>' +
         '</div>';
       }
 
@@ -2096,9 +2112,9 @@ async function loadInvestments() {
         '<div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%;background:linear-gradient(90deg,var(--gold),var(--green))"></div></div>'+
         '<div style="font-size:11px;color:var(--muted);margin-top:5px;display:flex;justify-content:space-between">'+
           '<span>'+pct+'%</span>'+
-          '<span>'+(lang==='ar'?'الربح: ':'Profit: ')+'$'+parseFloat(inv.total_profit||0).toFixed(2)+'</span>'+
+          '<span>'+(lang==='ar'?'الربح: ':lang==='tr'?'Kâr: ':'Profit: ')+'$'+parseFloat(inv.total_profit||0).toFixed(2)+'</span>'+
         '</div>'+nextProfitHtml+
-        (inv.status==='active' ? '<button onclick="cancelInvestment(\''+inv.id+'\')" style="width:100%;margin-top:10px;padding:8px;border-radius:8px;border:1px solid var(--red,#e44);background:transparent;color:var(--red,#e44);font-size:12px;font-weight:600;cursor:pointer">'+(lang==='ar'?'إلغاء الاستثمار وتحرير الفلوس':'Cancel Investment & Unlock Funds')+'</button>' : '')
+        (inv.status==='active' ? '<button onclick="cancelInvestment(\''+inv.id+'\')" style="width:100%;margin-top:10px;padding:8px;border-radius:8px;border:1px solid var(--red,#e44);background:transparent;color:var(--red,#e44);font-size:12px;font-weight:600;cursor:pointer">'+(lang==='ar'?'إلغاء الاستثمار وتحرير الفلوس':lang==='tr'?'Yatırımı İptal Et ve Bakiyeyi Aç':'Cancel Investment & Unlock Funds')+'</button>' : '')
         +'</div>';
     }).join('');
   } catch(e){}
@@ -2107,14 +2123,14 @@ async function loadInvestments() {
 async function cancelInvestment(investmentId) {
   // نتحقق إن الاستثمار فعلاً active وتابع لليوزر الحالي
   const inv = (window.__myInvestments||[]).find(i=>i.id===investmentId && i.status==='active');
-  if(!inv) { showToast(lang==='ar'?'✗ الاستثمار غير موجود أو تم معالجته مسبقاً':'✗ Investment not found or already processed','err'); return; }
+  if(!inv) { showToast(lang==='ar'?'✗ الاستثمار غير موجود أو تم معالجته مسبقاً':lang==='tr'?'✗ Yatırım bulunamadı veya zaten işlendi':'✗ Investment not found or already processed','err'); return; }
   const ok = confirm(lang==='ar'
     ? `هل أنت متأكد من إلغاء استثمارك في "${inv.plan_name}"؟\nسيتوقف الربح اليومي ويُرجع المبلغ لرصيدك.`
     : `Cancel your investment in "${inv.plan_name}"?\nDaily profit will stop and amount will be refunded.`);
   if (!ok) return;
   // الـ trigger protect_investment_fields يحمي الحقول المهمة — فقط status يتغير
   const { error } = await db.from('investments').update({ status: 'cancelled' }).eq('id', investmentId).eq('user_id', userProfile.id);
-  if (error) { showToast(lang==='ar'?'✗ فشل إلغاء الاستثمار: '+error.message:'✗ Failed: '+error.message,'err'); return; }
+  if (error) { showToast(lang==='ar'?'✗ فشل إلغاء الاستثمار: '+error.message:lang==='tr'?'✗ İptal başarısız: '+error.message:'✗ Failed: '+error.message,'err'); return; }
   // إرجاع المبلغ يدوي (الـ trigger مش بيعمله — بس الأدمن لو عمل cancel بالـ RPC بيرجعه)
   // نعمله manual هنا للـ user cancel
   await db.from('users').update({
@@ -2123,16 +2139,16 @@ async function cancelInvestment(investmentId) {
   }).eq('id', userProfile.id);
   await db.from('transactions').insert({
     user_id: userProfile.id, type:'deposit', amount: parseFloat(inv.amount||0),
-    description: (lang==='ar'?'إرجاع رأس مال استثمار ملغي — ':'Refund for cancelled investment — ') + inv.plan_name,
+    description: (lang==='ar'?'إرجاع رأس مال استثمار ملغي — ':lang==='tr'?'İptal edilen yatırımın geri ödemesi — ':'Refund for cancelled investment — ') + inv.plan_name,
     ref_id: investmentId
   });
   await db.from('notifications').insert({
     user_id: userProfile.id,
-    title: lang==='ar'?'⚠️ تم إلغاء استثمارك':'⚠️ Investment Cancelled',
-    body: (lang==='ar'?'تم إلغاء استثمارك في "':'Your investment in "') + inv.plan_name + (lang==='ar'?'" وإرجاع $':'" refunded $') + inv.amount,
+    title: lang==='ar'?'⚠️ تم إلغاء استثمارك':lang==='tr'?'⚠️ Yatırımınız İptal Edildi':'⚠️ Investment Cancelled',
+    body: (lang==='ar'?'تم إلغاء استثمارك في "':lang==='tr'?'Yatırımınız "':'Your investment in "') + inv.plan_name + (lang==='ar'?'" وإرجاع $':lang==='tr'?'" iptal edildi, $':'" refunded $') + inv.amount,
     type:'warning'
   });
-  showToast(lang==='ar'?'✓ تم إلغاء الاستثمار — تم رجوع الفلوس لرصيدك':'✓ Investment cancelled — funds refunded to balance');
+  showToast(lang==='ar'?'✓ تم إلغاء الاستثمار — تم رجوع الفلوس لرصيدك':lang==='tr'?'✓ Yatırım iptal edildi — bakiyenize geri ödendi':'✓ Investment cancelled — funds refunded to balance');
   await loadInvestments();
   await loadDashboard();
 }
@@ -2152,12 +2168,12 @@ function renderKYCStatus() {
   const status=userProfile.kyc_status||'pending';
   if(status==='verified'){
     const s2=document.getElementById('kyc-step2-num');if(s2){s2.textContent='✓';s2.className='step-num step-done';}
-    if(box)box.innerHTML='<div style="background:rgba(34,211,160,0.1);border:1px solid var(--green);border-radius:10px;padding:12px 16px;color:var(--green);font-size:13px;font-weight:600;margin-top:12px">✅ '+(lang==='ar'?'تم التحقق من هويتك بنجاح':'Identity verified successfully')+'</div>';
+    if(box)box.innerHTML='<div style="background:rgba(34,211,160,0.1);border:1px solid var(--green);border-radius:10px;padding:12px 16px;color:var(--green);font-size:13px;font-weight:600;margin-top:12px">✅ '+(lang==='ar'?'تم التحقق من هويتك بنجاح':lang==='tr'?'Kimliğiniz başarıyla doğrulandı':'Identity verified successfully')+'</div>';
     if(btn)btn.style.display='none';
   } else if(status==='rejected'){
-    if(box)box.innerHTML='<div style="background:rgba(255,77,106,0.1);border:1px solid var(--red);border-radius:10px;padding:12px 16px;color:var(--red);font-size:13px;font-weight:600;margin-top:12px">❌ '+(lang==='ar'?'تم رفض طلبك، يرجى إعادة الرفع':'Request rejected, please re-upload')+'</div>';
+    if(box)box.innerHTML='<div style="background:rgba(255,77,106,0.1);border:1px solid var(--red);border-radius:10px;padding:12px 16px;color:var(--red);font-size:13px;font-weight:600;margin-top:12px">❌ '+(lang==='ar'?'تم رفض طلبك، يرجى إعادة الرفع':lang==='tr'?'Talebiniz reddedildi, lütfen yeniden yükleyin':'Request rejected, please re-upload')+'</div>';
   } else if(userProfile.kyc_data){
-    if(box)box.innerHTML='<div style="background:rgba(249,115,22,0.1);border:1px solid var(--orange);border-radius:10px;padding:12px 16px;color:var(--orange);font-size:13px;margin-top:12px">⏳ '+(lang==='ar'?'طلبك قيد المراجعة':'Your request is under review')+'</div>';
+    if(box)box.innerHTML='<div style="background:rgba(249,115,22,0.1);border:1px solid var(--orange);border-radius:10px;padding:12px 16px;color:var(--orange);font-size:13px;margin-top:12px">⏳ '+(lang==='ar'?'طلبك قيد المراجعة':lang==='tr'?'Talebiniz inceleniyor':'Your request is under review')+'</div>';
     if(btn)btn.style.display='none';
   }
 }
@@ -2172,8 +2188,8 @@ async function submitKYC() {
   const docType=document.getElementById('kyc-doc-type').value;
   const errEl=document.getElementById('kyc-upload-err');
   const btn=document.getElementById('kyc-submit-btn');
-  if(!front){errEl.textContent=(lang==='ar'?'يرجى رفع صورة الوجه الأمامي':'Please upload front side');errEl.style.display='block';return;}
-  btn.textContent=(lang==='ar'?'⏳ جارٍ الرفع...':'⏳ Uploading...');btn.disabled=true;errEl.style.display='none';
+  if(!front){errEl.textContent=(lang==='ar'?'يرجى رفع صورة الوجه الأمامي':lang==='tr'?'Lütfen ön yüzü yükleyin':'Please upload front side');errEl.style.display='block';return;}
+  btn.textContent=(lang==='ar'?'⏳ جارٍ الرفع...':lang==='tr'?'⏳ Yükleniyor...':'⏳ Uploading...');btn.disabled=true;errEl.style.display='none';
   try {
     const uid=userProfile.id, ts=Date.now(), uploads=[];
     for(const [file,name] of [[front,'front'],[back,'back'],[selfie,'selfie']]) {
@@ -2184,16 +2200,16 @@ async function submitKYC() {
       if(!error) uploads.push({name,path});
     }
     await db.from('users').update({kyc_status:'pending',kyc_data:JSON.stringify({doc_type:docType,files:uploads,submitted_at:new Date().toISOString()})}).eq('id',uid);
-    await db.from('notifications').insert({user_id:uid,title:'✅ '+(lang==='ar'?'تم استلام مستندات KYC':'KYC documents received'),body:(lang==='ar'?'سيتم المراجعة خلال 24 ساعة':'Will be reviewed within 24 hours'),type:'info'});
+    await db.from('notifications').insert({user_id:uid,title:'✅ '+(lang==='ar'?'تم استلام مستندات KYC':lang==='tr'?'KYC belgeleri alındı':'KYC documents received'),body:(lang==='ar'?'سيتم المراجعة خلال 24 ساعة':lang==='tr'?'24 saat içinde incelenecek':'Will be reviewed within 24 hours'),type:'info'});
     userProfile.kyc_status='pending';userProfile.kyc_data=true;
     closeModal('kyc');
     renderKYCStatus();
-    showToast(lang==='ar'?'✓ تم رفع مستنداتك بنجاح':'✓ Documents uploaded successfully');
+    showToast(lang==='ar'?'✓ تم رفع مستنداتك بنجاح':lang==='tr'?'✓ Belgeleriniz başarıyla yüklendi':'✓ Documents uploaded successfully');
   } catch(e) {
     console.error('KYC submit error:', e);
-    errEl.textContent=(lang==='ar'?'❌ حدث خطأ، حاول مرة أخرى':'❌ Something went wrong, please try again');errEl.style.display='block';
+    errEl.textContent=(lang==='ar'?'❌ حدث خطأ، حاول مرة أخرى':lang==='tr'?'❌ Bir hata oluştu, lütfen tekrar deneyin':'❌ Something went wrong, please try again');errEl.style.display='block';
   } finally {
-    btn.textContent=(lang==='ar'?'📤 رفع المستندات':'📤 Upload Documents');btn.disabled=false;
+    btn.textContent=(lang==='ar'?'📤 رفع المستندات':lang==='tr'?'📤 Belgeleri Yükle':'📤 Upload Documents');btn.disabled=false;
   }
 }
 
@@ -2202,8 +2218,8 @@ async function submitDeposit() {
   if(!userProfile){openModal('login');return;}
   const hash=document.getElementById('dep-hash').value.trim();
   const amount=parseFloat(document.getElementById('dep-amount').value);
-  if(!hash){showToast(lang==='ar'?'أدخل رقم التحويل TX Hash':'Enter TX Hash','err');return;}
-  if(!amount||amount<siteSettings.min_deposit){showToast(lang==='ar'?`الحد الأدنى للإيداع $${siteSettings.min_deposit}`:`Minimum deposit $${siteSettings.min_deposit}`,'err');return;}
+  if(!hash){showToast(lang==='ar'?'أدخل رقم التحويل TX Hash':lang==='tr'?'TX Hash girin':'Enter TX Hash','err');return;}
+  if(!amount||amount<siteSettings.min_deposit){showToast(lang==='ar'?`الحد الأدنى للإيداع $${siteSettings.min_deposit}`:lang==='tr'?`Minimum yatırım $${siteSettings.min_deposit}`:`Minimum deposit $${siteSettings.min_deposit}`,'err');return;}
   try {
     const activeBtn=document.querySelector('#dw-dep .coin-btn.active');
     const coinKey=activeBtn?activeBtn.getAttribute('onclick').match(/'([^']+)'/)[1]:'USDT-TRC20';
@@ -2213,29 +2229,29 @@ async function submitDeposit() {
     if (window.__selectedPlanRate) {
       const { data: planRow } = await db.from('plans').select('id,min_amount,max_amount').eq('daily_rate', window.__selectedPlanRate).maybeSingle();
       if (planRow) {
-        if (amount < parseFloat(planRow.min_amount)) { showToast(lang==='ar'?`الحد الأدنى لهذه الباقة $${planRow.min_amount}`:`Minimum for this plan is $${planRow.min_amount}`,'err'); return; }
-        if (planRow.max_amount && amount > parseFloat(planRow.max_amount)) { showToast(lang==='ar'?`الحد الأقصى لهذه الباقة $${planRow.max_amount}`:`Maximum for this plan is $${planRow.max_amount}`,'err'); return; }
+        if (amount < parseFloat(planRow.min_amount)) { showToast(lang==='ar'?`الحد الأدنى لهذه الباقة $${planRow.min_amount}`:lang==='tr'?`Bu paket için minimum $${planRow.min_amount}`:`Minimum for this plan is $${planRow.min_amount}`,'err'); return; }
+        if (planRow.max_amount && amount > parseFloat(planRow.max_amount)) { showToast(lang==='ar'?`الحد الأقصى لهذه الباقة $${planRow.max_amount}`:lang==='tr'?`Bu paket için maksimum $${planRow.max_amount}`:`Maximum for this plan is $${planRow.max_amount}`,'err'); return; }
         planId = planRow.id;
       }
     }
 
     await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,tx_hash:hash,status:'pending',plan_id:planId});
-    await db.from('notifications').insert({user_id:userProfile.id,title:'📥 '+(lang==='ar'?'تم استلام طلب إيداعك':'Deposit request received'),body:(lang==='ar'?'طلب إيداع $':'Deposit request $')+amount+' '+(lang==='ar'?'قيد المراجعة':'under review'),type:'info'});
-    showToast(lang==='ar'?'✓ تم إرسال طلب الإيداع بنجاح':'✓ Deposit request submitted');
+    await db.from('notifications').insert({user_id:userProfile.id,title:'📥 '+(lang==='ar'?'تم استلام طلب إيداعك':lang==='tr'?'Yatırım talebi alındı':'Deposit request received'),body:(lang==='ar'?'طلب إيداع $':lang==='tr'?'Yatırım talebi $':'Deposit request $')+amount+' '+(lang==='ar'?'قيد المراجعة':lang==='tr'?'inceleniyor':'under review'),type:'info'});
+    showToast(lang==='ar'?'✓ تم إرسال طلب الإيداع بنجاح':lang==='tr'?'✓ Yatırım talebi gönderildi':'✓ Deposit request submitted');
     document.getElementById('dep-hash').value='';
     document.getElementById('dep-amount').value='';
     window.__selectedPlanRate = null;
-  } catch(e){showToast(lang==='ar'?'حدث خطأ':'Error occurred','err');}
+  } catch(e){showToast(lang==='ar'?'حدث خطأ':lang==='tr'?'Bir hata oluştu':'Error occurred','err');}
 }
 
 async function submitWithdrawal() {
   if(!userProfile){openModal('login');return;}
   const addr=document.getElementById('wd-addr').value.trim();
   const amount=parseFloat(document.getElementById('wd-amount').value);
-  if(!addr){showToast(lang==='ar'?'أدخل عنوان محفظتك':'Enter wallet address','err');return;}
-  if(!amount||amount<siteSettings.min_withdrawal){showToast(lang==='ar'?`الحد الأدنى للسحب $${siteSettings.min_withdrawal}`:`Minimum withdrawal $${siteSettings.min_withdrawal}`,'err');return;}
+  if(!addr){showToast(lang==='ar'?'أدخل عنوان محفظتك':lang==='tr'?'Cüzdan adresinizi girin':'Enter wallet address','err');return;}
+  if(!amount||amount<siteSettings.min_withdrawal){showToast(lang==='ar'?`الحد الأدنى للسحب $${siteSettings.min_withdrawal}`:lang==='tr'?`Minimum çekim $${siteSettings.min_withdrawal}`:`Minimum withdrawal $${siteSettings.min_withdrawal}`,'err');return;}
   // ✅ FIX: التحقق من الحد الأقصى للسحب
-  if(amount > siteSettings.max_withdrawal){showToast(lang==='ar'?`الحد الأقصى للسحب $${siteSettings.max_withdrawal.toLocaleString()}`:`Maximum withdrawal $${siteSettings.max_withdrawal.toLocaleString()}`,'err');return;}
+  if(amount > siteSettings.max_withdrawal){showToast(lang==='ar'?`الحد الأقصى للسحب $${siteSettings.max_withdrawal.toLocaleString()}`:lang==='tr'?`Maksimum çekim $${siteSettings.max_withdrawal.toLocaleString()}`:`Maximum withdrawal $${siteSettings.max_withdrawal.toLocaleString()}`,'err');return;}
 
   // نحسب الرصيد المتاح الحقيقي = الرصيد الكلي ناقص أي فلوس مقفولة في استثمار نشط
   const { data: activeInvData } = await db.from('investments').select('amount').eq('user_id',userProfile.id).eq('status','active');
@@ -2246,9 +2262,11 @@ async function submitWithdrawal() {
     if(lockedAmount > 0) {
       showToast(lang==='ar'
         ? `الرصيد المتاح $${availableBalance.toFixed(2)} فقط — $${lockedAmount.toFixed(2)} مقفول في استثمار نشط. لازم تلغي الاستثمار أولاً من صفحة "استثماراتي" عشان تسحب هذا المبلغ.`
+        : lang==='tr'
+        ? `Sadece $${availableBalance.toFixed(2)} kullanılabilir — $${lockedAmount.toFixed(2)} aktif bir yatırımda kilitli. Çekmek için önce "Yatırımlarım" sayfasından yatırımı iptal edin.`
         : `Only $${availableBalance.toFixed(2)} is available — $${lockedAmount.toFixed(2)} is locked in an active investment. Cancel the investment first from "My Investments" to withdraw it.`, 'err');
     } else {
-      showToast(lang==='ar'?'الرصيد غير كافٍ':'Insufficient balance','err');
+      showToast(lang==='ar'?'الرصيد غير كافٍ':lang==='tr'?'Yetersiz bakiye':'Insufficient balance','err');
     }
     return;
   }
@@ -2256,11 +2274,11 @@ async function submitWithdrawal() {
   try {
     const coin=document.getElementById('wd-coin').value;
     await db.from('withdrawals').insert({user_id:userProfile.id,amount,coin:coin.split('-')[0],network:coin,wallet_address:addr,status:'pending'});
-    await db.from('notifications').insert({user_id:userProfile.id,title:'📤 '+(lang==='ar'?'تم استلام طلب سحبك':'Withdrawal request received'),body:(lang==='ar'?'طلب سحب $':'Withdrawal request $')+amount+' '+(lang==='ar'?'قيد المراجعة':'under review'),type:'info'});
-    showToast(lang==='ar'?'✓ تم إرسال طلب السحب':'✓ Withdrawal request sent');
+    await db.from('notifications').insert({user_id:userProfile.id,title:'📤 '+(lang==='ar'?'تم استلام طلب سحبك':lang==='tr'?'Çekim talebi alındı':'Withdrawal request received'),body:(lang==='ar'?'طلب سحب $':lang==='tr'?'Çekim talebi $':'Withdrawal request $')+amount+' '+(lang==='ar'?'قيد المراجعة':lang==='tr'?'inceleniyor':'under review'),type:'info'});
+    showToast(lang==='ar'?'✓ تم إرسال طلب السحب':lang==='tr'?'✓ Çekim talebi gönderildi':'✓ Withdrawal request sent');
     document.getElementById('wd-addr').value='';
     document.getElementById('wd-amount').value='';
-  } catch(e){showToast(lang==='ar'?'حدث خطأ':'Error occurred','err');}
+  } catch(e){showToast(lang==='ar'?'حدث خطأ':lang==='tr'?'Bir hata oluştu':'Error occurred','err');}
 }
 
 // ── COIN SELECTOR ──
@@ -2280,7 +2298,7 @@ function setCoin(el, coin) {
 
 function copyDepAddr() {
   navigator.clipboard.writeText(document.getElementById('dep-addr').textContent).catch(()=>{});
-  showToast(lang==='ar'?'✓ تم نسخ العنوان':'✓ Copied');
+  showToast(lang==='ar'?'✓ تم نسخ العنوان':lang==='tr'?'✓ Kopyalandı':'✓ Copied');
 }
 
 // ── تغيير كلمة المرور (للمستخدم الداخل في حسابه) ──
@@ -2302,7 +2320,7 @@ async function changeMyPassword(){
     if (error) { console.error('changeMyPassword error:', error); showErr(errEl, genericErrMsg()); return; }
     document.getElementById('sec-cur-pass').value = '';
     document.getElementById('sec-new-pass').value = '';
-    showToast(lang==='ar'?'✓ تم تغيير كلمة المرور بنجاح':'✓ Password changed successfully');
+    showToast(lang==='ar'?'✓ تم تغيير كلمة المرور بنجاح':lang==='tr'?'✓ Şifre başarıyla değiştirildi':'✓ Password changed successfully');
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -2322,7 +2340,7 @@ async function sendPasswordReset(){
     const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
     // مش بنفرق في الرسالة بين إيميل موجود أو لأ، عشان الأمان (منع تخمين إيميلات مسجلة)
     closeModal('forgot');
-    showToast(lang==='ar'?'✓ لو الإيميل ده مسجّل، هتستقبل رابط إعادة تعيين كلمة المرور':'✓ If this email is registered, you will receive a reset link');
+    showToast(lang==='ar'?'✓ لو الإيميل ده مسجّل، هتستقبل رابط إعادة تعيين كلمة المرور':lang==='tr'?'✓ Bu e-posta kayıtlıysa, bir sıfırlama bağlantısı alacaksınız':'✓ If this email is registered, you will receive a reset link');
   } catch(e) {
     showErr(errEl, {ar:'حدث خطأ، حاول مرة أخرى', en:'An error occurred, please try again', tr:'Bir hata oluştu, lütfen tekrar deneyin'});
   } finally {
@@ -2342,12 +2360,12 @@ async function confirmPasswordReset(){
   const { error } = await db.auth.updateUser({ password: p1 });
   if (error) { console.error('confirmPasswordReset error:', error); showErr(errEl, genericErrMsg()); return; }
   closeModal('reset-password');
-  showToast(lang==='ar'?'✓ تم تعيين كلمة المرور الجديدة بنجاح':'✓ New password set successfully');
+  showToast(lang==='ar'?'✓ تم تعيين كلمة المرور الجديدة بنجاح':lang==='tr'?'✓ Yeni şifre başarıyla ayarlandı':'✓ New password set successfully');
 }
 
 function copyRef() {
   navigator.clipboard.writeText(document.getElementById('ref-link-txt').textContent).catch(()=>{});
-  showToast(lang==='ar'?'✓ تم نسخ الرابط':'✓ Link copied');
+  showToast(lang==='ar'?'✓ تم نسخ الرابط':lang==='tr'?'✓ Bağlantı kopyalandı':'✓ Link copied');
 }
 
 // ── PLAN BUTTONS ──
@@ -2355,7 +2373,7 @@ function handlePlanClick(rate) {
   if(isLoggedIn) { goToDeposit(rate); return; }
   if(!authReady) {
     pendingPage={id:'deposit',el:null,planRate:rate};
-    showToast(lang==='ar'?'⏳ لحظة...':'⏳ One moment...');
+    showToast(lang==='ar'?'⏳ لحظة...':lang==='tr'?'⏳ Bir dakika...':'⏳ One moment...');
     return;
   }
   pendingPage={id:'deposit',el:null,planRate:rate}; openModal('login');
@@ -2495,6 +2513,8 @@ async function submitContact() {
     const remaining = Math.ceil((cooldown - (now - _contactLastSent)) / 1000);
     showToast(lang==='ar'
       ? `⏳ انتظر ${remaining} ثانية قبل إرسال رسالة أخرى`
+      : lang==='tr'
+      ? `⏳ Başka bir mesaj göndermeden önce ${remaining} saniye bekleyin`
       : `⏳ Please wait ${remaining}s before sending another message`, 'err');
     return;
   }
@@ -2502,9 +2522,9 @@ async function submitContact() {
   const name = document.getElementById('cf-name').value.trim();
   const email = document.getElementById('cf-email').value.trim();
   const msg = document.getElementById('cf-message').value.trim();
-  if(!name||!email||!msg) { showToast(lang==='ar'?'أكمل جميع الحقول':'Fill all fields','err'); return; }
+  if(!name||!email||!msg) { showToast(lang==='ar'?'أكمل جميع الحقول':lang==='tr'?'Tüm alanları doldurun':'Fill all fields','err'); return; }
   // تحقق بسيط من صيغة الإيميل
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showToast(lang==='ar'?'البريد الإلكتروني غير صحيح':'Invalid email address','err'); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showToast(lang==='ar'?'البريد الإلكتروني غير صحيح':lang==='tr'?'Geçersiz e-posta adresi':'Invalid email address','err'); return; }
 
   const btn = document.getElementById('cf-submit-btn');
   if(btn){ btn.disabled=true; btn.textContent='⏳'; }
@@ -2514,7 +2534,7 @@ async function submitContact() {
     // فحص rate limiting (RPC موجود في DB)
     const { data: rlCheck, error: rlErr } = await db.rpc('check_contact_rate_limit');
     if(rlErr || rlCheck === false) {
-      showToast(lang==='ar'?'✗ أرسلت رسالة مؤخراً، انتظر قليلاً قبل الإرسال مرة أخرى':'✗ You sent a message recently, please wait before sending again','err');
+      showToast(lang==='ar'?'✗ أرسلت رسالة مؤخراً، انتظر قليلاً قبل الإرسال مرة أخرى':lang==='tr'?'✗ Az önce bir mesaj gönderdiniz, lütfen tekrar göndermeden önce bekleyin':'✗ You sent a message recently, please wait before sending again','err');
       return;
     }
     const { error } = await db.from('contact_messages').insert({
@@ -2526,12 +2546,12 @@ async function submitContact() {
     });
     if(error) throw error;
     _contactLastSent = Date.now();
-    showToast(lang==='ar'?'✓ تم إرسال رسالتك، سنرد قريباً':'✓ Message sent, we will reply soon');
+    showToast(lang==='ar'?'✓ تم إرسال رسالتك، سنرد قريباً':lang==='tr'?'✓ Mesajınız gönderildi, yakında yanıtlayacağız':'✓ Message sent, we will reply soon');
     document.getElementById('cf-name').value='';
     document.getElementById('cf-email').value='';
     document.getElementById('cf-message').value='';
   } catch(e) {
-    showToast(lang==='ar'?'حدث خطأ، حاول مرة أخرى':'Error sending message, try again','err');
+    showToast(lang==='ar'?'حدث خطأ، حاول مرة أخرى':lang==='tr'?'Mesaj gönderilemedi, tekrar deneyin':'Error sending message, try again','err');
   } finally {
     if(btn){ btn.disabled=false; btn.textContent={ar:'📤 إرسال الرسالة',en:'📤 Send Message',tr:'📤 Mesaj Gönder'}[lang]; }
   }
