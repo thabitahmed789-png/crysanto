@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Crysanto — Digital Investment Platform</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230F1520"/><rect width="32" height="32" rx="7" fill="none" stroke="%23C9A84C" stroke-width="1.5"/><path d="M18 6 A10 10 0 1 0 18 26 L16.5 23.5 A7 7 0 1 1 16.5 8.5 Z" fill="%23C9A84C"/><rect x="18.5" y="6" width="2.2" height="20" rx="1" fill="%23C9A84C"/><path d="M20.7 6 Q28 6 28 12 Q28 18 20.7 18 L20.7 15.5 Q25.5 15.5 25.5 12 Q25.5 8.5 20.7 8.5 Z" fill="%23C9A84C"/><path d="M20.7 16.5 L28.5 26 L26 26 L18.5 17 Z" fill="%23C9A84C"/></svg>">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -26,8 +27,8 @@ body:not(.auth-ready) #page-deposit,
 body:not(.auth-ready) #page-referral { visibility: hidden; }
 
 nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:68px;background:rgba(8,12,18,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);;overflow:hidden;}
-.logo{font-family:var(--en);font-size:22px;font-weight:800;color:var(--gold);display:flex;align-items:center;gap:8px;}
-.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--gold),var(--gold-l));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo{font-family:Georgia,serif;font-size:20px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:10px;letter-spacing:2px;}
+.logo-icon{width:34px;height:34px;display:flex;align-items:center;justify-content:center;}
 .nav-links{display:flex;gap:2px;list-style:none;flex-wrap:nowrap;overflow:hidden;flex:1;justify-content:center;}
 .nav-links a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;padding:6px 12px;border-radius:6px;transition:.2s;cursor:pointer;}
 .nav-links a:hover,.nav-links a.active{color:var(--gold);background:var(--gold-dim);}
@@ -252,14 +253,26 @@ body:not(.ltr) .footer-grid{text-align:right;}
 
 <div id="session-check-overlay" style="position:fixed;inset:0;background:#0b0e17;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;" aria-label="Loading">
   <div style="width:42px;height:42px;border:3px solid rgba(255,193,7,.25);border-top-color:#ffc107;border-radius:50%;animation:scSpin .8s linear infinite;"></div>
-  <div style="color:#ffc107;font-weight:700;font-size:15px;font-family:inherit;">Crysanto</div>
+  <div style="margin-bottom:4px"><svg width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+  <rect width="34" height="34" rx="8" fill="#0F1520" stroke="#C9A84C" stroke-width="1.2"/>
+  <path d="M20 8.5 A8.5 8.5 0 1 0 20 25.5 L18.6 23.3 A6.5 6.5 0 1 1 18.6 10.7 Z" fill="#C9A84C"/>
+  <rect x="20.5" y="8.5" width="2.2" height="17" rx="1" fill="#C9A84C"/>
+  <path d="M22.7 8.5 Q29 8.5 29 13.5 Q29 18.5 22.7 18.5 L22.7 16.5 Q27 16.5 27 13.5 Q27 10.5 22.7 10.5 Z" fill="#C9A84C"/>
+  <path d="M22.7 17.5 L30 25.5 L27.5 25.5 L20.5 17.8 Z" fill="#C9A84C"/>
+</svg></div><div style="color:#C9A84C;font-weight:700;font-size:15px;font-family:Georgia,serif;letter-spacing:2px">Crysanto</div>
 </div>
 <style>@keyframes scSpin{to{transform:rotate(360deg)}}</style>
 
 <div class="toast" id="toast"></div>
 
 <nav>
-  <div class="logo"><div class="logo-icon">₿</div><span>Crysanto</span></div>
+  <div class="logo" onclick="showPage('home',null)" style="cursor:pointer;gap:10px"><svg width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+  <rect width="34" height="34" rx="8" fill="#0F1520" stroke="#C9A84C" stroke-width="1.2"/>
+  <path d="M20 8.5 A8.5 8.5 0 1 0 20 25.5 L18.6 23.3 A6.5 6.5 0 1 1 18.6 10.7 Z" fill="#C9A84C"/>
+  <rect x="20.5" y="8.5" width="2.2" height="17" rx="1" fill="#C9A84C"/>
+  <path d="M22.7 8.5 Q29 8.5 29 13.5 Q29 18.5 22.7 18.5 L22.7 16.5 Q27 16.5 27 13.5 Q27 10.5 22.7 10.5 Z" fill="#C9A84C"/>
+  <path d="M22.7 17.5 L30 25.5 L27.5 25.5 L20.5 17.8 Z" fill="#C9A84C"/>
+</svg><span style="font-family:Georgia,serif;letter-spacing:2px">Crysanto</span></div>
   <ul class="nav-links">
     <li><a class="active" onclick="showPage('home',this)" data-ar="الرئيسية" data-en="Home" data-tr="Ana Sayfa">Home</a></li>
     <li><a onclick="showPage('about',this)" data-ar="من نحن" data-en="About" data-tr="Hakkımızda">About</a></li>
@@ -829,7 +842,14 @@ body:not(.ltr) .footer-grid{text-align:right;}
 <footer style="padding:50px 40px 30px">
   <div class="footer-grid" style="gap:40px;max-width:1100px;margin:0 auto 40px">
     <div>
-      <div class="footer-logo" style="margin-bottom:12px;text-align:left">Crysanto</div>
+      <div style="margin-bottom:14px"><svg width="140" height="38" viewBox="0 0 140 38" xmlns="http://www.w3.org/2000/svg">
+  <rect width="38" height="38" rx="9" fill="#0F1520" stroke="#C9A84C" stroke-width="1.2"/>
+  <path d="M22 7 A10 10 0 1 0 22 31 L20.4 28.4 A7 7 0 1 1 20.4 9.6 Z" fill="#C9A84C"/>
+  <rect x="22.5" y="7" width="2.5" height="24" rx="1" fill="#C9A84C"/>
+  <path d="M25 7 Q33 7 33 14 Q33 21 25 21 L25 18.5 Q30.5 18.5 30.5 14 Q30.5 9.5 25 9.5 Z" fill="#C9A84C"/>
+  <path d="M25 20 L34 31 L31 31 L22.5 20.5 Z" fill="#C9A84C"/>
+  <text x="46" y="25" font-family="Georgia,serif" font-weight="700" font-size="19" fill="#C9A84C" letter-spacing="2">CRYSANTO</text>
+</svg></div>
       <p style="font-size:12px;color:var(--muted);line-height:1.9;max-width:280px" id="footer-desc" data-ar="منصة استثمار رقمي رائدة توفر عوائد يومية مضمونة لعملاء في أكثر من 50 دولة." data-en="A leading digital investment platform providing guaranteed daily returns for clients in 50+ countries." data-tr="50'den fazla ülkede müşterilere garantili günlük getiri sunan önde gelen dijital yatırım platformu.">A leading digital investment platform providing guaranteed daily returns for clients in 50+ countries.</p>
       <div style="display:flex;gap:10px;margin-top:16px">
         <a href="#" style="width:34px;height:34px;border-radius:8px;background:var(--dark3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;text-decoration:none">💬</a>
@@ -878,7 +898,13 @@ body:not(.ltr) .footer-grid{text-align:right;}
   <div class="modal">
     <button class="modal-close" onclick="closeModal('login')">✕</button>
     <div style="text-align:center;margin-bottom:22px">
-      <div style="font-family:var(--en);font-size:20px;font-weight:800;color:var(--gold)">Crysanto</div>
+      <div style="display:flex;align-items:center;gap:8px"><svg width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+  <rect width="34" height="34" rx="8" fill="#0F1520" stroke="#C9A84C" stroke-width="1.2"/>
+  <path d="M20 8.5 A8.5 8.5 0 1 0 20 25.5 L18.6 23.3 A6.5 6.5 0 1 1 18.6 10.7 Z" fill="#C9A84C"/>
+  <rect x="20.5" y="8.5" width="2.2" height="17" rx="1" fill="#C9A84C"/>
+  <path d="M22.7 8.5 Q29 8.5 29 13.5 Q29 18.5 22.7 18.5 L22.7 16.5 Q27 16.5 27 13.5 Q27 10.5 22.7 10.5 Z" fill="#C9A84C"/>
+  <path d="M22.7 17.5 L30 25.5 L27.5 25.5 L20.5 17.8 Z" fill="#C9A84C"/>
+</svg><span style="font-family:Georgia,serif;font-size:16px;font-weight:700;color:var(--gold);letter-spacing:2px">Crysanto</span></div>
       <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="login-title" data-ar="تسجيل الدخول" data-en="Sign In" data-tr="Giriş Yap">Sign In</h3>
     </div>
     <div class="err-msg" id="login-err"></div>
@@ -898,7 +924,13 @@ body:not(.ltr) .footer-grid{text-align:right;}
   <div class="modal">
     <button class="modal-close" onclick="closeModal('forgot')">✕</button>
     <div style="text-align:center;margin-bottom:22px">
-      <div style="font-family:var(--en);font-size:20px;font-weight:800;color:var(--gold)">Crysanto</div>
+      <div style="display:flex;align-items:center;gap:8px"><svg width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+  <rect width="34" height="34" rx="8" fill="#0F1520" stroke="#C9A84C" stroke-width="1.2"/>
+  <path d="M20 8.5 A8.5 8.5 0 1 0 20 25.5 L18.6 23.3 A6.5 6.5 0 1 1 18.6 10.7 Z" fill="#C9A84C"/>
+  <rect x="20.5" y="8.5" width="2.2" height="17" rx="1" fill="#C9A84C"/>
+  <path d="M22.7 8.5 Q29 8.5 29 13.5 Q29 18.5 22.7 18.5 L22.7 16.5 Q27 16.5 27 13.5 Q27 10.5 22.7 10.5 Z" fill="#C9A84C"/>
+  <path d="M22.7 17.5 L30 25.5 L27.5 25.5 L20.5 17.8 Z" fill="#C9A84C"/>
+</svg><span style="font-family:Georgia,serif;font-size:16px;font-weight:700;color:var(--gold);letter-spacing:2px">Crysanto</span></div>
       <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="forgot-title" data-ar="استرجاع كلمة المرور" data-en="Reset Password" data-tr="Şifre Sıfırlama">Reset Password</h3>
       <p style="font-size:12px;color:var(--muted);margin-top:6px" id="forgot-desc" data-ar="هنبعتلك رابط إعادة تعيين كلمة المرور على بريدك الإلكتروني" data-en="We'll send a password reset link to your email" data-tr="Şifre sıfırlama bağlantısını e-postanıza göndereceğiz">We'll send a password reset link to your email</p>
     </div>
@@ -912,7 +944,13 @@ body:not(.ltr) .footer-grid{text-align:right;}
 <div class="modal-overlay" id="modal-reset-password">
   <div class="modal">
     <div style="text-align:center;margin-bottom:22px">
-      <div style="font-family:var(--en);font-size:20px;font-weight:800;color:var(--gold)">Crysanto</div>
+      <div style="display:flex;align-items:center;gap:8px"><svg width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+  <rect width="34" height="34" rx="8" fill="#0F1520" stroke="#C9A84C" stroke-width="1.2"/>
+  <path d="M20 8.5 A8.5 8.5 0 1 0 20 25.5 L18.6 23.3 A6.5 6.5 0 1 1 18.6 10.7 Z" fill="#C9A84C"/>
+  <rect x="20.5" y="8.5" width="2.2" height="17" rx="1" fill="#C9A84C"/>
+  <path d="M22.7 8.5 Q29 8.5 29 13.5 Q29 18.5 22.7 18.5 L22.7 16.5 Q27 16.5 27 13.5 Q27 10.5 22.7 10.5 Z" fill="#C9A84C"/>
+  <path d="M22.7 17.5 L30 25.5 L27.5 25.5 L20.5 17.8 Z" fill="#C9A84C"/>
+</svg><span style="font-family:Georgia,serif;font-size:16px;font-weight:700;color:var(--gold);letter-spacing:2px">Crysanto</span></div>
       <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="reset-title" data-ar="تعيين كلمة مرور جديدة" data-en="Set New Password" data-tr="Yeni Şifre Belirle">Set New Password</h3>
     </div>
     <div class="err-msg" id="reset-err"></div>
@@ -926,7 +964,13 @@ body:not(.ltr) .footer-grid{text-align:right;}
   <div class="modal">
     <button class="modal-close" onclick="closeModal('register')">✕</button>
     <div style="text-align:center;margin-bottom:22px">
-      <div style="font-family:var(--en);font-size:20px;font-weight:800;color:var(--gold)">Crysanto</div>
+      <div style="display:flex;align-items:center;gap:8px"><svg width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+  <rect width="34" height="34" rx="8" fill="#0F1520" stroke="#C9A84C" stroke-width="1.2"/>
+  <path d="M20 8.5 A8.5 8.5 0 1 0 20 25.5 L18.6 23.3 A6.5 6.5 0 1 1 18.6 10.7 Z" fill="#C9A84C"/>
+  <rect x="20.5" y="8.5" width="2.2" height="17" rx="1" fill="#C9A84C"/>
+  <path d="M22.7 8.5 Q29 8.5 29 13.5 Q29 18.5 22.7 18.5 L22.7 16.5 Q27 16.5 27 13.5 Q27 10.5 22.7 10.5 Z" fill="#C9A84C"/>
+  <path d="M22.7 17.5 L30 25.5 L27.5 25.5 L20.5 17.8 Z" fill="#C9A84C"/>
+</svg><span style="font-family:Georgia,serif;font-size:16px;font-weight:700;color:var(--gold);letter-spacing:2px">Crysanto</span></div>
       <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="reg-title" data-ar="إنشاء حساب" data-en="Create Account" data-tr="Hesap Oluştur">Create Account</h3>
     </div>
     <div class="err-msg" id="reg-err"></div>
