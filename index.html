@@ -25,13 +25,13 @@ body:not(.auth-ready) #page-dashboard,
 body:not(.auth-ready) #page-deposit,
 body:not(.auth-ready) #page-referral { visibility: hidden; }
 
-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:68px;background:rgba(8,12,18,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:68px;background:rgba(8,12,18,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);;overflow:hidden;}
 .logo{font-family:var(--en);font-size:22px;font-weight:800;color:var(--gold);display:flex;align-items:center;gap:8px;}
 .logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--gold),var(--gold-l));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
-.nav-links{display:flex;gap:4px;list-style:none;}
+.nav-links{display:flex;gap:2px;list-style:none;flex-wrap:nowrap;overflow:hidden;flex:1;justify-content:center;}
 .nav-links a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;padding:6px 12px;border-radius:6px;transition:.2s;cursor:pointer;}
 .nav-links a:hover,.nav-links a.active{color:var(--gold);background:var(--gold-dim);}
-.nav-right{display:flex;align-items:center;gap:10px;}
+.nav-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .lang-sw{display:flex;gap:3px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:3px;}
 .lb{padding:4px 10px;border-radius:5px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:transparent;color:var(--muted);font-family:var(--en);}
 .lb.on{background:var(--gold);color:#000;}
@@ -293,7 +293,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
 </nav>
 
 <!-- MOBILE MENU -->
-<div class="mobile-menu" id="mobile-menu">
+<div class="mobile-menu" id="mobile-menu" style="display:none">
   <div style="display:flex;gap:6px;margin-bottom:10px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:4px;">
     <button class="lb" id="m-lb-ar" onclick="setLang('ar')" style="flex:1;padding:8px;border-radius:5px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;">عربي</button>
     <button class="lb on" id="m-lb-en" onclick="setLang('en')" style="flex:1;padding:8px;border-radius:5px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;">EN</button>
@@ -1154,8 +1154,22 @@ db.auth.onAuthStateChange(async (event, session) => {
   // SIGNED_IN = بعد login جديد (عبر onAuthStateChange مش doLogin)
   if((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session && !isLoggedIn) {
     currentUser = session.user;
+    // إخفاء زراير Login/Register فوراً — قبل ما fetchProfile يخلص
+    const _bL = document.getElementById('btnLogin');
+    const _bR = document.getElementById('btnRegister');
+    if(_bL) _bL.style.display = 'none';
+    if(_bR) _bR.style.display = 'none';
+    document.body.classList.add('logged-in');
+    // جلب البروفايل
     await fetchProfile(3, 500);
-    if(userProfile) afterLogin();
+    if(userProfile) {
+      afterLogin();
+    } else {
+      // fetchProfile فشل — ارجع للوضع الطبيعي
+      document.body.classList.remove('logged-in');
+      if(_bL) _bL.style.display = '';
+      if(_bR) _bR.style.display = '';
+    }
   } else if(event === 'SIGNED_OUT') {
     isLoggedIn = false; currentUser = null; userProfile = null;
     document.body.classList.remove('logged-in');
@@ -2434,8 +2448,9 @@ document.addEventListener('click',function(e){
 // ── INIT ──
 function init(){
   setLang(lang);
-  // بناء فوري للمحتوى الثابت (بدون DB)
+  // بناء فوري للمحتوى الثابت (بدون DB) — الباقات بتتبني بالـ fallback الأول فوراً
   buildTicker(); buildMarkets(); buildLivePrices(); buildFaq(); buildFeatures(); calcProfit();
+  buildPlans(); // عرض فوري بالباقات الافتراضية — هيتحدث لما DB يرد
 
   // جميع الـ DB calls بالتوازي — أسرع بكتير من sequential
   Promise.all([
@@ -2446,11 +2461,9 @@ function init(){
     refreshActiveDepositCoin();
     renderWalletDashboardList();
     applyMaintenanceMode();
-    if (plans) {
+    if (plans && plans.length) {
       __plansCache = plans;
-      buildPlans(); // ابني الباقات بعد ما جابهم
-    } else {
-      buildPlans(); // fallback
+      buildPlans(); // تحديث الباقات ببيانات DB الحقيقية
     }
   });
 
