@@ -295,12 +295,34 @@ body:not(.ltr) .footer-grid{text-align:right;}
     <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu">
       <span></span><span></span><span></span>
     </button>
-    <div id="user-menu" style="display:none;align-items:center;gap:8px;">
-      <div onclick="showPage('dashboard',null)" style="display:flex;align-items:center;gap:8px;background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:6px 14px;cursor:pointer;">
+    <div id="user-menu" style="display:none;align-items:center;gap:8px;position:relative;">
+      <div onclick="toggleUserDropdown()" style="display:flex;align-items:center;gap:8px;background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:6px 14px;cursor:pointer;user-select:none;" id="user-menu-btn">
         <div id="user-av" style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;">U</div>
         <span id="user-name-nav" style="font-size:13px;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">User</span>
+        <span style="color:var(--muted);font-size:10px;margin-right:2px;">▾</span>
       </div>
-      <button onclick="doLogout()" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;" id="logout-btn" data-ar="خروج" data-en="Logout" data-tr="Çıkış">Logout</button>
+      <!-- dropdown -->
+      <div id="user-dropdown" style="display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;min-width:200px;background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:8px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+        <div onclick="showPage('dashboard',null);closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
+          <span style="font-size:15px">📊</span>
+          <span style="font-size:13px" data-ar="لوحتي" data-en="My Dashboard" data-tr="Panelim">My Dashboard</span>
+        </div>
+        <div onclick="showPage('deposit',null);closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
+          <span style="font-size:15px">💳</span>
+          <span style="font-size:13px" data-ar="إيداع / سحب" data-en="Deposit / Withdraw" data-tr="Yatırım / Çekim">Deposit / Withdraw</span>
+        </div>
+        <div onclick="showPage('referral',null);closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
+          <span style="font-size:15px">🎁</span>
+          <span style="font-size:13px" data-ar="برنامج الإحالة" data-en="Referral Program" data-tr="Referans Programı">Referral Program</span>
+        </div>
+        <div style="height:1px;background:var(--border);margin:6px 4px"></div>
+        <div style="padding:6px 12px;font-size:11px;color:var(--muted)" id="user-balance-nav">Balance: —</div>
+        <div style="height:1px;background:var(--border);margin:6px 4px"></div>
+        <div onclick="doLogout();closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:var(--red);transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
+          <span style="font-size:15px">🚪</span>
+          <span style="font-size:13px" data-ar="تسجيل الخروج" data-en="Sign Out" data-tr="Çıkış Yap">Sign Out</span>
+        </div>
+      </div>
     </div>
   </div>
 </nav>
@@ -1177,7 +1199,16 @@ function escapeHtml(str) {
 
 let lang = localStorage.getItem('crysanto_lang') || "en";
 // شبكة أمان: لو لأي سبب الـ INITIAL_SESSION ماجتش، منسيبش شاشة التحميل عالقة للأبد
-setTimeout(() => { const ov = document.getElementById('session-check-overlay'); if(ov) ov.style.display = 'none'; }, 5000); // max 5s fallback
+// authReady بعد 3 ثواني max — بعدها بيشغل زي ما لو مفيش session
+setTimeout(() => {
+  if (!authReady) {
+    authReady = true;
+    document.body.classList.add('auth-ready');
+    const ov = document.getElementById('session-check-overlay');
+    if (ov) { ov.style.display = 'none'; ov.style.visibility = 'hidden'; ov.style.pointerEvents = 'none'; }
+    if (pendingPage && !isLoggedIn) { openModal('login'); }
+  }
+}, 3000);
 let isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
 let _authHandled = false; // منع تعارض login/register مع onAuthStateChange
 const PROTECTED = ['dashboard','deposit','referral'];
@@ -1710,6 +1741,35 @@ async function doRegister() {
 }
 
 
+function toggleUserDropdown() {
+  const dd = document.getElementById('user-dropdown');
+  if (!dd) return;
+  const isOpen = dd.style.display === 'block';
+  dd.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    // تحديث الرصيد في الـ dropdown
+    const balEl = document.getElementById('user-balance-nav');
+    if (balEl && userProfile) {
+      const bal = parseFloat(userProfile.balance || 0);
+      balEl.textContent = ({ar:'الرصيد: $', en:'Balance: $', tr:'Bakiye: $'}[lang]||'Balance: $') + bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    }
+    // إغلاق لو ضغط برا
+    setTimeout(() => {
+      document.addEventListener('click', function _close(e) {
+        if (!document.getElementById('user-menu')?.contains(e.target)) {
+          closeUserDropdown();
+          document.removeEventListener('click', _close);
+        }
+      });
+    }, 10);
+  }
+}
+
+function closeUserDropdown() {
+  const dd = document.getElementById('user-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+
 async function doLogout() {
   _authHandled = true; // نتعامل مع الخروج هنا
   await db.auth.signOut();
@@ -1754,13 +1814,12 @@ async function fetchProfile(retries = 3, delay = 500) {
 function afterLogin() {
   isLoggedIn = true;
   document.body.classList.add('logged-in');
-  // شيل الـ overlay فوراً — guaranteed
+
+  // شيل الـ overlay فوراً
   const _ov = document.getElementById('session-check-overlay');
   if (_ov) { _ov.style.display = 'none'; _ov.style.visibility = 'hidden'; _ov.style.pointerEvents = 'none'; }
-  // ✅ تحديث last_seen عند كل login
-  db.rpc('update_last_seen').catch(()=>{});
 
-  // إخفاء/إظهار الأزرار
+  // إظهار الـ user menu فوراً حتى قبل ما البروفايل يكتمل
   const btnL = document.getElementById('btnLogin');
   const btnR = document.getElementById('btnRegister');
   const uMenu = document.getElementById('user-menu');
@@ -1768,33 +1827,52 @@ function afterLogin() {
   if(btnR) btnR.style.display = 'none';
   if(uMenu) uMenu.style.display = 'flex';
 
-  // تحديث معلومات المستخدم في الـ nav
-  if(userProfile) {
-    const av = document.getElementById('user-av');
-    const nm = document.getElementById('user-name-nav');
-    const m  = document.getElementById('user-memo');
-    const r  = document.getElementById('ref-link-txt');
-    if(av) av.textContent = (userProfile.name||'?')[0].toUpperCase();
-    if(nm) nm.textContent = (userProfile.name||'').split(' ')[0];
-    if(m)  m.textContent  = userProfile.memo || userProfile.ref_code || '---';
-    if(r)  r.textContent  = 'https://crysanto.io/ref/' + (userProfile.ref_code || '---');
+  // تحديث nav بالبيانات المتاحة — إما من userProfile أو من currentUser
+  const _name = userProfile?.name || currentUser?.user_metadata?.full_name || '';
+  const _email = currentUser?.email || '';
+  const _firstLetter = (_name || _email || '?')[0].toUpperCase();
+  const _displayName = _name ? _name.split(' ')[0] : (_email.split('@')[0] || 'User');
+
+  const av = document.getElementById('user-av');
+  const nm = document.getElementById('user-name-nav');
+  const m  = document.getElementById('user-memo');
+  const r  = document.getElementById('ref-link-txt');
+  if(av) av.textContent = _firstLetter;
+  if(nm) nm.textContent = _displayName;
+  if(m)  m.textContent  = userProfile?.memo || userProfile?.ref_code || '---';
+  if(r)  r.textContent  = 'https://crysanto.io/ref/' + (userProfile?.ref_code || '---');
+  // تحديث رصيد الـ dropdown
+  const _balNav = document.getElementById('user-balance-nav');
+  if(_balNav && userProfile) {
+    const _b = parseFloat(userProfile.balance||0);
+    _balNav.textContent = ({ar:'الرصيد: $',en:'Balance: $',tr:'Bakiye: $'}[lang]||'Balance: $') + _b.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
   }
 
-  // الـ lang buttons — تأكد إن الـ EN محدد
-  document.querySelectorAll('.lb').forEach(b=>b.classList.remove('on'));
+  // لو البروفايل جه بعدين، نحدث الـ nav تاني
+  if (!userProfile) {
+    fetchProfile(2, 600).then(() => {
+      if (!userProfile) return;
+      if(av) av.textContent = (userProfile.name||_firstLetter)[0].toUpperCase();
+      if(nm) nm.textContent = (userProfile.name||_displayName).split(' ')[0];
+      if(m)  m.textContent  = userProfile.memo || userProfile.ref_code || '---';
+      if(r)  r.textContent  = 'https://crysanto.io/ref/' + (userProfile.ref_code || '---');
+      db.rpc('update_last_seen').catch(()=>{});
+    });
+  } else {
+    db.rpc('update_last_seen').catch(()=>{});
+  }
+
+  // lang buttons
   document.querySelectorAll('.lb').forEach(b => {
-    if(b.getAttribute('onclick') === "setLang('"+lang+"')") b.classList.add('on');
+    const oc = b.getAttribute('onclick') || '';
+    b.classList.toggle('on', oc.includes("setLang('" + lang + "')"));
   });
 
-  showToast({
-    ar: 'مرحباً ' + (userProfile?.name||'') + ' 👋',
-    en: 'Welcome '  + (userProfile?.name||'') + ' 👋',
-    tr: 'Hoşgeldiniz ' + (userProfile?.name||'') + ' 👋'
-  }[lang]);
+  showToast({ar:'مرحباً ' + (_name||_email||'') + ' 👋', en:'Welcome ' + (_name||_email||'') + ' 👋', tr:'Hoşgeldiniz ' + (_name||_email||'') + ' 👋'}[lang] || 'Welcome 👋');
 
   if(pendingPage) {
     const p = pendingPage; pendingPage = null;
-    setTimeout(()=>showPage(p.id, p.el), 200);
+    setTimeout(() => showPage(p.id, p.el), 100);
   } else {
     showPage('dashboard', null);
   }
