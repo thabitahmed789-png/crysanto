@@ -20,6 +20,10 @@ body{background:var(--dark);color:var(--text);font-family:var(--font);overflow-x
 body.ltr{direction:ltr;font-family:var(--en);}
 body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(201,168,76,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,0.04) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0;}
 body:not(.logged-in) .nav-protected{display:none!important;}
+/* تأكيد إن الـ pages المحمية متاخدش مساحة قبل الـ auth check */
+body:not(.auth-ready) #page-dashboard,
+body:not(.auth-ready) #page-deposit,
+body:not(.auth-ready) #page-referral { visibility: hidden; }
 
 nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:68px;background:rgba(8,12,18,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
 .logo{font-family:var(--en);font-size:22px;font-weight:800;color:var(--gold);display:flex;align-items:center;gap:8px;}
@@ -246,7 +250,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
 </head>
 <body class="lang-en">
 
-<div id="session-check-overlay" style="position:fixed;inset:0;background:#0b0e17;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+<div id="session-check-overlay" style="position:fixed;inset:0;background:#0b0e17;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;" aria-label="Loading">
   <div style="width:42px;height:42px;border:3px solid rgba(255,193,7,.25);border-top-color:#ffc107;border-radius:50%;animation:scSpin .8s linear infinite;"></div>
   <div style="color:#ffc107;font-weight:700;font-size:15px;font-family:inherit;">Crysanto</div>
 </div>
@@ -1136,7 +1140,7 @@ function escapeHtml(str) {
 
 let lang = localStorage.getItem('crysanto_lang') || "en";
 // شبكة أمان: لو لأي سبب الـ INITIAL_SESSION ماجتش، منسيبش شاشة التحميل عالقة للأبد
-setTimeout(() => { const ov = document.getElementById('session-check-overlay'); if(ov) ov.style.display = 'none'; }, 25000);
+setTimeout(() => { const ov = document.getElementById('session-check-overlay'); if(ov) ov.style.display = 'none'; }, 5000); // max 5s fallback
 let isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
 let _authHandled = false; // منع تعارض login/register مع onAuthStateChange
 const PROTECTED = ['dashboard','deposit','referral'];
@@ -1166,9 +1170,10 @@ db.auth.onAuthStateChange(async (event, session) => {
 
   if(event === 'INITIAL_SESSION') {
     authReady = true;
-    // نشيل شاشة "بنتأكد من حسابك" دلوقتي بعد ما عرفنا فعليًا هل المستخدم داخل أو لأ
+    // شيل الـ overlay فوراً — سواء في session أو لأ
     const ov = document.getElementById('session-check-overlay');
-    if(ov) ov.style.display = 'none';
+    if (ov) { ov.style.display = 'none'; ov.style.visibility = 'hidden'; ov.style.pointerEvents = 'none'; }
+    document.body.classList.add('auth-ready'); // نعرف إن الـ auth check خلص
     // لو المستخدم كان ضغط على صفحة محمية (زي تحديد باقة استثمار) قبل ما نتأكد من الجلسة، نكمله دلوقتي
     if(pendingPage && pendingPage.id && pendingPage.id !== 'login') {
       const pp = pendingPage; pendingPage = null;
@@ -1698,6 +1703,9 @@ async function fetchProfile(retries = 3, delay = 500) {
 function afterLogin() {
   isLoggedIn = true;
   document.body.classList.add('logged-in');
+  // شيل الـ overlay فوراً — guaranteed
+  const _ov = document.getElementById('session-check-overlay');
+  if (_ov) { _ov.style.display = 'none'; _ov.style.visibility = 'hidden'; _ov.style.pointerEvents = 'none'; }
   // ✅ تحديث last_seen عند كل login
   db.rpc('update_last_seen').catch(()=>{});
 
@@ -1762,8 +1770,10 @@ async function loadDashboard() {
     const availBox = document.getElementById('wd-available-box');
     if (availBox) {
       const avail = (parseFloat(userProfile.balance)||0) - window.__lockedAmount;
-      availBox.textContent = (lang==='ar' ? '💰 المتاح للسحب: $' : '💰 Available to withdraw: $') + avail.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) +
-        (window.__lockedAmount>0 ? (lang==='ar' ? ` (مقفول في استثمار: $${window.__lockedAmount.toLocaleString()})` : ` (locked in investment: $${window.__lockedAmount.toLocaleString()})`) : '');
+      const _availLabel = {ar:'💰 المتاح للسحب: $', en:'💰 Available to withdraw: $', tr:'💰 Çekilebilir: $'}[lang] || '💰 Available to withdraw: $';
+      const _lockLabel  = {ar:` (مقفول في استثمار: $${window.__lockedAmount.toLocaleString()})`, en:` (locked in investment: $${window.__lockedAmount.toLocaleString()})`, tr:` (yatırımda kilitli: $${window.__lockedAmount.toLocaleString()})`}[lang] || '';
+      availBox.textContent = _availLabel + avail.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) +
+        (window.__lockedAmount > 0 ? _lockLabel : '');
     }
 
     // إجمالي المستثمر
@@ -1796,11 +1806,11 @@ async function loadDashboard() {
           const h = Math.floor(msUntilNextProfit/3600000), m = Math.floor((msUntilNextProfit%3600000)/60000);
           return '<div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:var(--gold-dim);color:var(--gold)">💹</div>'+
           '<div><div class="w-name">'+escapeHtml(inv.plan_name)+'</div>'+
-          '<div class="w-addr">'+inv.daily_rate+'%/day · '+(lang==='ar'?'اليوم ':'Day ')+dayNum+(lang==='ar'?' من ':'/')+totalDays+' · ⏱ '+h+'h '+m+'m</div></div></div>'+
+          '<div class="w-addr">'+inv.daily_rate+'%/day · '+({ar:'اليوم ',en:'Day ',tr:'Gün '}[lang]||'Day ')+dayNum+({ar:' من ',en:'/',tr:'/'}[lang]||'/')+totalDays+' · ⏱ '+h+'h '+m+'m</div></div></div>'+
           '<div class="w-bal">$'+parseFloat(inv.amount).toLocaleString()+'</div></div>';
         }).join('')+'</div>';
       } else {
-        invBox.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+(lang==='ar'?'لا توجد استثمارات نشطة':'No active investments')+'</div>';
+        invBox.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+({ar:'لا توجد استثمارات نشطة',en:'No active investments',tr:'Aktif yatırım yok'}[lang]||'No active investments')+'</div>';
       }
     }
 
@@ -1821,7 +1831,7 @@ async function loadTransactions(resetPage=true) {
   if(!userProfile) return;
   if(resetPage){ txPage=0; txAllData=[]; }
   const el=document.getElementById('tx-list');
-  el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">⏳ '+(lang==='ar'?'جاري التحميل...':'Loading...')+'</div>';
+  el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">⏳ '+({ar:'جاري التحميل...',en:'Loading...',tr:'Yükleniyor...'}[lang]||'Loading...')+'</div>';
   try {
     const [depRes,wdRes,txRes]=await Promise.all([
       db.from('deposits').select('id,amount,coin,status,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(100),
@@ -1834,7 +1844,7 @@ async function loadTransactions(resetPage=true) {
     txAllData=[...deps,...wds,...txs].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
     renderTransactionsList();
   } catch(e){
-    el.innerHTML='<div style="color:var(--red);font-size:13px;text-align:center;padding:30px">'+(lang==='ar'?'حدث خطأ في التحميل':'Error loading transactions')+'</div>';
+    el.innerHTML='<div style="color:var(--red);font-size:13px;text-align:center;padding:30px">'+({ar:'حدث خطأ في التحميل',en:'Error loading transactions',tr:'İşlemler yüklenemedi'}[lang]||'Error loading')+'</div>';
   }
 }
 
@@ -1862,7 +1872,7 @@ function renderTransactionsList(){
   if(txPage>=totalPages) txPage=Math.max(0,totalPages-1);
   const paged=filtered.slice(txPage*txPageSize,(txPage+1)*txPageSize);
   if(!paged.length){
-    el.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+filters.map(f=>`<button onclick="txFilter='${f}';txPage=0;renderTransactionsList()" style="padding:5px 12px;border-radius:20px;border:1px solid ${txFilter===f?'var(--gold)':'var(--border)'};background:${txFilter===f?'var(--gold-dim)':'transparent'};color:${txFilter===f?'var(--gold)':'var(--muted)'};cursor:pointer;font-size:12px;font-family:inherit">${(fLabels[f][lang]||fLabels[f].en)}</button>`).join('')+'</div><div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">'+(lang==='ar'?'لا توجد معاملات':'No transactions')+'</div>';
+    el.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+filters.map(f=>`<button onclick="txFilter='${f}';txPage=0;renderTransactionsList()" style="padding:5px 12px;border-radius:20px;border:1px solid ${txFilter===f?'var(--gold)':'var(--border)'};background:${txFilter===f?'var(--gold-dim)':'transparent'};color:${txFilter===f?'var(--gold)':'var(--muted)'};cursor:pointer;font-size:12px;font-family:inherit">${(fLabels[f][lang]||fLabels[f].en)}</button>`).join('')+'</div><div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">'+({ar:'لا توجد معاملات',en:'No transactions',tr:'İşlem yok'}[lang]||'No transactions')+'</div>';
     return;
   }
   el.innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">${filters.map(f=>`<button onclick="txFilter='${f}';txPage=0;renderTransactionsList()" style="padding:5px 12px;border-radius:20px;border:1px solid ${txFilter===f?'var(--gold)':'var(--border)'};background:${txFilter===f?'var(--gold-dim)':'transparent'};color:${txFilter===f?'var(--gold)':'var(--muted)'};cursor:pointer;font-size:12px;font-family:inherit">${(fLabels[f][lang]||fLabels[f].en)}</button>`).join('')}</div>
@@ -1929,7 +1939,7 @@ async function loadInvestments() {
         const h = Math.floor(msUntilNextProfit / 3600000);
         const m = Math.floor((msUntilNextProfit % 3600000) / 60000);
         nextProfitHtml = '<div style="font-size:11px;color:var(--gold);margin-top:6px;display:flex;justify-content:space-between">' +
-          '<span>📅 '+(lang==='ar'?'اليوم ':'Day ')+dayNum+(lang==='ar'?' من ':' of ')+totalDays+'</span>' +
+          '<span>📅 '+({ar:'اليوم ',en:'Day ',tr:'Gün '}[lang]||'Day ')+dayNum+({ar:' من ',en:' of ',tr:'/'}[lang]||' of ')+totalDays+'</span>' +
           '<span>⏱ '+(lang==='ar'?'الربح القادم بعد ':'Next profit in ')+h+'h '+m+'m</span>' +
         '</div>';
       }
@@ -2230,20 +2240,50 @@ async function goToDeposit(rate) {
 
 // ── LANG ──
 function setLang(l) {
-  lang=l;
-  localStorage.setItem('crysanto_lang', l); // حفظ اللغة
-  document.querySelectorAll('.lb').forEach(b=>b.classList.remove('on'));
-  document.querySelectorAll('.lb[onclick="setLang(\''+l+'\')"]').forEach(b=>b.classList.add('on'));
-  document.body.classList.toggle('ltr',l!=='ar');
-  document.documentElement.setAttribute('dir',l==='ar'?'rtl':'ltr');
-  document.querySelectorAll('[data-'+l+']').forEach(el=>{const v=el.getAttribute('data-'+l);if(el.tagName==='INPUT')el.placeholder=v;else el.textContent=v;});
-  buildFaq();buildFeatures();buildPlans();
-  // لو فيه modal قانوني مفتوح حاليًا، نحدّث محتواه باللغة الجديدة
-  ['terms','privacy','aml','risk'].forEach(t=>{
-    const m=document.getElementById('modal-'+t);
-    if(m && m.classList.contains('open')){
-      m.querySelectorAll('.legal-ar,.legal-en,.legal-tr').forEach(el=>el.style.display='none');
-      const a=m.querySelector('.legal-'+l); if(a) a.style.display='block';
+  lang = l;
+  localStorage.setItem('crysanto_lang', l);
+
+  // تحديث أزرار اللغة في كل الأماكن (navbar + mobile menu)
+  document.querySelectorAll('.lb').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.lb').forEach(b => {
+    const oc = b.getAttribute('onclick') || '';
+    if (oc.includes("setLang('" + l + "')")) b.classList.add('on');
+  });
+
+  // اتجاه الصفحة والخط
+  document.body.classList.toggle('ltr', l !== 'ar');
+  document.documentElement.setAttribute('dir', l === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', l);
+
+  // ترجمة كل العناصر اللي عندها data-ar/en/tr
+  document.querySelectorAll('[data-' + l + ']').forEach(el => {
+    const v = el.getAttribute('data-' + l);
+    if (!v) return;
+    if (el.tagName === 'INPUT') el.placeholder = v;
+    else el.textContent = v;
+  });
+
+  // إعادة بناء المحتوى الديناميكي (JS-generated) باللغة الجديدة
+  buildFaq(); buildFeatures(); buildPlans();
+
+  // إعادة تحميل الداشبورد لو اليوزر جوا
+  if (isLoggedIn && userProfile) {
+    const activeDash = document.querySelector('.sidebar-item.active');
+    const activeId = activeDash ? activeDash.getAttribute('onclick')?.match(/switchDash\(this,'([^']+)'\)/)?.[1] : null;
+    if (activeId === 'd-overview') loadDashboard();
+    else if (activeId === 'd-history') loadTransactions();
+    else if (activeId === 'd-invest') loadInvestments();
+    else if (activeId === 'd-notif') loadNotifications();
+    else loadDashboard(); // default
+  }
+
+  // لو فيه modal قانوني مفتوح، نحدّث محتواه
+  ['terms','privacy','aml','risk'].forEach(t => {
+    const m = document.getElementById('modal-' + t);
+    if (m && m.classList.contains('open')) {
+      m.querySelectorAll('.legal-ar,.legal-en,.legal-tr').forEach(el => el.style.display = 'none');
+      const a = m.querySelector('.legal-' + l);
+      if (a) a.style.display = 'block';
     }
   });
 }
@@ -2394,13 +2434,29 @@ document.addEventListener('click',function(e){
 // ── INIT ──
 function init(){
   setLang(lang);
-  buildTicker();buildMarkets();buildLivePrices();buildFaq();buildFeatures();buildPlans();calcProfit();
-  // جلب الأسعار الحقيقية من CoinGecko بعد 1 ثانية (عشان الصفحة تحمّل أول)
-  setTimeout(fetchLivePrices, 1000);
-  // تحديث الأسعار كل 60 ثانية (CoinGecko rate limit)
+  // بناء فوري للمحتوى الثابت (بدون DB)
+  buildTicker(); buildMarkets(); buildLivePrices(); buildFaq(); buildFeatures(); calcProfit();
+
+  // جميع الـ DB calls بالتوازي — أسرع بكتير من sequential
+  Promise.all([
+    fetchWalletsFromDB(),
+    fetchSiteSettingsFromDB(),
+    fetchPlansFromDB()
+  ]).then(([_w, _s, plans]) => {
+    refreshActiveDepositCoin();
+    renderWalletDashboardList();
+    applyMaintenanceMode();
+    if (plans) {
+      __plansCache = plans;
+      buildPlans(); // ابني الباقات بعد ما جابهم
+    } else {
+      buildPlans(); // fallback
+    }
+  });
+
+  // أسعار CoinGecko بعد 1.5 ثانية (بعد ما الصفحة خلصت)
+  setTimeout(fetchLivePrices, 1500);
   setInterval(fetchLivePrices, 60000);
-  fetchWalletsFromDB().then(()=>{ refreshActiveDepositCoin(); renderWalletDashboardList(); });
-  fetchSiteSettingsFromDB().then(applyMaintenanceMode);
   setInterval(updatePrices, 8000); // محاكاة بسيطة بين استدعاءات CoinGecko
   // ✅ FIX: Live Stats من Supabase الحقيقي بدل Math.random
   async function updateLiveStats(){
