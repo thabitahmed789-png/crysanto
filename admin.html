@@ -1168,7 +1168,7 @@ function showUserModal(id){
     </div>
     <div style="display:flex;gap:10px">
       <button class="act-btn-primary" onclick="sendNotifToUser('${u.id}')">${lang==='ar'?'إرسال إشعار':'Send Notification'}</button>
-      <button class="act-btn" style="background:var(--gold);color:#000" onclick="adminAddProfit('${u.id}','${u.name?.replace(/'/g,\"\'\")}');closeModal()">💰 ${lang==='ar'?'إضافة ربح':'Add Profit'}</button>
+      <button class="act-btn" style="background:var(--gold);color:#000" onclick="adminAddProfit('${u.id}', this.dataset.name);closeModal()" data-name="${(u.name||'').replace(/"/g,'&quot;')}">💰 ${lang==='ar'?'إضافة ربح':'Add Profit'}</button>
       <button class="act-btn red" onclick="toggleUserBlock('${u.id}','${u.status==='blocked'?'active':'blocked'}');closeModal()">${u.status==='blocked'?t('unblock'):t('block')}</button>
     </div>
     <div style="margin-top:12px;padding:12px;background:var(--dark);border-radius:8px;font-size:11px;color:var(--muted)">
@@ -2152,8 +2152,9 @@ function injectExportButtons(){
   autoWrap.style.display = 'flex';
   autoWrap.style.justifyContent = 'space-between';
   autoWrap.style.alignItems = 'center';
+  const _l = (typeof lang !== 'undefined') ? lang : (localStorage.getItem('crysanto_admin_lang') || 'ar');
   autoWrap.innerHTML = `
-    <span id="auto-dist-label">⚡ ${lang==='ar'?'التوزيع التلقائي للأرباح كل 24 ساعة: نشط':'Auto daily profit distribution (24h): Active'}</span>
+    <span id="auto-dist-label">⚡ ${_l==='ar'?'التوزيع التلقائي للأرباح كل 24 ساعة: نشط':'Auto daily profit distribution (24h): Active'}</span>
     <label style="position:relative;width:44px;height:24px;cursor:pointer;flex-shrink:0">
       <input type="checkbox" id="auto-dist-toggle" checked style="opacity:0;width:0;height:0" onchange="toggleAutoDist()">
       <span id="auto-dist-track" style="position:absolute;inset:0;background:var(--green);border-radius:12px;transition:.3s"></span>
@@ -2852,7 +2853,8 @@ async function exportCSV(type) {
 // ══════════════════════════════════════════════
 // MANUAL PROFIT (داخل user modal)
 // ══════════════════════════════════════════════
-async function adminAddProfit(userId, userName) {
+async function adminAddProfit(userId, userNameOrEl) {
+  const userName = (typeof userNameOrEl === 'string') ? userNameOrEl : (userNameOrEl?.dataset?.name || 'User');
   const amtStr = prompt(lang==='ar'?`أضف ربح يدوي لـ "${userName}" (بالدولار):`:`Add manual profit for "${userName}" (in USD):`);
   if(!amtStr) return;
   const amt = parseFloat(amtStr);
