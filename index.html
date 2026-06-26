@@ -13,15 +13,19 @@
 <meta property="og:site_name" content="Crysanto">
 <meta property="og:title" content="Crysanto — Digital Investment Platform">
 <meta property="og:description" content="Secure crypto deposits, withdrawals, referral rewards, and daily profit plans — available in Arabic, English, and Turkish.">
+<meta property="og:image" content="https://crysanto.io/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:url" content="https://crysanto.io/">
 <!-- Twitter Card -->
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Crysanto — Digital Investment Platform">
 <meta name="twitter:description" content="Secure crypto deposits, withdrawals, referral rewards, and daily profit plans.">
-<!-- Basic CSP hardening (defense-in-depth; complements server/host headers) -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.coingecko.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
+<meta name="twitter:image" content="https://crysanto.io/og-image.png"><!-- Basic CSP hardening (defense-in-depth; complements server/host headers) -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.coingecko.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230F1520"/><rect width="32" height="32" rx="7" fill="none" stroke="%23C9A84C" stroke-width="1.5"/><path d="M18 6 A10 10 0 1 0 18 26 L16.5 23.5 A7 7 0 1 1 16.5 8.5 Z" fill="%23C9A84C"/><rect x="18.5" y="6" width="2.2" height="20" rx="1" fill="%23C9A84C"/><path d="M20.7 6 Q28 6 28 12 Q28 18 20.7 18 L20.7 15.5 Q25.5 15.5 25.5 12 Q25.5 8.5 20.7 8.5 Z" fill="%23C9A84C"/><path d="M20.7 16.5 L28.5 26 L26 26 L18.5 17 Z" fill="%23C9A84C"/></svg>">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -699,6 +703,33 @@ body:not(.ltr) .footer-grid{text-align:right;}
             <div id="sec-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px"></div>
             <button class="btn-primary" id="sec-save-btn" onclick="changeMyPassword()" data-ar="💾 حفظ كلمة المرور الجديدة" data-en="💾 Save New Password" data-tr="💾 Yeni Şifreyi Kaydet">💾 حفظ كلمة المرور الجديدة</button>
           </div>
+
+          <!-- ✅ FIX: المصادقة الثنائية (2FA) -->
+          <div class="panel" style="max-width:420px;margin-top:18px">
+            <div class="panel-head" data-ar="المصادقة الثنائية (2FA)" data-en="Two-Factor Authentication (2FA)" data-tr="İki Adımlı Doğrulama (2FA)">المصادقة الثنائية (2FA)</div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:14px" data-ar="طبقة حماية إضافية — هتحتاج كود من تطبيق مصادقة (Google Authenticator/Authy) كل ما تدخل حسابك." data-en="An extra layer of protection — you'll need a code from an authenticator app (Google Authenticator/Authy) each time you log in." data-tr="Ekstra koruma katmanı — her girişte bir kimlik doğrulama uygulamasından kod gerekecek.">طبقة حماية إضافية — هتحتاج كود من تطبيق مصادقة كل ما تدخل حسابك.</p>
+
+            <div id="mfa-status-off">
+              <button class="btn-primary" onclick="start2FAEnrollment()" data-ar="🔐 تفعيل المصادقة الثنائية" data-en="🔐 Enable 2FA" data-tr="🔐 2FA'yı Etkinleştir">🔐 تفعيل المصادقة الثنائية</button>
+            </div>
+
+            <div id="mfa-status-on" style="display:none">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;color:var(--green);font-size:13px;font-weight:700">✓ <span data-ar="المصادقة الثنائية مفعّلة" data-en="2FA is enabled" data-tr="2FA etkin">المصادقة الثنائية مفعّلة</span></div>
+              <button class="copy-btn" onclick="disable2FA()" style="color:var(--red);border-color:rgba(255,77,106,0.3)" data-ar="❌ إلغاء تفعيل 2FA" data-en="❌ Disable 2FA" data-tr="❌ 2FA'yı Devre Dışı Bırak">❌ إلغاء تفعيل 2FA</button>
+            </div>
+
+            <div id="mfa-enroll-box" style="display:none;margin-top:14px;text-align:center">
+              <div id="mfa-qr-wrap" style="background:#fff;border-radius:10px;padding:12px;display:inline-block;margin-bottom:12px"></div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:10px" data-ar="مسح الكود من تطبيق المصادقة، أو إدخال هذا الكود يدويًا:" data-en="Scan with your authenticator app, or enter this code manually:" data-tr="Kimlik doğrulama uygulamanızla tarayın veya bu kodu manuel girin:">مسح الكود من تطبيق المصادقة، أو إدخال هذا الكود يدويًا:</div>
+              <div id="mfa-secret" style="font-family:var(--mono);font-size:13px;background:var(--dark3);border-radius:8px;padding:8px;word-break:break-all;margin-bottom:14px"></div>
+              <div class="form-group" style="text-align:right"><label data-ar="أدخل الكود المكوّن من 6 أرقام" data-en="Enter the 6-digit code" data-tr="6 haneli kodu girin">أدخل الكود المكوّن من 6 أرقام</label>
+                <input type="text" id="mfa-verify-code" inputmode="numeric" maxlength="6" placeholder="123456" style="text-align:center;letter-spacing:4px;font-size:18px">
+              </div>
+              <div id="mfa-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px"></div>
+              <button class="btn-primary" onclick="confirm2FAEnrollment()" data-ar="✓ تأكيد وتفعيل" data-en="✓ Confirm & Enable" data-tr="✓ Onayla ve Etkinleştir">✓ تأكيد وتفعيل</button>
+              <button class="copy-btn" onclick="cancel2FAEnrollment()" style="margin-top:8px" data-ar="إلغاء" data-en="Cancel" data-tr="İptal">إلغاء</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -927,7 +958,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
 <!-- LOGIN MODAL -->
 <div class="modal-overlay" id="modal-login">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('login')">✕</button>
+    <button class="modal-close" aria-label="Close" onclick="closeModal('login')">✕</button>
     <div style="text-align:center;margin-bottom:22px">
       <div style="display:flex;align-items:center;gap:8px"><svg width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
   <rect width="34" height="34" rx="8" fill="#0F1520" stroke="#C9A84C" stroke-width="1.2"/>
@@ -942,6 +973,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
     <div class="form-group"><label id="ll1" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">Email</label><input type="email" id="login-email" placeholder="example@mail.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div class="form-group"><label id="ll2" data-ar="كلمة المرور" data-en="Password" data-tr="Şifre">Password</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <p style="text-align:left;margin-bottom:14px"><a href="#" style="color:var(--muted);font-size:12px" onclick="closeModal('login');openModal('forgot')" id="lgo-forgot" data-ar="نسيت كلمة المرور؟" data-en="Forgot password?" data-tr="Şifrenizi mi unuttunuz?">Forgot password?</a></p>
+    <div id="turnstile-login" style="display:none;margin-bottom:14px"></div>
     <button class="btn-primary" style="width:100%;margin-bottom:14px" onclick="doLogin()" id="login-btn-txt" data-ar="دخول" data-en="Sign In" data-tr="Giriş">Sign In</button>
     <p style="text-align:center;font-size:12px;color:var(--muted)">
       <span id="lno-acc" data-ar="ليس لديك حساب؟" data-en="No account?" data-tr="Hesabınız yok mu?">No account?</span>
@@ -953,7 +985,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
 <!-- FORGOT PASSWORD MODAL -->
 <div class="modal-overlay" id="modal-forgot">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('forgot')">✕</button>
+    <button class="modal-close" aria-label="Close" onclick="closeModal('forgot')">✕</button>
     <div style="text-align:center;margin-bottom:22px">
       <div style="display:flex;align-items:center;gap:8px"><svg width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
   <rect width="34" height="34" rx="8" fill="#0F1520" stroke="#C9A84C" stroke-width="1.2"/>
@@ -991,9 +1023,24 @@ body:not(.ltr) .footer-grid{text-align:right;}
   </div>
 </div>
 
+<!-- ✅ FIX: MFA CHALLENGE MODAL (يظهر بعد الدخول بالباسورد لو الحساب فيه 2FA مفعّلة) -->
+<div class="modal-overlay" id="modal-mfa-challenge">
+  <div class="modal">
+    <div style="text-align:center;margin-bottom:22px">
+      <h3 style="font-size:17px;font-weight:700;margin-top:4px" data-ar="أدخل كود المصادقة الثنائية" data-en="Enter your 2FA code" data-tr="2FA kodunuzu girin">أدخل كود المصادقة الثنائية</h3>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px" data-ar="افتح تطبيق المصادقة (Authenticator) وأدخل الكود المكوّن من 6 أرقام" data-en="Open your authenticator app and enter the 6-digit code" data-tr="Kimlik doğrulama uygulamanızı açın ve 6 haneli kodu girin">افتح تطبيق المصادقة وأدخل الكود المكوّن من 6 أرقام</p>
+    </div>
+    <div class="err-msg" id="mfa-login-err"></div>
+    <div class="form-group">
+      <input type="text" id="mfa-login-code" inputmode="numeric" maxlength="6" placeholder="123456" style="text-align:center;letter-spacing:6px;font-size:20px" onkeydown="if(event.key==='Enter')verifyMfaAndContinueLogin()">
+    </div>
+    <button class="btn-primary" style="width:100%" onclick="verifyMfaAndContinueLogin()" id="mfa-login-btn-txt" data-ar="تأكيد" data-en="Verify" data-tr="Doğrula">Verify</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-register">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('register')">✕</button>
+    <button class="modal-close" aria-label="Close" onclick="closeModal('register')">✕</button>
     <div style="text-align:center;margin-bottom:22px">
       <div style="display:flex;align-items:center;gap:8px"><svg width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
   <rect width="34" height="34" rx="8" fill="#0F1520" stroke="#C9A84C" stroke-width="1.2"/>
@@ -1018,6 +1065,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
       <input type="checkbox" id="reg-terms" style="margin-top:2px;accent-color:var(--gold)">
       <label for="reg-terms" id="terms-lbl" data-ar="أوافق على شروط الاستخدام وسياسة الخصوصية" data-en="I agree to Terms of Service & Privacy Policy" data-tr="Kullanım Şartlarını kabul ediyorum">I agree to Terms of Service & Privacy Policy</label>
     </div>
+    <div id="turnstile-register" style="display:none;margin-bottom:14px"></div>
     <button class="btn-primary" style="width:100%;margin-bottom:14px" onclick="doRegister()" id="reg-btn-txt" data-ar="إنشاء الحساب" data-en="Create Account" data-tr="Hesap Oluştur">Create Account</button>
     <p style="text-align:center;font-size:12px;color:var(--muted)">
       <span id="rhas-acc" data-ar="لديك حساب؟" data-en="Have an account?" data-tr="Hesabınız var mı?">Have an account?</span>
@@ -1029,7 +1077,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
 <!-- KYC MODAL -->
 <div class="modal-overlay" id="modal-kyc">
   <div class="modal" style="max-width:500px">
-    <button class="modal-close" onclick="closeModal('kyc')">✕</button>
+    <button class="modal-close" aria-label="Close" onclick="closeModal('kyc')">✕</button>
     <h3 style="font-size:18px;font-weight:800;margin-bottom:20px">🪪 <span id="kyc-modal-title" data-ar="رفع مستندات KYC" data-en="Upload KYC Documents" data-tr="KYC Belgeleri Yükle">Upload KYC Documents</span></h3>
     <div class="form-group">
       <label id="kyc-doc-type-lbl" data-ar="نوع المستند" data-en="Document Type" data-tr="Belge Türü">Document Type</label>
@@ -1050,7 +1098,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
 <!-- ── LEGAL MODALS: محتوى نموذجي عام — يُنصح باستبداله بنص مُراجَع قانونيًا قبل التشغيل الفعلي ── -->
 <div class="modal-overlay" id="modal-terms">
   <div class="modal" style="max-width:600px">
-    <button class="modal-close" onclick="closeModal('terms')">✕</button>
+    <button class="modal-close" aria-label="Close" onclick="closeModal('terms')">✕</button>
     <h3 style="font-size:18px;font-weight:800;margin-bottom:18px" data-ar="شروط الاستخدام" data-en="Terms of Service" data-tr="Kullanım Şartları">Terms of Service</h3>
     <div class="legal-body" style="font-size:13px;color:var(--muted);line-height:2;max-height:60vh;overflow-y:auto;padding-left:4px">
       <div class="legal-ar" style="display:none">
@@ -1083,7 +1131,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
 
 <div class="modal-overlay" id="modal-privacy">
   <div class="modal" style="max-width:600px">
-    <button class="modal-close" onclick="closeModal('privacy')">✕</button>
+    <button class="modal-close" aria-label="Close" onclick="closeModal('privacy')">✕</button>
     <h3 style="font-size:18px;font-weight:800;margin-bottom:18px" data-ar="سياسة الخصوصية" data-en="Privacy Policy" data-tr="Gizlilik Politikası">Privacy Policy</h3>
     <div class="legal-body" style="font-size:13px;color:var(--muted);line-height:2;max-height:60vh;overflow-y:auto;padding-left:4px">
       <div class="legal-ar" style="display:none">
@@ -1116,7 +1164,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
 
 <div class="modal-overlay" id="modal-aml">
   <div class="modal" style="max-width:600px">
-    <button class="modal-close" onclick="closeModal('aml')">✕</button>
+    <button class="modal-close" aria-label="Close" onclick="closeModal('aml')">✕</button>
     <h3 style="font-size:18px;font-weight:800;margin-bottom:18px" data-ar="سياسة مكافحة غسل الأموال (AML)" data-en="AML Policy" data-tr="AML Politikası">AML Policy</h3>
     <div class="legal-body" style="font-size:13px;color:var(--muted);line-height:2;max-height:60vh;overflow-y:auto;padding-left:4px">
       <div class="legal-ar" style="display:none">
@@ -1146,7 +1194,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
 
 <div class="modal-overlay" id="modal-risk">
   <div class="modal" style="max-width:600px">
-    <button class="modal-close" onclick="closeModal('risk')">✕</button>
+    <button class="modal-close" aria-label="Close" onclick="closeModal('risk')">✕</button>
     <h3 style="font-size:18px;font-weight:800;margin-bottom:18px" data-ar="إفصاح المخاطر" data-en="Risk Disclosure" data-tr="Risk Açıklaması">Risk Disclosure</h3>
     <div class="legal-body" style="font-size:13px;color:var(--muted);line-height:2;max-height:60vh;overflow-y:auto;padding-left:4px">
       <div class="legal-ar" style="display:none">
@@ -1186,6 +1234,13 @@ window.addEventListener('unhandledrejection', function(e){
 
 const SUPA_URL = 'https://pxcnolevnhbxmfarivon.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4Y25vbGV2bmhieG1mYXJpdm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTk3NzksImV4cCI6MjA5NTQ5NTc3OX0.Uj9hytWXYZupPDUSj3SaOWKLA6lOaZlVCKuywCfU5b8';
+
+// ✅ FIX: حماية CAPTCHA (Cloudflare Turnstile) — لما تحصل على site key من Cloudflare حطه هنا.
+// لحد ما تحطه، الـ widget مخفي والتسجيل/الدخول شغالين عادي بدون كابتشا (مفيش كسر).
+// خطوات التفعيل الكاملة: 1) سجّل دومين على https://dash.cloudflare.com/?to=/:account/turnstile واخد site key + secret key
+// 2) حط site key هنا تحت. 3) من Supabase Dashboard → Authentication → Settings → Bot and Abuse Protection
+//    فعّل Captcha protection واختار Turnstile وحط الـ secret key هناك.
+const TURNSTILE_SITE_KEY = ''; // مثال: '0x4AAAAAAAxxxxxxxxxxxxxx'
 const { createClient } = supabase;
 const db = createClient(SUPA_URL, SUPA_KEY, {
   auth: {
@@ -1195,6 +1250,24 @@ const db = createClient(SUPA_URL, SUPA_KEY, {
     storage: window.localStorage
   }
 });
+
+// ── CAPTCHA helpers (Cloudflare Turnstile) ──
+let _turnstileWidgets = {}; // widgetId per container id
+function initTurnstileWidget(containerId) {
+  if (!TURNSTILE_SITE_KEY) return; // كابتشا غير مفعّلة لسه
+  const el = document.getElementById(containerId);
+  if (!el || !window.turnstile || _turnstileWidgets[containerId]) return;
+  el.style.display = 'block';
+  _turnstileWidgets[containerId] = turnstile.render(el, { sitekey: TURNSTILE_SITE_KEY, theme: 'dark' });
+}
+function getTurnstileToken(containerId) {
+  if (!TURNSTILE_SITE_KEY) return undefined; // مفيش كابتشا = مفيش توكن، Supabase هيتجاهلها لو غير مفعّلة من جهتها
+  if (!window.turnstile || _turnstileWidgets[containerId] === undefined) return '';
+  return turnstile.getResponse(_turnstileWidgets[containerId]) || '';
+}
+function resetTurnstileWidget(containerId) {
+  if (window.turnstile && _turnstileWidgets[containerId] !== undefined) turnstile.reset(_turnstileWidgets[containerId]);
+}
 
 // ── Timeout helper: لو أي نداء Supabase علّق، نوقفه بعد 15 ثانية برسالة واضحة ──
 function withTimeout(promise, ms = 15000) {
@@ -1389,6 +1462,19 @@ const wallets = {
   'BNB':{addr:'0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335',icon:'B',color:'#f0b90b',network:'BNB Smart Chain (BEP-20)',confirm:'1-5 min',label:'BNB — BEP-20',settingsKey:'wallet_bnb'},
 };
 
+// ✅ FIX: فحص شكل عنوان المحفظة حسب الشبكة قبل قبول طلب السحب — يمنع خسارة الفلوس بسبب عنوان غلط
+// ده فحص شكلي (format) بس، مش ضمان 100% إن العنوان شغال، لكنه بيمسك أغلب أخطاء الكتابة الشائعة.
+function isValidWalletAddress(coinKey, addr) {
+  if (!addr) return false;
+  addr = addr.trim();
+  if (coinKey === 'USDT-TRC20') {
+    // عناوين TRON: تبدأ بحرف T، Base58، 34 حرف بالظبط
+    return /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(addr);
+  }
+  // USDT-BEP20, ETH, BNB كلها شبكات EVM: 0x + 40 حرف hex
+  return /^0x[a-fA-F0-9]{40}$/.test(addr);
+}
+
 // بيحمّل العناوين الحقيقية من جدول settings ويحدّث صفحة الإيداع + تبويب المحفظة.
 // لو فشل التحميل (مشكلة شبكة مثلاً) العناوين الافتراضية فوق تفضل شغالة كـ fallback، مفيش كسر في الموقع.
 async function fetchWalletsFromDB() {
@@ -1515,7 +1601,13 @@ function showPage(id, el) {
   if(id==='deposit'   && userProfile) { const m=document.getElementById('user-memo'); if(m) m.textContent=userProfile.memo||userProfile.ref_code||'---'; }
 }
 
-function openModal(type) { const m=document.getElementById('modal-'+type); if(m) m.classList.add('open'); }
+function openModal(type) {
+  const m=document.getElementById('modal-'+type);
+  if(m) m.classList.add('open');
+  // ✅ FIX: تشغيل الكابتشا (لو مفعّلة) لما مودال الدخول أو التسجيل يفتح
+  if (type === 'register') setTimeout(()=>initTurnstileWidget('turnstile-register'), 50);
+  if (type === 'login') setTimeout(()=>initTurnstileWidget('turnstile-login'), 50);
+}
 function openLegal(type) {
   // بتفتح الـ modal القانوني وبتظهر محتوى اللغة الحالية بس
   const m = document.getElementById('modal-' + type);
@@ -1535,6 +1627,8 @@ function closeModal(type) {
   const errMap = {login:'login-err', register:'reg-err', kyc:'kyc-upload-err', forgot:'forgot-err', 'reset-password':'reset-err'};
   const e = document.getElementById(errMap[type]);
   if(e) e.style.display='none';
+  if (type === 'register') resetTurnstileWidget('turnstile-register');
+  if (type === 'login') resetTurnstileWidget('turnstile-login');
 }
 document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 
@@ -1548,6 +1642,7 @@ function switchDash(el, id) {
   if(id==='d-invest') loadInvestments();
   if(id==='d-kyc') renderKYCStatus();
   if(id==='d-wallet') renderWalletDashboardList();
+  if(id==='d-security') render2FAStatus();
 }
 
 function switchDW(el, id) {
@@ -1568,6 +1663,11 @@ async function doLogin() {
   if(!email || !pass) {
     showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'}); return;
   }
+  // ✅ FIX: التحقق من الكابتشا (لو مفعّلة) قبل محاولة الدخول
+  const loginCaptchaToken = getTurnstileToken('turnstile-login');
+  if (TURNSTILE_SITE_KEY && !loginCaptchaToken) {
+    showErr(errEl,{ar:'من فضلك أكمل اختبار الكابتشا',en:'Please complete the captcha',tr:'Lütfen captchayı tamamlayın'}); return;
+  }
 
   if(btn) { btn.textContent = '⏳'; btn.disabled = true; }
   _authHandled = true;
@@ -1575,7 +1675,7 @@ async function doLogin() {
   try {
     // ── STEP 1: تسجيل الدخول ──
     if(btn) btn.textContent = '1/2 Signing in...';
-    const { data, error } = await withTimeout(db.auth.signInWithPassword({ email, password: pass }));
+    const { data, error } = await withTimeout(db.auth.signInWithPassword({ email, password: pass, options: { captchaToken: loginCaptchaToken } }));
 
     if(error) {
       const m = error.message || '';
@@ -1588,10 +1688,28 @@ async function doLogin() {
       showErr(errEl, friendly);
       if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
       _authHandled = false;
+      resetTurnstileWidget('turnstile-login');
       return;
     }
 
     currentUser = data.user;
+
+    // ✅ FIX: التحقق من المصادقة الثنائية (2FA) لو مفعّلة على الحساب
+    try {
+      const { data: aal } = await db.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal && aal.nextLevel === 'aal2' && aal.currentLevel !== aal.nextLevel) {
+        const { data: factorsData } = await db.auth.mfa.listFactors();
+        const factor = (factorsData?.totp || []).find(f => f.status === 'verified');
+        if (factor) {
+          _pendingMfaFactorId = factor.id;
+          _authHandled = false;
+          if(btn) { btn.textContent = {ar:'دخول',en:'Sign In',tr:'Giriş'}[lang]; btn.disabled = false; }
+          closeModal('login');
+          openModal('mfa-challenge');
+          return;
+        }
+      }
+    } catch (mfaCheckErr) { console.error('mfa check error:', mfaCheckErr); }
 
     // ── STEP 2: جلب الـ profile ──
     if(btn) btn.textContent = '2/2 Loading profile...';
@@ -1641,6 +1759,54 @@ async function doLogin() {
   }
 }
 
+// ✅ FIX: تأكيد كود المصادقة الثنائية بعد الدخول بالباسورد، ثم استكمال نفس مسار الدخول (جلب/إنشاء profile + afterLogin)
+let _pendingMfaFactorId = null;
+async function verifyMfaAndContinueLogin() {
+  const code = document.getElementById('mfa-login-code').value.trim();
+  const errEl = document.getElementById('mfa-login-err');
+  const btn = document.getElementById('mfa-login-btn-txt');
+  errEl.style.display = 'none';
+  if (!/^\d{6}$/.test(code)) {
+    showErr(errEl, {ar:'أدخل كود مكوّن من 6 أرقام', en:'Enter a 6-digit code', tr:'6 haneli bir kod girin'}); return;
+  }
+  if (!_pendingMfaFactorId || !currentUser) return;
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  try {
+    const { data: ch, error: chErr } = await db.auth.mfa.challenge({ factorId: _pendingMfaFactorId });
+    if (chErr) { showErr(errEl, genericErrMsg()); if(btn){btn.textContent={ar:'تأكيد',en:'Verify',tr:'Doğrula'}[lang];btn.disabled=false;} return; }
+    const { error: vErr } = await db.auth.mfa.verify({ factorId: _pendingMfaFactorId, challengeId: ch.id, code });
+    if (vErr) {
+      showErr(errEl, {ar:'الكود غير صحيح، حاول مرة أخرى', en:'Incorrect code, try again', tr:'Kod yanlış, tekrar deneyin'});
+      if(btn){btn.textContent={ar:'تأكيد',en:'Verify',tr:'Doğrula'}[lang];btn.disabled=false;}
+      return;
+    }
+    document.getElementById('mfa-login-code').value = '';
+    closeModal('mfa-challenge');
+
+    // ── استكمال جلب/إنشاء الـ profile وفتح الداشبورد ──
+    const { data: prof, error: profErr } = await withTimeout(db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle());
+    if (profErr) { console.error('mfa/profile fetch error:', profErr); showToast(genericErrMsg()[lang]||genericErrMsg().en,'err'); return; }
+    if (prof) {
+      userProfile = prof;
+    } else {
+      const userName = currentUser.user_metadata?.name || currentUser.email.split('@')[0];
+      const refCode  = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
+      const { data: newP, error: insErr } = await withTimeout(db.from('users').insert({
+        auth_id: currentUser.id, name: userName, email: currentUser.email,
+        ref_code: refCode, balance: 0, status: 'active', kyc_status: 'none'
+      }).select().single());
+      if (insErr) { console.error('mfa/profile insert error:', insErr); showToast(genericErrMsg()[lang]||genericErrMsg().en,'err'); return; }
+      userProfile = newP;
+    }
+    afterLogin();
+  } catch (e) {
+    console.error('verifyMfaAndContinueLogin exception:', e);
+    showErr(errEl, genericErrMsg());
+  } finally {
+    if (btn) { btn.textContent = {ar:'تأكيد',en:'Verify',tr:'Doğrula'}[lang]; btn.disabled = false; }
+  }
+}
+
 
 async function doRegister() {
   const name  = document.getElementById('reg-name').value.trim();
@@ -1667,6 +1833,11 @@ async function doRegister() {
   if(!siteSettings.registration_open) {
     showErr(errEl,{ar:'التسجيل مغلق مؤقتًا، حاول لاحقًا',en:'Registration is temporarily closed',tr:'Kayıt geçici olarak kapalı'}); return;
   }
+  // ✅ FIX: التحقق من الكابتشا (لو مفعّلة)
+  const captchaToken = getTurnstileToken('turnstile-register');
+  if (TURNSTILE_SITE_KEY && !captchaToken) {
+    showErr(errEl,{ar:'من فضلك أكمل اختبار الكابتشا',en:'Please complete the captcha',tr:'Lütfen captchayı tamamlayın'}); return;
+  }
 
   if(btn) { btn.textContent = '⏳'; btn.disabled = true; }
   _authHandled = true;
@@ -1674,7 +1845,7 @@ async function doRegister() {
   try {
     // ── STEP 1: إنشاء الحساب في Auth ──
     if(btn) btn.textContent = '1/3 Creating auth...';
-    const { data, error } = await withTimeout(db.auth.signUp({ email, password: pass, options: { data: { name, ref_code: ref||null } } }));
+    const { data, error } = await withTimeout(db.auth.signUp({ email, password: pass, options: { data: { name, ref_code: ref||null }, captchaToken } }));
 
     if(error) {
       const m = error.message || '';
@@ -1685,6 +1856,7 @@ async function doRegister() {
       showErr(errEl, friendly);
       if(btn) { btn.textContent = {ar:'إنشاء الحساب',en:'Create Account',tr:'Hesap Oluştur'}[lang]; btn.disabled = false; }
       _authHandled = false;
+      resetTurnstileWidget('turnstile-register');
       return;
     }
 
@@ -1787,6 +1959,7 @@ function closeUserDropdown() {
 }
 
 async function doLogout() {
+  clearTimeout(_idleTimer); // ✅ FIX: وقف عداد الخمول لما اليوزر يخرج
   _authHandled = true; // نتعامل مع الخروج هنا
   await db.auth.signOut();
   _authHandled = false;
@@ -1801,6 +1974,24 @@ async function doLogout() {
   showPage('home', document.querySelector('.nav-links a'));
   showToast({ar:'تم تسجيل الخروج بنجاح',en:'Logged out successfully',tr:'Başarıyla çıkış yapıldı'}[lang]);
 }
+
+// ── AUTO-LOGOUT ON INACTIVITY ──
+// ✅ FIX: خروج تلقائي بعد 15 دقيقة من عدم النشاط — حماية لحساب اليوزر لو نسي الجهاز شغال (نت كافيه مثلاً)
+let _idleTimer = null;
+const IDLE_LIMIT_MS = 15 * 60 * 1000;
+function resetIdleTimer() {
+  if (!isLoggedIn) return;
+  clearTimeout(_idleTimer);
+  _idleTimer = setTimeout(() => {
+    if (isLoggedIn) {
+      showToast({ar:'⏳ تم تسجيل خروجك تلقائيًا لعدم النشاط',en:'⏳ Logged out automatically due to inactivity',tr:'⏳ Hareketsizlik nedeniyle otomatik çıkış yapıldı'}[lang]||'Logged out due to inactivity','err');
+      doLogout();
+    }
+  }, IDLE_LIMIT_MS);
+}
+['mousemove','keydown','mousedown','click','scroll','touchstart'].forEach(ev => {
+  document.addEventListener(ev, () => { if (isLoggedIn) resetIdleTimer(); }, {passive:true});
+});
 
 async function fetchProfile(retries = 3, delay = 500) {
   if(!currentUser) { console.warn('fetchProfile: no currentUser'); return; }
@@ -1830,6 +2021,7 @@ async function fetchProfile(retries = 3, delay = 500) {
 function afterLogin() {
   isLoggedIn = true;
   document.body.classList.add('logged-in');
+  resetIdleTimer(); // ✅ FIX: تشغيل عداد الخمول لما اليوزر يسجل دخول
 
   // شيل الـ overlay فوراً
   const _ov = document.getElementById('session-check-overlay');
@@ -2248,7 +2440,13 @@ async function submitWithdrawal() {
   if(!userProfile){openModal('login');return;}
   const addr=document.getElementById('wd-addr').value.trim();
   const amount=parseFloat(document.getElementById('wd-amount').value);
+  const coin=document.getElementById('wd-coin').value;
   if(!addr){showToast(lang==='ar'?'أدخل عنوان محفظتك':lang==='tr'?'Cüzdan adresinizi girin':'Enter wallet address','err');return;}
+  // ✅ FIX: التحقق من شكل عنوان المحفظة حسب الشبكة قبل القبول — يمنع خسارة الفلوس بسبب عنوان غلط
+  if(!isValidWalletAddress(coin, addr)){
+    showToast(lang==='ar'?'⚠️ عنوان المحفظة غير صحيح لهذه الشبكة، تحقق منه وحاول مرة أخرى':lang==='tr'?'⚠️ Bu ağ için cüzdan adresi geçersiz, kontrol edip tekrar deneyin':'⚠️ Wallet address looks invalid for this network. Please check and try again','err');
+    return;
+  }
   if(!amount||amount<siteSettings.min_withdrawal){showToast(lang==='ar'?`الحد الأدنى للسحب $${siteSettings.min_withdrawal}`:lang==='tr'?`Minimum çekim $${siteSettings.min_withdrawal}`:`Minimum withdrawal $${siteSettings.min_withdrawal}`,'err');return;}
   // ✅ FIX: التحقق من الحد الأقصى للسحب
   if(amount > siteSettings.max_withdrawal){showToast(lang==='ar'?`الحد الأقصى للسحب $${siteSettings.max_withdrawal.toLocaleString()}`:lang==='tr'?`Maksimum çekim $${siteSettings.max_withdrawal.toLocaleString()}`:`Maximum withdrawal $${siteSettings.max_withdrawal.toLocaleString()}`,'err');return;}
@@ -2272,7 +2470,6 @@ async function submitWithdrawal() {
   }
 
   try {
-    const coin=document.getElementById('wd-coin').value;
     await db.from('withdrawals').insert({user_id:userProfile.id,amount,coin:coin.split('-')[0],network:coin,wallet_address:addr,status:'pending'});
     await db.from('notifications').insert({user_id:userProfile.id,title:'📤 '+(lang==='ar'?'تم استلام طلب سحبك':lang==='tr'?'Çekim talebi alındı':'Withdrawal request received'),body:(lang==='ar'?'طلب سحب $':lang==='tr'?'Çekim talebi $':'Withdrawal request $')+amount+' '+(lang==='ar'?'قيد المراجعة':lang==='tr'?'inceleniyor':'under review'),type:'info'});
     showToast(lang==='ar'?'✓ تم إرسال طلب السحب':lang==='tr'?'✓ Çekim talebi gönderildi':'✓ Withdrawal request sent');
@@ -2327,6 +2524,80 @@ async function changeMyPassword(){
 }
 
 // ── نسيت كلمة المرور (إرسال رابط إعادة تعيين بالإيميل) ──
+
+// ✅ FIX: المصادقة الثنائية (2FA) — Supabase Auth MFA (TOTP)
+let _mfaPendingFactorId = null;
+
+async function render2FAStatus() {
+  const offBox = document.getElementById('mfa-status-off');
+  const onBox = document.getElementById('mfa-status-on');
+  const enrollBox = document.getElementById('mfa-enroll-box');
+  if (!offBox || !onBox) return;
+  try {
+    const { data, error } = await db.auth.mfa.listFactors();
+    if (error) { console.error('listFactors error:', error); return; }
+    const verified = (data?.totp || []).filter(f => f.status === 'verified');
+    if (verified.length > 0) {
+      offBox.style.display = 'none'; onBox.style.display = ''; enrollBox.style.display = 'none';
+    } else {
+      offBox.style.display = ''; onBox.style.display = 'none';
+    }
+  } catch (e) { console.error('render2FAStatus exception:', e); }
+}
+
+async function start2FAEnrollment() {
+  const enrollBox = document.getElementById('mfa-enroll-box');
+  const errEl = document.getElementById('mfa-err');
+  if (errEl) errEl.style.display = 'none';
+  try {
+    const { data, error } = await db.auth.mfa.enroll({ factorType: 'totp' });
+    if (error) { console.error('mfa enroll error:', error); showToast(genericErrMsg()[lang] || genericErrMsg().en, 'err'); return; }
+    _mfaPendingFactorId = data.id;
+    document.getElementById('mfa-qr-wrap').innerHTML = data.totp.qr_code; // SVG جاهزة من Supabase
+    document.getElementById('mfa-secret').textContent = data.totp.secret;
+    document.getElementById('mfa-status-off').style.display = 'none';
+    enrollBox.style.display = '';
+  } catch (e) { console.error('start2FAEnrollment exception:', e); }
+}
+
+async function confirm2FAEnrollment() {
+  const code = document.getElementById('mfa-verify-code').value.trim();
+  const errEl = document.getElementById('mfa-err');
+  errEl.style.display = 'none';
+  if (!/^\d{6}$/.test(code)) {
+    showErr(errEl, {ar:'أدخل كود مكوّن من 6 أرقام', en:'Enter a 6-digit code', tr:'6 haneli bir kod girin'}); return;
+  }
+  if (!_mfaPendingFactorId) return;
+  try {
+    const { data: ch, error: chErr } = await db.auth.mfa.challenge({ factorId: _mfaPendingFactorId });
+    if (chErr) { showErr(errEl, genericErrMsg()); return; }
+    const { error: vErr } = await db.auth.mfa.verify({ factorId: _mfaPendingFactorId, challengeId: ch.id, code });
+    if (vErr) { showErr(errEl, {ar:'الكود غير صحيح، حاول مرة أخرى', en:'Incorrect code, try again', tr:'Kod yanlış, tekrar deneyin'}); return; }
+    document.getElementById('mfa-verify-code').value = '';
+    showToast(lang==='ar'?'✓ تم تفعيل المصادقة الثنائية بنجاح':lang==='tr'?'✓ İki adımlı doğrulama etkinleştirildi':'✓ Two-factor authentication enabled');
+    render2FAStatus();
+  } catch (e) { console.error('confirm2FAEnrollment exception:', e); showErr(errEl, genericErrMsg()); }
+}
+
+function cancel2FAEnrollment() {
+  if (_mfaPendingFactorId) { db.auth.mfa.unenroll({ factorId: _mfaPendingFactorId }).catch(()=>{}); }
+  _mfaPendingFactorId = null;
+  document.getElementById('mfa-enroll-box').style.display = 'none';
+  document.getElementById('mfa-verify-code').value = '';
+  render2FAStatus();
+}
+
+async function disable2FA() {
+  try {
+    const { data, error } = await db.auth.mfa.listFactors();
+    if (error) { console.error('listFactors error:', error); return; }
+    const verified = (data?.totp || []).filter(f => f.status === 'verified');
+    for (const f of verified) { await db.auth.mfa.unenroll({ factorId: f.id }); }
+    showToast(lang==='ar'?'✓ تم إلغاء تفعيل المصادقة الثنائية':lang==='tr'?'✓ İki adımlı doğrulama devre dışı bırakıldı':'✓ Two-factor authentication disabled');
+    render2FAStatus();
+  } catch (e) { console.error('disable2FA exception:', e); }
+}
+
 async function sendPasswordReset(){
   const email = document.getElementById('forgot-email').value.trim();
   const errEl = document.getElementById('forgot-err');
