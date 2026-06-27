@@ -46,7 +46,7 @@ body:not(.auth-ready) #page-dashboard,
 body:not(.auth-ready) #page-deposit,
 body:not(.auth-ready) #page-referral { visibility: hidden; }
 
-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:68px;background:rgba(8,12,18,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);;overflow:hidden;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:68px;background:rgba(8,12,18,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
 .logo{font-family:Georgia,serif;font-size:20px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:10px;letter-spacing:2px;}
 .logo-icon{width:34px;height:34px;display:flex;align-items:center;justify-content:center;}
 .nav-links{display:flex;gap:2px;list-style:none;flex-wrap:nowrap;overflow:hidden;flex:1;justify-content:center;}
@@ -321,24 +321,24 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <span id="user-name-nav" style="font-size:13px;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">User</span>
         <span style="color:var(--muted);font-size:10px;margin-right:2px;">▾</span>
       </div>
-      <!-- dropdown -->
-      <div id="user-dropdown" style="display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;min-width:200px;background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:8px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
-        <div onclick="showPage('dashboard',null);closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
+      <!-- dropdown — fixed لتجنب حصر الـ overflow في الـ nav -->
+      <div id="user-dropdown" style="display:none;position:fixed;top:76px;min-width:220px;background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:8px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,0.6);backdrop-filter:blur(12px);">
+        <div onclick="showPage('dashboard',null);closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
           <span style="font-size:15px">📊</span>
           <span style="font-size:13px" data-ar="لوحتي" data-en="My Dashboard" data-tr="Panelim">My Dashboard</span>
         </div>
-        <div onclick="showPage('deposit',null);closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
+        <div onclick="showPage('deposit',null);closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
           <span style="font-size:15px">💳</span>
           <span style="font-size:13px" data-ar="إيداع / سحب" data-en="Deposit / Withdraw" data-tr="Yatırım / Çekim">Deposit / Withdraw</span>
         </div>
-        <div onclick="showPage('referral',null);closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
+        <div onclick="showPage('referral',null);closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
           <span style="font-size:15px">🎁</span>
           <span style="font-size:13px" data-ar="برنامج الإحالة" data-en="Referral Program" data-tr="Referans Programı">Referral Program</span>
         </div>
         <div style="height:1px;background:var(--border);margin:6px 4px"></div>
-        <div style="padding:6px 12px;font-size:11px;color:var(--muted)" id="user-balance-nav">Balance: —</div>
+        <div style="padding:6px 14px;font-size:11px;color:var(--muted)" id="user-balance-nav">Balance: —</div>
         <div style="height:1px;background:var(--border);margin:6px 4px"></div>
-        <div onclick="doLogout();closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:var(--red);transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
+        <div onclick="doLogout();closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;color:var(--red);transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
           <span style="font-size:15px">🚪</span>
           <span style="font-size:13px" data-ar="تسجيل الخروج" data-en="Sign Out" data-tr="Çıkış Yap">Sign Out</span>
         </div>
@@ -648,6 +648,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <div class="sidebar-item active" onclick="switchDash(this,'d-overview')" data-ar="📊 نظرة عامة" data-en="📊 Overview" data-tr="📊 Genel Bakış">📊 نظرة عامة</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-wallet')" data-ar="💼 المحفظة" data-en="💼 Wallet" data-tr="💼 Cüzdan">💼 المحفظة</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-history')" data-ar="📋 السجل" data-en="📋 History" data-tr="📋 Geçmiş">📋 السجل</div>
+        <div class="sidebar-item" onclick="switchDash(this,'d-profits-log')" data-ar="💰 الأرباح اليومية" data-en="💰 Daily Profits" data-tr="💰 Günlük Karlar">💰 الأرباح اليومية</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-kyc')" data-ar="🪪 KYC" data-en="🪪 KYC" data-tr="🪪 KYC">🪪 KYC</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-notif')" data-ar="🔔 الإشعارات" data-en="🔔 Notifications" data-tr="🔔 Bildirimler">🔔 الإشعارات</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-invest')" data-ar="💹 استثماراتي" data-en="💹 My Investments" data-tr="💹 Yatırımlarım">💹 استثماراتي</div>
@@ -695,6 +696,29 @@ body:not(.ltr) .footer-grid{text-align:right;}
         </div>
         <div id="d-notif" style="display:none"><div class="panel"><div class="panel-head" id="notif-h" data-ar="الإشعارات" data-en="Notifications" data-tr="Bildirimler">الإشعارات</div><div id="notif-list"></div></div></div>
         <div id="d-invest" style="display:none"><div class="panel"><div class="panel-head" id="inv-h" data-ar="استثماراتي" data-en="My Investments" data-tr="Yatırımlarım">استثماراتي</div><div id="inv-list"></div></div></div>
+        <div id="d-profits-log" style="display:none">
+          <div class="panel">
+            <div class="panel-head">
+              <span id="dpl-h" data-ar="💰 سجل الأرباح اليومية" data-en="💰 Daily Profits Log" data-tr="💰 Günlük Kar Kaydı">💰 سجل الأرباح اليومية</span>
+            </div>
+            <!-- Summary strip -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px" id="dp-summary-grid">
+              <div style="background:var(--dark);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-ar="أرباح اليوم" data-en="Today's Profit" data-tr="Bugünkü Kar">أرباح اليوم</div>
+                <div style="font-size:20px;font-weight:800;color:var(--green);font-family:var(--mono)" id="my-dp-today">—</div>
+              </div>
+              <div style="background:var(--dark);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-ar="هذا الأسبوع" data-en="This Week" data-tr="Bu Hafta">هذا الأسبوع</div>
+                <div style="font-size:20px;font-weight:800;color:var(--gold);font-family:var(--mono)" id="my-dp-week">—</div>
+              </div>
+              <div style="background:var(--dark);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-ar="هذا الشهر" data-en="This Month" data-tr="Bu Ay">هذا الشهر</div>
+                <div style="font-size:20px;font-weight:800;color:var(--blue);font-family:var(--mono)" id="my-dp-month">—</div>
+              </div>
+            </div>
+            <div id="my-profits-list"><div style="color:var(--muted);text-align:center;padding:30px">⏳</div></div>
+          </div>
+        </div>
         <div id="d-security" style="display:none">
           <div class="panel" style="max-width:420px">
             <div class="panel-head" id="sec-h" data-ar="تغيير كلمة المرور" data-en="Change Password" data-tr="Şifre Değiştir">تغيير كلمة المرور</div>
@@ -1643,6 +1667,7 @@ function switchDash(el, id) {
   if(id==='d-kyc') renderKYCStatus();
   if(id==='d-wallet') renderWalletDashboardList();
   if(id==='d-security') render2FAStatus();
+  if(id==='d-profits-log') loadMyDailyProfits();
 }
 
 function switchDW(el, id) {
@@ -1931,26 +1956,44 @@ async function doRegister() {
 
 function toggleUserDropdown() {
   const dd = document.getElementById('user-dropdown');
+  const btn = document.getElementById('user-menu-btn');
   if (!dd) return;
   const isOpen = dd.style.display === 'block';
-  dd.style.display = isOpen ? 'none' : 'block';
-  if (!isOpen) {
-    // تحديث الرصيد في الـ dropdown
-    const balEl = document.getElementById('user-balance-nav');
-    if (balEl && userProfile) {
-      const bal = parseFloat(userProfile.balance || 0);
-      balEl.textContent = ({ar:'الرصيد: $', en:'Balance: $', tr:'Bakiye: $'}[lang]||'Balance: $') + bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-    }
-    // إغلاق لو ضغط برا
-    setTimeout(() => {
-      document.addEventListener('click', function _close(e) {
-        if (!document.getElementById('user-menu')?.contains(e.target)) {
-          closeUserDropdown();
-          document.removeEventListener('click', _close);
-        }
-      });
-    }, 10);
+  if (isOpen) {
+    dd.style.display = 'none';
+    return;
   }
+  // حساب موضع الـ dropdown بناءً على موضع الزرار
+  if (btn) {
+    const rect = btn.getBoundingClientRect();
+    const isRtl = document.body.classList.contains('ltr') === false;
+    dd.style.top = (rect.bottom + 8) + 'px';
+    if (isRtl) {
+      // RTL: الـ dropdown يمتد من يمين الزرار
+      dd.style.right = (window.innerWidth - rect.right) + 'px';
+      dd.style.left = 'auto';
+    } else {
+      // LTR: الـ dropdown يمتد من يسار الزرار
+      dd.style.left = rect.left + 'px';
+      dd.style.right = 'auto';
+    }
+  }
+  dd.style.display = 'block';
+  // تحديث الرصيد في الـ dropdown
+  const balEl = document.getElementById('user-balance-nav');
+  if (balEl && userProfile) {
+    const bal = parseFloat(userProfile.balance || 0);
+    balEl.textContent = ({ar:'الرصيد: $', en:'Balance: $', tr:'Bakiye: $'}[lang]||'Balance: $') + bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  // إغلاق لو ضغط برا
+  setTimeout(() => {
+    document.addEventListener('click', function _close(e) {
+      if (!document.getElementById('user-menu')?.contains(e.target) && !document.getElementById('user-dropdown')?.contains(e.target)) {
+        closeUserDropdown();
+        document.removeEventListener('click', _close);
+      }
+    });
+  }, 10);
 }
 
 function closeUserDropdown() {
@@ -2065,9 +2108,11 @@ function afterLogin() {
       if(m)  m.textContent  = userProfile.memo || userProfile.ref_code || '---';
       if(r)  r.textContent  = 'https://crysanto.io/ref/' + (userProfile.ref_code || '---');
       db.rpc('update_last_seen').catch(()=>{});
+      trackDeviceLogin();
     });
   } else {
     db.rpc('update_last_seen').catch(()=>{});
+    trackDeviceLogin();
   }
 
   // lang buttons
@@ -2427,7 +2472,12 @@ async function submitDeposit() {
       }
     }
 
-    await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,tx_hash:hash,status:'pending',plan_id:planId});
+    // ✅ NEW: فحص الـ risk score قبل الإيداع
+    const { data: depRisk } = await db.rpc('check_transaction_risk', {
+      p_user_id: userProfile.id, p_type: 'deposit', p_amount: amount
+    }).catch(() => ({ data: null }));
+
+    await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,tx_hash:hash,status:'pending',plan_id:planId,risk_score:depRisk?.[0]?.risk_score||0});
     await db.from('notifications').insert({user_id:userProfile.id,title:'📥 '+(lang==='ar'?'تم استلام طلب إيداعك':lang==='tr'?'Yatırım talebi alındı':'Deposit request received'),body:(lang==='ar'?'طلب إيداع $':lang==='tr'?'Yatırım talebi $':'Deposit request $')+amount+' '+(lang==='ar'?'قيد المراجعة':lang==='tr'?'inceleniyor':'under review'),type:'info'});
     showToast(lang==='ar'?'✓ تم إرسال طلب الإيداع بنجاح':lang==='tr'?'✓ Yatırım talebi gönderildi':'✓ Deposit request submitted');
     document.getElementById('dep-hash').value='';
@@ -2470,7 +2520,14 @@ async function submitWithdrawal() {
   }
 
   try {
-    await db.from('withdrawals').insert({user_id:userProfile.id,amount,coin:coin.split('-')[0],network:coin,wallet_address:addr,status:'pending'});
+    // ✅ NEW: فحص الـ risk score قبل السحب
+    const { data: riskData } = await db.rpc('check_transaction_risk', {
+      p_user_id: userProfile.id, p_type: 'withdrawal', p_amount: amount
+    }).catch(() => ({ data: null }));
+    if (riskData && riskData[0]?.risk_score >= 75) {
+      showToast(lang==='ar'?'⚠️ طلب السحب قيد المراجعة الأمنية، سيتم معالجته خلال 24 ساعة':lang==='tr'?'⚠️ Çekim talebi güvenlik incelemesinde, 24 saat içinde işlenecek':'⚠️ Withdrawal is under security review, will be processed within 24 hours');
+    }
+    await db.from('withdrawals').insert({user_id:userProfile.id,amount,coin:coin.split('-')[0],network:coin,wallet_address:addr,status:'pending',risk_score:riskData?.[0]?.risk_score||0});
     await db.from('notifications').insert({user_id:userProfile.id,title:'📤 '+(lang==='ar'?'تم استلام طلب سحبك':lang==='tr'?'Çekim talebi alındı':'Withdrawal request received'),body:(lang==='ar'?'طلب سحب $':lang==='tr'?'Çekim talebi $':'Withdrawal request $')+amount+' '+(lang==='ar'?'قيد المراجعة':lang==='tr'?'inceleniyor':'under review'),type:'info'});
     showToast(lang==='ar'?'✓ تم إرسال طلب السحب':lang==='tr'?'✓ Çekim talebi gönderildi':'✓ Withdrawal request sent');
     document.getElementById('wd-addr').value='';
@@ -2905,6 +2962,132 @@ function init(){
   setInterval(updateLiveStats, 60000);
 }
 document.addEventListener('DOMContentLoaded', init);
+
+// ══════════════════════════════════════════════════════════════
+// ✅ NEW: Device Tracking — يُشغَّل بعد كل login ناجح
+// ══════════════════════════════════════════════════════════════
+async function trackDeviceLogin() {
+  if (!userProfile) return;
+  try {
+    const fp = await getDeviceFingerprint();
+    const ua = navigator.userAgent;
+    const browser = /Chrome/.test(ua) ? 'Chrome' : /Firefox/.test(ua) ? 'Firefox' : /Safari/.test(ua) ? 'Safari' : 'Other';
+    const os = /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'macOS' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : 'Other';
+    const deviceType = /Mobi|Android/i.test(ua) ? 'mobile' : 'desktop';
+
+    const { data } = await db.rpc('track_user_device', {
+      p_user_id: userProfile.id,
+      p_fingerprint: fp,
+      p_ip: 'client', // الـ IP بيتحدد من السيرفر في الـ RPC
+      p_device_name: `${deviceType} — ${browser}`,
+      p_browser: browser,
+      p_os: os
+    });
+
+    // لو جهاز جديد وـ risk عالي — بلّغ المستخدم
+    if (data?.[0]?.is_new_device && data[0].risk_score >= 30) {
+      setTimeout(() => {
+        showToast({
+          ar: '🔔 تم تسجيل دخول من جهاز جديد — إذا لم تكن أنت، غيّر كلمة مرورك فوراً',
+          en: '🔔 New device login detected — if this wasn\'t you, change your password immediately',
+          tr: '🔔 Yeni cihazdan giriş algılandı — bu siz değilseniz şifrenizi hemen değiştirin'
+        }[lang] || '🔔 New device login detected', 'err');
+      }, 2000);
+    }
+  } catch(e) { /* silent */ }
+}
+
+// Device fingerprint بسيط من معلومات المتصفح
+function getDeviceFingerprint() {
+  const components = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width + 'x' + screen.height,
+    screen.colorDepth,
+    new Date().getTimezoneOffset(),
+    navigator.hardwareConcurrency || 0,
+    navigator.platform || ''
+  ].join('|');
+
+  // Simple hash
+  let hash = 0;
+  for (let i = 0; i < components.length; i++) {
+    const char = components.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return 'fp_' + Math.abs(hash).toString(36);
+}
+
+// ══════════════════════════════════════════════════════════════
+// ✅ NEW: My Daily Profits — قسم الأرباح اليومية للمستخدم
+// ══════════════════════════════════════════════════════════════
+async function loadMyDailyProfits() {
+  if (!userProfile) return;
+  const listEl = document.getElementById('my-profits-list');
+  if (!listEl) return;
+  listEl.innerHTML = `<div style="color:var(--muted);text-align:center;padding:30px">⏳ ${lang==='ar'?'جاري التحميل...':lang==='tr'?'Yükleniyor...':'Loading...'}</div>`;
+
+  try {
+    const { data, error } = await db
+      .from('daily_profits')
+      .select('*, investments(plan_name, daily_rate)')
+      .eq('user_id', userProfile.id)
+      .order('profit_date', { ascending: false })
+      .limit(60);
+
+    if (error) throw error;
+
+    if (!data || !data.length) {
+      listEl.innerHTML = `<div style="color:var(--muted);text-align:center;padding:30px;font-size:13px">
+        ${lang==='ar'?'لا توجد أرباح مسجلة بعد — ستظهر هنا بعد توزيع أول ربح يومي':lang==='tr'?'Henüz kar kaydı yok':'No profit records yet'}
+      </div>`;
+      // reset stats
+      ['my-dp-today','my-dp-week','my-dp-month'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = '$0'; });
+      return;
+    }
+
+    // احسب الإجماليات
+    const today = new Date().toISOString().slice(0,10);
+    const weekAgo = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
+    const monthStart = new Date().toISOString().slice(0,7) + '-01';
+
+    let todayTotal = 0, weekTotal = 0, monthTotal = 0;
+    data.forEach(dp => {
+      const amt = parseFloat(dp.amount || 0);
+      if (dp.profit_date === today) todayTotal += amt;
+      if (dp.profit_date >= weekAgo) weekTotal += amt;
+      if (dp.profit_date >= monthStart) monthTotal += amt;
+    });
+
+    const fmt = v => '$' + v.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+    const setEl = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    setEl('my-dp-today', fmt(todayTotal));
+    setEl('my-dp-week', fmt(weekTotal));
+    setEl('my-dp-month', fmt(monthTotal));
+
+    // رسم القائمة
+    listEl.innerHTML = data.map(dp => {
+      const plan = dp.investments?.plan_name || '—';
+      const rate = dp.investments?.daily_rate;
+      const amt = parseFloat(dp.amount || 0);
+      const isToday = dp.profit_date === today;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--dark3);border-radius:8px;border:1px solid ${isToday ? 'var(--gold)' : 'var(--border)'};margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:20px">💰</span>
+          <div>
+            <div style="font-size:13px;font-weight:600">${escapeHtml(plan)}${rate ? ` · ${rate}%` : ''}</div>
+            <div style="font-size:11px;color:var(--muted)">${dp.profit_date || '—'}${isToday ? ' · <span style="color:var(--gold)">اليوم</span>' : ''}</div>
+          </div>
+        </div>
+        <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--green)">+${fmt(amt)}</div>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    listEl.innerHTML = `<div style="color:var(--red);text-align:center;padding:20px;font-size:13px">✗ ${escapeHtml(e.message)}</div>`;
+  }
+}
 </script>
 </body>
 </html>
