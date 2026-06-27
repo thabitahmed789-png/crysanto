@@ -599,7 +599,11 @@ body.ltr .toast{left:auto;right:24px;}
 
     <!-- ══ NOTIFICATIONS ══ -->
     <div id="s-notifs" class="section-wrap" style="display:none">
-      <div class="section-title" id="notif-send-title">إرسال الإشعارات</div>
+      <div class="section-title" id="notif-send-title">إرسال الإشعارات
+        <button class="act-btn" onclick="bulkMarkNotificationsRead()" style="font-size:11px;margin-right:auto" id="bulk-read-btn">
+          ✓ ${lang==='ar'?'تعليم الكل كمقروء':'Mark All Read'} <span id="unread-notif-count" style="background:var(--red);color:#fff;border-radius:100px;padding:1px 6px;font-size:10px;margin-right:4px"></span>
+        </button>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
         <div class="panel">
           <div class="panel-head"><span id="notif-compose-title">إنشاء إشعار</span></div>
@@ -1136,6 +1140,7 @@ function initApp(){
   loadRealOverviewStats();
   setupRealtime();
   loadSecurityBadge();
+  loadUnreadNotifCount();
 }
 
 // ── OVERVIEW ──
@@ -2610,9 +2615,16 @@ function renderRealUsers(data) {
 }
 
 async function toggleUserBlock(userId, newStatus) {
-  const { error } = await sdb.from('users').update({ status: newStatus }).eq('id', userId);
-  if (error) { showToast((lang==='ar'?'✗ فشل تنفيذ العملية: ':'✗ Failed: ')+error.message); console.error('toggleUserBlock error:', error); return; }
-  showToast(newStatus==='blocked' ? (lang==='ar'?'تم حظر المستخدم':'User blocked') : (lang==='ar'?'تم رفع الحظر':'User unblocked'));
+  const reason = newStatus === 'blocked'
+    ? (prompt(lang==='ar'?'سبب الحظر (اختياري):':'Block reason (optional):') || 'Blocked by admin')
+    : (lang==='ar'?'تم رفع الحظر بواسطة الأدمن':'Unblocked by admin');
+  const { data, error } = await sdb.rpc('admin_set_account_status', {
+    p_user_id: userId, p_status: newStatus, p_reason: reason
+  });
+  if(error) { showToast((lang==='ar'?'✗ فشل: ':'✗ Failed: ') + error.message); return; }
+  showToast(newStatus==='blocked'
+    ? (lang==='ar'?'✓ تم حظر المستخدم':'✓ User blocked')
+    : (lang==='ar'?'✓ تم رفع الحظر':'✓ User unblocked'));
   await loadRealUsers();
 }
 
@@ -3252,5 +3264,36 @@ async function runDailyProfits(){
   } finally {
     if(btn){ btn.disabled = false; btn.textContent = '▶ ' + (lang==='ar'?'تشغيل توزيع الأرباح الآن':'Run Daily Profits Now'); }
   }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ✅ NEW: Bulk mark notifications as read
+// ══════════════════════════════════════════════════════════════
+async function bulkMarkNotificationsRead(userId) {
+  const btn = document.getElementById('bulk-read-btn');
+  if(btn) { btn.disabled = true; }
+  try {
+    const params = userId ? { p_user_id: userId } : {};
+    const { data, error } = await sdb.rpc('admin_mark_all_notifications_read', params);
+    if(error) throw error;
+    const count = data?.[0]?.count || 0;
+    showToast(`✓ ${lang==='ar'?`تم تعليم ${count} إشعار كمقروء`:`Marked ${count} notifications as read`}`);
+    const el = document.getElementById('unread-notif-count');
+    if(el) el.textContent = '';
+  } catch(e) {
+    showToast('✗ ' + e.message);
+  } finally {
+    if(btn) btn.disabled = false;
+  }
+}
+
+async function loadUnreadNotifCount() {
+  try {
+    const { count } = await sdb.from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_read', false);
+    const el = document.getElementById('unread-notif-count');
+    if(el) el.textContent = count > 0 ? count : '';
+  } catch(e) {}
 }
 </script>
