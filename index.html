@@ -621,7 +621,6 @@ body:not(.ltr) .footer-grid{text-align:right;}
             <option value="4.8,60" selected>Gold 4.8%/day</option>
             <option value="8.2,90">VIP 8.2%/day</option>
           </select>
-        </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
         <div style="background:var(--dark);border-radius:10px;padding:18px;text-align:center"><div style="font-size:11px;color:var(--muted);margin-bottom:6px" id="cr1" data-ar="يومياً" data-en="Daily" data-tr="Günlük">يومياً</div><div style="font-size:24px;font-weight:800;color:var(--gold);font-family:var(--mono)" id="c-daily">$48</div></div>
@@ -2424,11 +2423,84 @@ async function cancelInvestment(investmentId) {
   await loadDashboard();
 }
 
-function loadReferral() {
+async function loadReferral() {
   if(!userProfile) return;
-  const rc=document.getElementById('d-ref-count');if(rc)rc.textContent=userProfile.ref_count||0;
-  const rt=document.getElementById('d-ref-total');if(rt)rt.textContent='$'+(userProfile.ref_earnings||0).toLocaleString();
-  const rl=document.getElementById('ref-link-txt');if(rl)rl.textContent='https://crysanto.io/ref/'+(userProfile.ref_code||'---');
+
+  // بيانات الرابط
+  const rl = document.getElementById('ref-link-txt');
+  if(rl) rl.textContent = 'https://crysanto.io/ref/' + (userProfile.ref_code || '---');
+
+  // جلب بيانات الإحالة من الـ DB
+  try {
+    // إحصائيات الإحالات
+    const { data: refs } = await db
+      .from('referrals')
+      .select('id, commission, status, created_at, users!referrals_referred_id_fkey(name,email)')
+      .eq('referrer_id', userProfile.id)
+      .order('created_at', { ascending: false });
+
+    const totalRefs    = refs?.length || userProfile.ref_count || 0;
+    const totalEarned  = refs?.reduce((s,r) => s + parseFloat(r.commission||0), 0) || userProfile.ref_earnings || 0;
+    const pending      = refs?.filter(r => r.status === 'pending').reduce((s,r) => s + parseFloat(r.commission||0), 0) || 0;
+
+    const rc = document.getElementById('d-ref-count'); if(rc) rc.textContent = totalRefs;
+    const rt = document.getElementById('d-ref-total'); if(rt) rt.textContent = '$' + totalEarned.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+
+    // الـ $0 المحدد في pending stat card
+    const allStatCards = document.querySelectorAll('#page-referral .sc-val');
+    if(allStatCards[2]) allStatCards[2].textContent = '$' + pending.toFixed(2);
+
+    // إذا في إحالات، أضف جدول تاريخها
+    const refBox = document.querySelector('#page-referral .ref-box')?.closest('div[style*="max-width"]');
+    if(refBox && refs && refs.length > 0) {
+      let histEl = document.getElementById('ref-history-table');
+      if(!histEl) {
+        histEl = document.createElement('div');
+        histEl.id = 'ref-history-table';
+        refBox.appendChild(histEl);
+      }
+      histEl.innerHTML = `
+        <div style="background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:24px;margin-top:20px">
+          <h4 style="font-size:14px;font-weight:700;margin-bottom:16px">
+            ${lang==='ar'?'سجل الإحالات':lang==='tr'?'Referans Geçmişi':'Referral History'}
+          </h4>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead>
+                <tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+                  <th style="text-align:right;padding:8px 0">${lang==='ar'?'المستخدم':'User'}</th>
+                  <th style="text-align:center;padding:8px 0">${lang==='ar'?'التاريخ':'Date'}</th>
+                  <th style="text-align:center;padding:8px 0">${lang==='ar'?'الحالة':'Status'}</th>
+                  <th style="text-align:left;padding:8px 0">${lang==='ar'?'العمولة':'Commission'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${refs.map(r => {
+                  const name = r.users?.name || r.users?.email?.split('@')[0] || '—';
+                  const date = (r.created_at||'').slice(0,10);
+                  const amt  = parseFloat(r.commission||0);
+                  const isPaid = r.status === 'paid' || r.status === 'credited';
+                  return `<tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:10px 0;font-weight:600">${escapeHtml(name)}</td>
+                    <td style="padding:10px 0;color:var(--muted);text-align:center">${date}</td>
+                    <td style="padding:10px 0;text-align:center">
+                      <span style="background:${isPaid?'rgba(34,211,160,.15)':'rgba(249,115,22,.15)'};color:${isPaid?'var(--green)':'var(--orange)'};padding:2px 8px;border-radius:100px;font-size:11px">
+                        ${isPaid?(lang==='ar'?'مدفوع':'Paid'):(lang==='ar'?'قيد الانتظار':'Pending')}
+                      </span>
+                    </td>
+                    <td style="padding:10px 0;color:var(--green);font-family:var(--mono);font-weight:700;text-align:left">+$${amt.toFixed(2)}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+  } catch(e) {
+    // fallback لبيانات userProfile المحلية
+    const rc = document.getElementById('d-ref-count'); if(rc) rc.textContent = userProfile.ref_count || 0;
+    const rt = document.getElementById('d-ref-total'); if(rt) rt.textContent = '$' + (userProfile.ref_earnings||0).toLocaleString();
+  }
 }
 
 // ── KYC ──
@@ -2864,7 +2936,34 @@ async function buildPlans(){
   document.getElementById('plans-grid').innerHTML=pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>/day</span></div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\')">'+invL[lang]+'</button></div>').join('');
 }
 
-function calcProfit(){const a=parseFloat(document.getElementById('calc-amt').value)||0;const [r,d]=document.getElementById('calc-plan').value.split(',').map(Number);const dl=a*r/100,tot=dl*d,ret=a+tot;document.getElementById('c-daily').textContent='$'+dl.toFixed(2);document.getElementById('c-total').textContent='$'+tot.toFixed(0);document.getElementById('c-return').textContent='$'+ret.toFixed(0);}
+function calcProfit(){
+  const a = parseFloat(document.getElementById('calc-amt').value) || 0;
+  const sel = document.getElementById('calc-plan');
+  if(!sel || !sel.value) return;
+  const [r, d] = sel.value.split(',').map(Number);
+  const dl = a * r / 100, tot = dl * d, ret = a + tot;
+  document.getElementById('c-daily').textContent  = '$' + dl.toFixed(2);
+  document.getElementById('c-total').textContent  = '$' + tot.toFixed(0);
+  document.getElementById('c-return').textContent = '$' + ret.toFixed(0);
+}
+
+// تحميل الباقات من الـ DB في الـ calculator
+async function loadCalcPlans() {
+  try {
+    if(!__plansCache) __plansCache = await fetchPlansFromDB();
+    const rows = __plansCache;
+    if(!rows || !rows.length) return;
+    const sel = document.getElementById('calc-plan');
+    if(!sel) return;
+    const nameKey = {ar:'name_ar', en:'name_en', tr:'name_tr'}[lang] || 'name_en';
+    sel.innerHTML = rows.map((r, i) =>
+      `<option value="${r.daily_rate},${r.duration_days}" ${i===1?'selected':''}>
+        ${escapeHtml(r[nameKey]||r.name_en||'Plan')} ${r.daily_rate}%/day
+      </option>`
+    ).join('');
+    calcProfit();
+  } catch(e) { /* fallback options ثابتة */ }
+}
 
 // ✅ FIX: Rate limiting لنموذج التواصل — منع إرسال أكثر من رسالة كل دقيقتين
 let _contactLastSent = 0;
@@ -2954,6 +3053,7 @@ function init(){
   setLang(lang);
   // بناء فوري للمحتوى الثابت (بدون DB) — الباقات بتتبني بالـ fallback الأول فوراً
   buildTicker(); buildMarkets(); buildLivePrices(); buildFaq(); buildFeatures(); calcProfit();
+  loadCalcPlans();
   buildPlans(); // عرض فوري بالباقات الافتراضية — هيتحدث لما DB يرد
 
   // جميع الـ DB calls بالتوازي — أسرع بكتير من sequential
