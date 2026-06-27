@@ -1327,49 +1327,49 @@ let _authHandled = false; // منع تعارض login/register مع onAuthStateCh
 const PROTECTED = ['dashboard','deposit','referral'];
 
 // مراقبة الجلسة — الريفريش + الدخول التلقائي
-let authReady = false; // false لحد ما نتأكد فعليًا فيه جلسة محفوظة ولا لأ (بيحل مشكلة الخروج التلقائي لو ضغط المستخدم على صفحة محمية بسرعة قبل ما نتأكد)
-db.auth.onAuthStateChange(async (event, session) => {
-  if(_authHandled) return; // doLogin / doRegister شغّالين
+let authReady = false;
+let _sessionHandling = false; // منع تعارض متعدد
 
-  // INITIAL_SESSION = عند تحميل الصفحة لو في جلسة محفوظة
-  // SIGNED_IN = بعد login جديد (عبر onAuthStateChange مش doLogin)
-  if((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session && !isLoggedIn) {
-    currentUser = session.user;
-    // إخفاء زراير Login/Register فوراً — قبل ما fetchProfile يخلص
-    const _bL = document.getElementById('btnLogin');
-    const _bR = document.getElementById('btnRegister');
-    if(_bL) _bL.style.display = 'none';
-    if(_bR) _bR.style.display = 'none';
-    document.body.classList.add('logged-in');
-    // جلب البروفايل
-    await fetchProfile(3, 500);
-    if(userProfile) {
-      afterLogin();
-    } else {
-      // fetchProfile فشل — ارجع للوضع الطبيعي
-      document.body.classList.remove('logged-in');
-      if(_bL) _bL.style.display = '';
-      if(_bR) _bR.style.display = '';
-    }
-  } else if(event === 'SIGNED_OUT') {
+db.auth.onAuthStateChange(async (event, session) => {
+  // doLogin/doRegister/doLogout بيتعاملوا مع نفسهم — إلا في حالة TOKEN_REFRESHED وPASSWORD_RECOVERY
+  if(_authHandled && event !== 'TOKEN_REFRESHED' && event !== 'PASSWORD_RECOVERY' && event !== 'SIGNED_OUT') return;
+
+  // ── SIGNED_OUT: تنظيف كامل بغض النظر عن _authHandled ──
+  if(event === 'SIGNED_OUT') {
+    _sessionHandling = false;
     isLoggedIn = false; currentUser = null; userProfile = null;
     document.body.classList.remove('logged-in');
     const bL=document.getElementById('btnLogin'); if(bL) bL.style.display='';
     const bR=document.getElementById('btnRegister'); if(bR) bR.style.display='';
     const uM=document.getElementById('user-menu'); if(uM) uM.style.display='none';
-    showPage('home', null);
-  } else if(event === 'PASSWORD_RECOVERY') {
-    // المستخدم ضغط على رابط إعادة تعيين كلمة المرور من الإيميل
-    openModal('reset-password');
+    // شيل أي dropdown مفتوح
+    const dd=document.getElementById('user-dropdown'); if(dd) dd.style.display='none';
+    if(!_authHandled) showPage('home', null); // بس لو مش doLogout هو اللي عمله
   }
 
+  // ── INITIAL_SESSION: أول تحميل للصفحة ──
   if(event === 'INITIAL_SESSION') {
     authReady = true;
-    // شيل الـ overlay فوراً — سواء في session أو لأ
+    document.body.classList.add('auth-ready');
     const ov = document.getElementById('session-check-overlay');
-    if (ov) { ov.style.display = 'none'; ov.style.visibility = 'hidden'; ov.style.pointerEvents = 'none'; }
-    document.body.classList.add('auth-ready'); // نعرف إن الـ auth check خلص
-    // لو المستخدم كان ضغط على صفحة محمية (زي تحديد باقة استثمار) قبل ما نتأكد من الجلسة، نكمله دلوقتي
+    if(ov) { ov.style.display='none'; ov.style.visibility='hidden'; ov.style.pointerEvents='none'; }
+
+    if(session && !isLoggedIn && !_sessionHandling) {
+      _sessionHandling = true;
+      currentUser = session.user;
+      await fetchProfile(3, 500);
+      if(userProfile) {
+        afterLogin();
+      } else {
+        // fetchProfile فشل — reset كامل
+        currentUser = null;
+        document.body.classList.remove('logged-in');
+        const _bL=document.getElementById('btnLogin'); if(_bL) _bL.style.display='';
+        const _bR=document.getElementById('btnRegister'); if(_bR) _bR.style.display='';
+      }
+      _sessionHandling = false;
+    }
+
     if(pendingPage && pendingPage.id && pendingPage.id !== 'login') {
       const pp = pendingPage; pendingPage = null;
       if(isLoggedIn) {
@@ -1377,6 +1377,16 @@ db.auth.onAuthStateChange(async (event, session) => {
         else showPage(pp.id, pp.el);
       }
     }
+  }
+
+  // ── TOKEN_REFRESHED: تحديث الـ token تلقائياً — لا نعمل حاجة ──
+  if(event === 'TOKEN_REFRESHED' && session) {
+    currentUser = session.user; // حدّث الـ user object بس
+  }
+
+  // ── PASSWORD_RECOVERY ──
+  if(event === 'PASSWORD_RECOVERY') {
+    openModal('reset-password');
   }
 });
 
@@ -1688,7 +1698,6 @@ async function doLogin() {
   if(!email || !pass) {
     showErr(errEl,{ar:'أدخل البريد وكلمة المرور',en:'Enter email and password',tr:'E-posta ve şifre girin'}); return;
   }
-  // ✅ FIX: التحقق من الكابتشا (لو مفعّلة) قبل محاولة الدخول
   const loginCaptchaToken = getTurnstileToken('turnstile-login');
   if (TURNSTILE_SITE_KEY && !loginCaptchaToken) {
     showErr(errEl,{ar:'من فضلك أكمل اختبار الكابتشا',en:'Please complete the captcha',tr:'Lütfen captchayı tamamlayın'}); return;
@@ -1696,6 +1705,12 @@ async function doLogin() {
 
   if(btn) { btn.textContent = '⏳'; btn.disabled = true; }
   _authHandled = true;
+
+  // ✅ FIX: لو في حساب قديم داخل — اعمل له signOut الأول عشان تمسح الجلسة القديمة تماماً
+  if(isLoggedIn || currentUser) {
+    isLoggedIn = false; currentUser = null; userProfile = null; _sessionHandling = false;
+    await db.auth.signOut({ scope: 'local' }).catch(() => {});
+  }
 
   try {
     // ── STEP 1: تسجيل الدخول ──
@@ -2002,29 +2017,42 @@ function closeUserDropdown() {
 }
 
 async function doLogout() {
-  clearTimeout(_idleTimer); // ✅ FIX: وقف عداد الخمول لما اليوزر يخرج
-  _authHandled = true; // نتعامل مع الخروج هنا
-  await db.auth.signOut();
-  _authHandled = false;
+  clearTimeout(_idleTimer);
+  clearTimeout(_idleWarnTimer);
   isLoggedIn = false; currentUser = null; userProfile = null;
+  _sessionHandling = false;
   document.body.classList.remove('logged-in');
   const btnL = document.getElementById('btnLogin');
   const btnR = document.getElementById('btnRegister');
   const uMenu = document.getElementById('user-menu');
+  const dd = document.getElementById('user-dropdown');
   if(btnL) btnL.style.display = '';
   if(btnR) btnR.style.display = '';
   if(uMenu) uMenu.style.display = 'none';
+  if(dd) dd.style.display = 'none';
+  // امسح بيانات الـ UI
+  const _clearIds = ['balance-val','invested-val','profit-val','ref-earnings-val',
+    'dash-balance','dash-invested','dash-profit','user-memo','ref-link-txt'];
+  _clearIds.forEach(id => { const el = document.getElementById(id); if(el) el.textContent = '—'; });
   showPage('home', document.querySelector('.nav-links a'));
   showToast({ar:'تم تسجيل الخروج بنجاح',en:'Logged out successfully',tr:'Başarıyla çıkış yapıldı'}[lang]);
+  await db.auth.signOut({ scope: 'local' });
 }
 
 // ── AUTO-LOGOUT ON INACTIVITY ──
-// ✅ FIX: خروج تلقائي بعد 15 دقيقة من عدم النشاط — حماية لحساب اليوزر لو نسي الجهاز شغال (نت كافيه مثلاً)
 let _idleTimer = null;
-const IDLE_LIMIT_MS = 15 * 60 * 1000;
+let _idleWarnTimer = null;
+const IDLE_LIMIT_MS = 60 * 60 * 1000;   // خروج تلقائي بعد 60 دقيقة
+const IDLE_WARN_MS  = 55 * 60 * 1000;   // تحذير بعد 55 دقيقة
+
 function resetIdleTimer() {
   if (!isLoggedIn) return;
   clearTimeout(_idleTimer);
+  clearTimeout(_idleWarnTimer);
+  // تحذير قبل الخروج بـ 5 دقائق
+  _idleWarnTimer = setTimeout(() => {
+    if (isLoggedIn) showToast({ar:'⏳ سيتم تسجيل خروجك خلال 5 دقائق لعدم النشاط',en:'⏳ You will be logged out in 5 minutes due to inactivity',tr:'⏳ Hareketsizlik nedeniyle 5 dakika içinde çıkış yapılacak'}[lang]||'⏳ Auto-logout in 5 minutes');
+  }, IDLE_WARN_MS);
   _idleTimer = setTimeout(() => {
     if (isLoggedIn) {
       showToast({ar:'⏳ تم تسجيل خروجك تلقائيًا لعدم النشاط',en:'⏳ Logged out automatically due to inactivity',tr:'⏳ Hareketsizlik nedeniyle otomatik çıkış yapıldı'}[lang]||'Logged out due to inactivity','err');
@@ -2064,13 +2092,20 @@ async function fetchProfile(retries = 3, delay = 500) {
 function afterLogin() {
   isLoggedIn = true;
   document.body.classList.add('logged-in');
-  resetIdleTimer(); // ✅ FIX: تشغيل عداد الخمول لما اليوزر يسجل دخول
+  resetIdleTimer();
 
-  // شيل الـ overlay فوراً
+  // ✅ FIX: امسح أي بيانات حساب قديم من الـ UI قبل ما تحط الجديد
+  const _clearIds = ['balance-val','invested-val','profit-val','ref-earnings-val',
+    'dash-balance','dash-invested','dash-profit','user-memo','ref-link-txt',
+    'my-dp-today','my-dp-week','my-dp-month','my-profits-list',
+    'inv-list','tx-list','notif-list'];
+  _clearIds.forEach(id => { const el = document.getElementById(id); if(el) el.textContent = '—'; });
+
+  // شيل الـ overlay
   const _ov = document.getElementById('session-check-overlay');
-  if (_ov) { _ov.style.display = 'none'; _ov.style.visibility = 'hidden'; _ov.style.pointerEvents = 'none'; }
+  if (_ov) { _ov.style.display='none'; _ov.style.visibility='hidden'; _ov.style.pointerEvents='none'; }
 
-  // إظهار الـ user menu فوراً حتى قبل ما البروفايل يكتمل
+  // إظهار الـ user menu
   const btnL = document.getElementById('btnLogin');
   const btnR = document.getElementById('btnRegister');
   const uMenu = document.getElementById('user-menu');
@@ -2078,7 +2113,7 @@ function afterLogin() {
   if(btnR) btnR.style.display = 'none';
   if(uMenu) uMenu.style.display = 'flex';
 
-  // تحديث nav بالبيانات المتاحة — إما من userProfile أو من currentUser
+  // تحديث nav بالبيانات المتاحة
   const _name = userProfile?.name || currentUser?.user_metadata?.full_name || '';
   const _email = currentUser?.email || '';
   const _firstLetter = (_name || _email || '?')[0].toUpperCase();
@@ -2092,14 +2127,13 @@ function afterLogin() {
   if(nm) nm.textContent = _displayName;
   if(m)  m.textContent  = userProfile?.memo || userProfile?.ref_code || '---';
   if(r)  r.textContent  = 'https://crysanto.io/ref/' + (userProfile?.ref_code || '---');
-  // تحديث رصيد الـ dropdown
+
   const _balNav = document.getElementById('user-balance-nav');
   if(_balNav && userProfile) {
     const _b = parseFloat(userProfile.balance||0);
     _balNav.textContent = ({ar:'الرصيد: $',en:'Balance: $',tr:'Bakiye: $'}[lang]||'Balance: $') + _b.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
   }
 
-  // لو البروفايل جه بعدين، نحدث الـ nav تاني
   if (!userProfile) {
     fetchProfile(2, 600).then(() => {
       if (!userProfile) return;
