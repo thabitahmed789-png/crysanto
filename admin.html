@@ -414,6 +414,13 @@ body.ltr .toast{left:auto;right:24px;}
     <div class="sb-item" onclick="switchSection('s-audit')" id="sb-audit">
       <span class="sb-icon">📋</span><span class="sb-lbl" data-ar="سجل العمليات" data-en="Audit Log" data-tr="İşlem Kaydı">سجل العمليات</span>
     </div>
+    <div class="sb-item" onclick="switchSection('s-security')" id="sb-security">
+      <span class="sb-icon">🛡️</span><span class="sb-lbl" data-ar="تنبيهات الأمان" data-en="Security Alerts" data-tr="Güvenlik Uyarıları">تنبيهات الأمان</span>
+      <span class="sb-badge" id="security-badge" style="background:var(--red);display:none">0</span>
+    </div>
+    <div class="sb-item" onclick="switchSection('s-daily-profits')" id="sb-daily-profits">
+      <span class="sb-icon">💸</span><span class="sb-lbl" data-ar="الأرباح اليومية" data-en="Daily Profits" data-tr="Günlük Karlar">الأرباح اليومية</span>
+    </div>
   </div>
 
   <!-- MAIN -->
@@ -732,6 +739,74 @@ body.ltr .toast{left:auto;right:24px;}
         <div class="tbl-wrap" id="audit-table-wrap"></div>
       </div>
     </div>
+    <!-- ══ SECURITY ALERTS ══ -->
+    <div id="s-security" class="section-wrap" style="display:none">
+      <div class="section-title" id="security-title">
+        تنبيهات الأمان
+        <span id="security-count-lbl" style="font-size:13px;color:var(--muted);font-weight:400"></span>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stat-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px" id="security-stats-grid">
+        <div class="sc red"><div class="sc-icon">🚨</div><div class="sc-label">غير مراجَعة</div><div class="sc-val" id="sec-stat-unreviewed">—</div></div>
+        <div class="sc orange"><div class="sc-icon">⚠️</div><div class="sc-label">خطر عالي</div><div class="sc-val" id="sec-stat-high">—</div></div>
+        <div class="sc blue"><div class="sc-icon">📱</div><div class="sc-label">أجهزة جديدة اليوم</div><div class="sc-val" id="sec-stat-devices">—</div></div>
+        <div class="sc orange"><div class="sc-icon">🔍</div><div class="sc-label">معاملات مشبوهة</div><div class="sc-val" id="sec-stat-suspicious">—</div></div>
+        <div class="sc red"><div class="sc-icon">🚫</div><div class="sc-label">محظورون</div><div class="sc-val" id="sec-stat-blocked">—</div></div>
+      </div>
+
+      <!-- Filters -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <div class="filter-tabs" style="margin-bottom:0">
+          <button class="ft on" onclick="filterSecurityAlerts(this,'all')" id="sa-all">الكل</button>
+          <button class="ft" onclick="filterSecurityAlerts(this,'unreviewed')" id="sa-unreviewed">غير مراجَعة</button>
+          <button class="ft" onclick="filterSecurityAlerts(this,'critical')" id="sa-critical" style="border-color:var(--red);color:var(--red)">🔴 خطر حرج</button>
+          <button class="ft" onclick="filterSecurityAlerts(this,'high')" id="sa-high">⚠️ عالي</button>
+          <button class="ft" onclick="filterSecurityAlerts(this,'medium')" id="sa-medium">🟡 متوسط</button>
+        </div>
+        <button class="act-btn" onclick="loadSecurityAlerts()" style="font-size:12px">🔄 تحديث</button>
+      </div>
+
+      <div class="panel">
+        <div id="security-alerts-wrap">
+          <div style="color:var(--muted);text-align:center;padding:40px">جاري التحميل...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DAILY PROFITS ══ -->
+    <div id="s-daily-profits" class="section-wrap" style="display:none">
+      <div class="section-title">الأرباح اليومية</div>
+
+      <!-- Stats -->
+      <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+        <div class="sc green"><div class="sc-icon">💰</div><div class="sc-label">أرباح اليوم</div><div class="sc-val" id="dp-stat-today">—</div></div>
+        <div class="sc gold"><div class="sc-icon">📊</div><div class="sc-label">عدد المستفيدين اليوم</div><div class="sc-val" id="dp-stat-count">—</div></div>
+        <div class="sc blue"><div class="sc-icon">📅</div><div class="sc-label">أرباح هذا الأسبوع</div><div class="sc-val" id="dp-stat-week">—</div></div>
+        <div class="sc purple"><div class="sc-icon">📆</div><div class="sc-label">أرباح هذا الشهر</div><div class="sc-val" id="dp-stat-month">—</div></div>
+      </div>
+
+      <!-- Run Distribution Button -->
+      <div class="alert-bar" style="margin-bottom:20px">
+        ⚙️ توزيع الأرباح اليومي يُشغَّل يدوياً من هنا أو يمكن جدولته تلقائياً عبر Supabase Edge Functions
+        <button class="act-btn-primary" onclick="runDailyProfits()" id="run-profits-btn" style="margin-right:auto;margin-left:12px">▶ تشغيل توزيع الأرباح الآن</button>
+      </div>
+
+      <!-- Table -->
+      <div class="panel">
+        <div class="panel-head">
+          <span>سجل الأرباح اليومية</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="date" id="dp-date-filter" style="background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;color:var(--text);font-size:12px" onchange="loadDailyProfits()">
+            <button class="act-btn" onclick="loadDailyProfits()" style="font-size:12px">🔄</button>
+          </div>
+        </div>
+        <div class="tbl-wrap" id="daily-profits-wrap">
+          <div style="color:var(--muted);text-align:center;padding:40px">جاري التحميل...</div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /main -->
 </div><!-- /app -->
 
@@ -1040,12 +1115,16 @@ function renderCurrentSection(){
   if(currentSection==='s-kyc') { renderKYC(); return; }
   if(currentSection==='s-overview') { renderOverview(); loadRealOverviewStats(); return; }
   if(currentSection==='s-contact') { renderContactMessages(); return; }
+  if(currentSection==='s-security') { loadSecurityAlerts(); loadSecurityStats(); return; }
+  if(currentSection==='s-daily-profits') { loadDailyProfitStats(); loadDailyProfits(); return; }
   const renders = {
     's-overview':renderOverview,'s-users':renderUsers,'s-deposits':loadRealDeposits,
     's-withdrawals':loadRealWithdrawals,'s-investments':renderInvestments,
     's-kyc':renderKYC,'s-referrals':renderReferrals,'s-profits':renderProfits,
     's-packages':renderPackages,'s-notifs':renderNotifs,'s-wallets':renderWallets,
-    's-stats':renderStats,'s-settings':renderSettings,'s-audit':renderAuditLog,'s-contact':renderContactMessages
+    's-stats':renderStats,'s-settings':renderSettings,'s-audit':renderAuditLog,
+    's-contact':renderContactMessages,'s-security':loadSecurityAlerts,
+    's-daily-profits':loadDailyProfits
   };
   if(renders[currentSection]) renders[currentSection]();
 }
@@ -1056,6 +1135,7 @@ function initApp(){
   renderOverview();
   loadRealOverviewStats();
   setupRealtime();
+  loadSecurityBadge();
 }
 
 // ── OVERVIEW ──
@@ -2896,4 +2976,281 @@ async function renderStats() {
 }
 
 console.log('%cCrysanto Admin Panel — Loaded ✓', 'color:#C9A84C;font-size:16px;font-weight:bold;');
+
+// ══════════════════════════════════════════════════════════════
+// 🛡️ SECURITY ALERTS — الجديد
+// ══════════════════════════════════════════════════════════════
+let _securityAlerts = [];
+let _secAlertFilter = 'all';
+
+// تحميل badge العدد في الـ sidebar
+async function loadSecurityBadge(){
+  try {
+    const { data } = await sdb.rpc('admin_get_security_stats');
+    if(!data || !data[0]) return;
+    const unreviewed = data[0].unreviewed_alerts || 0;
+    const badge = document.getElementById('security-badge');
+    if(badge){
+      badge.textContent = unreviewed;
+      badge.style.display = unreviewed > 0 ? 'inline-flex' : 'none';
+    }
+    // كمان نضيفهم على الـ overview card لو موجودة
+    const sc = document.getElementById('sc5v');
+    if(sc && data[0].blocked_users !== undefined) sc.textContent = data[0].blocked_users;
+  } catch(e){ console.error('loadSecurityBadge:', e); }
+}
+
+// تحميل stats cards
+async function loadSecurityStats(){
+  try {
+    const { data, error } = await sdb.rpc('admin_get_security_stats');
+    if(error || !data || !data[0]) return;
+    const s = data[0];
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val ?? '—'; };
+    set('sec-stat-unreviewed', s.unreviewed_alerts ?? 0);
+    set('sec-stat-high', s.high_risk_alerts ?? 0);
+    set('sec-stat-devices', s.new_devices_today ?? 0);
+    set('sec-stat-suspicious', s.suspicious_txns_today ?? 0);
+    set('sec-stat-blocked', s.blocked_users ?? 0);
+
+    // badge
+    const badge = document.getElementById('security-badge');
+    const n = s.unreviewed_alerts || 0;
+    if(badge){ badge.textContent = n; badge.style.display = n > 0 ? 'inline-flex' : 'none'; }
+  } catch(e){ console.error('loadSecurityStats:', e); }
+}
+
+function filterSecurityAlerts(el, f){
+  _secAlertFilter = f;
+  document.querySelectorAll('#s-security .ft').forEach(b => b.classList.remove('on'));
+  if(el) el.classList.add('on');
+  renderSecurityAlerts(_securityAlerts);
+}
+
+async function loadSecurityAlerts(){
+  const wrap = document.getElementById('security-alerts-wrap');
+  if(!wrap) return;
+  wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px">⏳ ${lang==='ar'?'جاري التحميل...':'Loading...'}</div>`;
+
+  try {
+    const { data, error } = await sdb.rpc('admin_get_security_alerts', {
+      p_limit: 100,
+      p_unreviewed_only: false
+    });
+    if(error) throw error;
+    _securityAlerts = data || [];
+
+    const lbl = document.getElementById('security-count-lbl');
+    if(lbl) lbl.textContent = `(${_securityAlerts.length} ${lang==='ar'?'تنبيه':'alerts'})`;
+
+    renderSecurityAlerts(_securityAlerts);
+  } catch(e){
+    wrap.innerHTML = `<div style="color:var(--red);padding:24px">✗ ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderSecurityAlerts(alerts){
+  const wrap = document.getElementById('security-alerts-wrap');
+  if(!wrap) return;
+
+  // تطبيق الفلتر
+  let filtered = alerts;
+  if(_secAlertFilter === 'unreviewed') filtered = alerts.filter(a => !a.is_reviewed);
+  else if(_secAlertFilter === 'critical') filtered = alerts.filter(a => a.severity === 'critical');
+  else if(_secAlertFilter === 'high') filtered = alerts.filter(a => a.severity === 'high');
+  else if(_secAlertFilter === 'medium') filtered = alerts.filter(a => a.severity === 'medium');
+
+  if(!filtered.length){
+    wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:48px;font-size:14px">
+      🎉 ${lang==='ar'?'لا توجد تنبيهات في هذه الفئة':'No alerts in this category'}
+    </div>`;
+    return;
+  }
+
+  const severityStyle = {
+    critical: { bg: 'rgba(255,50,50,.12)', border: '#ff3232', icon: '🔴', label: 'حرج' },
+    high:     { bg: 'rgba(255,140,0,.1)',  border: '#ff8c00', icon: '🟠', label: 'عالي' },
+    medium:   { bg: 'rgba(255,200,0,.08)', border: '#ffc800', icon: '🟡', label: 'متوسط' },
+    low:      { bg: 'rgba(16,217,160,.08)', border: 'var(--border2)', icon: '🟢', label: 'منخفض' },
+  };
+
+  const alertTypeLabel = {
+    suspicious_transaction:       lang==='ar'?'معاملة مشبوهة':'Suspicious Transaction',
+    shared_ip_multiple_accounts:  lang==='ar'?'IP مشترك بين حسابات':'Shared IP',
+    excessive_devices:            lang==='ar'?'أجهزة كثيرة':'Excessive Devices',
+    kyc_high_risk:                lang==='ar'?'KYC عالي الخطر':'High Risk KYC',
+    high_velocity:                lang==='ar'?'سرعة معاملات عالية':'High Velocity',
+  };
+
+  wrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;padding:4px">
+    ${filtered.map(a => {
+      const sv = severityStyle[a.severity] || severityStyle.low;
+      const reviewed = a.is_reviewed;
+      const time = (a.created_at||'').slice(0,16).replace('T',' ');
+      const typeLabel = alertTypeLabel[a.alert_type] || escapeHtml(a.alert_type||'—');
+      const dataStr = a.data ? JSON.stringify(a.data, null, 2) : '';
+      return `
+      <div style="background:${sv.bg};border:1px solid ${reviewed ? 'var(--border2)' : sv.border};border-radius:12px;padding:16px;opacity:${reviewed?'.6':'1'};transition:.2s" id="salert-${a.id}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">${sv.icon}</span>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:var(--text)">${typeLabel}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">${time}</div>
+            </div>
+            <span style="background:${sv.border};color:#000;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px">${sv.label}</span>
+            ${reviewed ? `<span style="background:var(--border2);color:var(--muted);font-size:10px;padding:2px 8px;border-radius:100px">${lang==='ar'?'✓ مراجَع':'✓ Reviewed'}</span>` : ''}
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            ${a.user_email ? `<a href="javascript:void(0)" onclick="showUserFromAlert('${escapeJsAttr(a.user_id||'')}','${escapeJsAttr(a.user_name||a.user_email||'')}','${escapeJsAttr(a.user_email||'')}','${escapeJsAttr(String(a.data?.balance||0))}')" style="color:var(--gold);font-size:12px;text-decoration:none">👤 ${escapeHtml(a.user_name||a.user_email)}</a>` : ''}
+            ${!reviewed ? `
+              <button class="act-btn green" onclick="reviewAlert(${a.id},'reviewed')" style="font-size:11px;padding:4px 10px">✓ ${lang==='ar'?'مراجَع':'Mark Reviewed'}</button>
+              <button class="act-btn red" onclick="blockUserFromAlert('${escapeJsAttr(a.user_id||'')}',${a.id})" style="font-size:11px;padding:4px 10px">🚫 ${lang==='ar'?'حظر المستخدم':'Block User'}</button>
+            ` : `<button class="act-btn" onclick="reviewAlert(${a.id},'reopen')" style="font-size:11px;padding:4px 10px;opacity:.7">${lang==='ar'?'إعادة فتح':'Reopen'}</button>`}
+          </div>
+        </div>
+        <div style="color:var(--text);font-size:13px;margin-bottom:${dataStr?'10px':'0'}">${escapeHtml(a.message||'—')}</div>
+        ${dataStr ? `
+        <details style="margin-top:6px">
+          <summary style="cursor:pointer;font-size:11px;color:var(--muted);user-select:none">${lang==='ar'?'▸ بيانات تفصيلية':'▸ Details'}</summary>
+          <pre style="background:var(--dark);border-radius:8px;padding:10px;font-size:11px;color:var(--gold);overflow-x:auto;margin-top:6px;white-space:pre-wrap">${escapeHtml(dataStr)}</pre>
+        </details>` : ''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+async function reviewAlert(alertId, action){
+  const notes = action === 'reviewed'
+    ? (prompt(lang==='ar'?'ملاحظة (اختياري):':'Note (optional):') || '')
+    : '';
+  const { error } = await sdb.rpc('admin_review_alert', {
+    p_alert_id: alertId,
+    p_notes: notes,
+    p_action: action
+  });
+  if(error){ showToast('✗ ' + error.message); return; }
+  showToast(action === 'reviewed'
+    ? (lang==='ar'?'✓ تم تعليم التنبيه كمراجَع':'✓ Alert marked as reviewed')
+    : (lang==='ar'?'✓ تم إعادة فتح التنبيه':'✓ Alert reopened'));
+  loadSecurityAlerts();
+  loadSecurityStats();
+  loadSecurityBadge();
+}
+
+async function blockUserFromAlert(userId, alertId){
+  if(!userId){ showToast(lang==='ar'?'لا يوجد مستخدم مرتبط':'No user linked'); return; }
+  const confirmed = confirm(lang==='ar'?'حظر هذا المستخدم؟':'Block this user?');
+  if(!confirmed) return;
+  const reason = prompt(lang==='ar'?'سبب الحظر:':'Block reason:') || 'Flagged by security alert';
+  const { error: blockErr } = await sdb.rpc('admin_set_account_status', {
+    p_user_id: userId, p_status: 'blocked', p_reason: reason
+  });
+  if(blockErr){ showToast('✗ ' + blockErr.message); return; }
+  // تعليم التنبيه كمراجَع أيضاً
+  await sdb.rpc('admin_review_alert', { p_alert_id: alertId, p_notes: 'User blocked: ' + reason, p_action: 'blocked' });
+  showToast(lang==='ar'?'✓ تم حظر المستخدم وتعليم التنبيه':'✓ User blocked and alert reviewed');
+  loadSecurityAlerts();
+  loadSecurityStats();
+  loadSecurityBadge();
+}
+
+function showUserFromAlert(userId, userName, userEmail, balance){
+  // افتح مودال المستخدم مباشرة من التنبيه
+  openUserModal({ id: userId, name: userName, email: userEmail, balance: parseFloat(balance)||0 });
+}
+
+// ══════════════════════════════════════════════════════════════
+// 💸 DAILY PROFITS — الجديد
+// ══════════════════════════════════════════════════════════════
+async function loadDailyProfitStats(){
+  try {
+    const { data, error } = await sdb.rpc('admin_get_profit_stats');
+    if(error || !data || !data[0]) return;
+    const s = data[0];
+    const fmt = v => '$' + parseFloat(v||0).toLocaleString(undefined,{maximumFractionDigits:2});
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    set('dp-stat-today',  fmt(s.today_distributed));
+    set('dp-stat-count',  (s.today_count ?? 0) + (lang==='ar'?' استثمار':' investments'));
+    set('dp-stat-week',   fmt(s.total_week));
+    set('dp-stat-month',  fmt(s.total_month));
+  } catch(e){ console.error('loadDailyProfitStats:', e); }
+}
+
+async function loadDailyProfits(){
+  const wrap = document.getElementById('daily-profits-wrap');
+  if(!wrap) return;
+  wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px">⏳ ${lang==='ar'?'جاري التحميل...':'Loading...'}</div>`;
+
+  const dateFilter = document.getElementById('dp-date-filter')?.value;
+
+  try {
+    let query = sdb
+      .from('daily_profits')
+      .select('*, users(name, email), investments(plan_name, daily_rate)')
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if(dateFilter) query = query.eq('profit_date', dateFilter);
+
+    const { data, error } = await query;
+    if(error) throw error;
+
+    if(!data || !data.length){
+      wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:48px">
+        ${lang==='ar'?'لا توجد أرباح في هذا اليوم':'No profits for this date'}
+      </div>`;
+      return;
+    }
+
+    wrap.innerHTML = `<table>
+      <thead><tr>
+        <th>${lang==='ar'?'المستخدم':'User'}</th>
+        <th>${lang==='ar'?'الباقة':'Plan'}</th>
+        <th>${lang==='ar'?'نسبة اليومي':'Daily Rate'}</th>
+        <th>${lang==='ar'?'المبلغ':'Amount'}</th>
+        <th>${lang==='ar'?'التاريخ':'Date'}</th>
+        <th>${lang==='ar'?'الحالة':'Status'}</th>
+      </tr></thead>
+      <tbody>${data.map(dp => `
+        <tr>
+          <td style="font-weight:600">${escapeHtml(dp.users?.name||'—')}
+            <div style="font-size:11px;color:var(--muted)">${escapeHtml(dp.users?.email||'')}</div>
+          </td>
+          <td style="font-size:12px">${escapeHtml(dp.investments?.plan_name||'—')}</td>
+          <td style="color:var(--gold);font-family:var(--mono)">${dp.investments?.daily_rate ?? '—'}%</td>
+          <td style="color:var(--green);font-family:var(--mono);font-weight:700">+$${parseFloat(dp.amount||0).toFixed(2)}</td>
+          <td style="font-size:12px;color:var(--muted)">${dp.profit_date||'—'}</td>
+          <td><span class="badge ${dp.status==='credited'?'b-active':'b-pending'}">${dp.status==='credited'?(lang==='ar'?'مضاف':'Credited'):(lang==='ar'?'معلق':'Pending')}</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  } catch(e){
+    wrap.innerHTML = `<div style="color:var(--red);padding:24px">✗ ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function runDailyProfits(){
+  const btn = document.getElementById('run-profits-btn');
+  const confirmed = confirm(lang==='ar'
+    ? 'تشغيل توزيع الأرباح اليومية الآن على جميع الاستثمارات النشطة؟'
+    : 'Run daily profit distribution on all active investments now?');
+  if(!confirmed) return;
+
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ ' + (lang==='ar'?'جاري التوزيع...':'Distributing...'); }
+
+  try {
+    const { data, error } = await sdb.rpc('distribute_daily_profits_v2');
+    if(error) throw error;
+    const res = data?.[0];
+    showToast(`✓ ${lang==='ar'?'تم التوزيع':'Done'} — ${res?.message || ''}`);
+    loadDailyProfitStats();
+    loadDailyProfits();
+    loadRealOverviewStats();
+  } catch(e){
+    showToast('✗ ' + e.message);
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = '▶ ' + (lang==='ar'?'تشغيل توزيع الأرباح الآن':'Run Daily Profits Now'); }
+  }
+}
 </script>
