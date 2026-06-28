@@ -2163,11 +2163,11 @@ function afterLogin() {
       if(nm) nm.textContent = (userProfile.name||_displayName).split(' ')[0];
       if(m)  m.textContent  = userProfile.memo || userProfile.ref_code || '---';
       if(r)  r.textContent  = 'https://crysanto.io/ref/' + (userProfile.ref_code || '---');
-      db.rpc('update_last_seen').catch(()=>{});
+      db.rpc('update_last_seen').then(() => {}).catch(() => {});
       trackDeviceLogin();
     });
   } else {
-    db.rpc('update_last_seen').catch(()=>{});
+    db.rpc('update_last_seen').then(() => {}).catch(() => {});
     trackDeviceLogin();
   }
 
@@ -2601,10 +2601,14 @@ async function submitDeposit() {
       }
     }
 
-    // ✅ NEW: فحص الـ risk score قبل الإيداع
-    const { data: depRisk } = await db.rpc('check_transaction_risk', {
-      p_user_id: userProfile.id, p_type: 'deposit', p_amount: amount
-    }).catch(() => ({ data: null }));
+    // ✅ فحص الـ risk score قبل الإيداع
+    let depRisk = null;
+    try {
+      const { data: _dr } = await db.rpc('check_transaction_risk', {
+        p_user_id: userProfile.id, p_type: 'deposit', p_amount: amount
+      });
+      depRisk = _dr;
+    } catch(_) {}
 
     await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,tx_hash:hash,status:'pending',plan_id:planId,risk_score:depRisk?.[0]?.risk_score||0});
     await db.from('notifications').insert({user_id:userProfile.id,title:'📥 '+(lang==='ar'?'تم استلام طلب إيداعك':lang==='tr'?'Yatırım talebi alındı':'Deposit request received'),body:(lang==='ar'?'طلب إيداع $':lang==='tr'?'Yatırım talebi $':'Deposit request $')+amount+' '+(lang==='ar'?'قيد المراجعة':lang==='tr'?'inceleniyor':'under review'),type:'info'});
@@ -2649,10 +2653,15 @@ async function submitWithdrawal() {
   }
 
   try {
-    // ✅ NEW: فحص الـ risk score قبل السحب
-    const { data: riskData } = await db.rpc('check_transaction_risk', {
-      p_user_id: userProfile.id, p_type: 'withdrawal', p_amount: amount
-    }).catch(() => ({ data: null }));
+    // ✅ فحص الـ risk score قبل السحب
+    let riskData = null;
+    try {
+      const { data: _rd } = await db.rpc('check_transaction_risk', {
+        p_user_id: userProfile.id, p_type: 'withdrawal', p_amount: amount
+      });
+      riskData = _rd;
+    } catch(_) {}
+
     if (riskData && riskData[0]?.risk_score >= 75) {
       showToast(lang==='ar'?'⚠️ طلب السحب قيد المراجعة الأمنية، سيتم معالجته خلال 24 ساعة':lang==='tr'?'⚠️ Çekim talebi güvenlik incelemesinde, 24 saat içinde işlenecek':'⚠️ Withdrawal is under security review, will be processed within 24 hours');
     }
