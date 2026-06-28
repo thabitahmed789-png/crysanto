@@ -1341,6 +1341,20 @@ let isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = nu
 let _authHandled = false; // منع تعارض login/register مع onAuthStateChange
 const PROTECTED = ['dashboard','deposit','referral'];
 
+// ══════════════════════════════════════════════════════════════
+// ✅ FIX: شيل الـ overlay إجباري بعد 3 ثواني في أي حال
+// عشان لو Supabase اتأخر أو INITIAL_SESSION ما جاش، الصفحة ما تفضلش فاضية
+// ══════════════════════════════════════════════════════════════
+const _overlayForceTimeout = setTimeout(() => {
+  authReady = true;
+  const ov = document.getElementById('session-check-overlay');
+  if(ov) { ov.style.display='none'; ov.style.visibility='hidden'; ov.style.pointerEvents='none'; }
+  document.body.classList.add('auth-ready');
+  // لو الصفحة لسه فاضية — ارجع للـ home
+  const anyActive = document.querySelector('.page.active');
+  if(!anyActive) { const h=document.getElementById('page-home'); if(h) h.classList.add('active'); }
+}, 3000);
+
 // مراقبة الجلسة — الريفريش + الدخول التلقائي
 let authReady = false;
 let _sessionHandling = false; // منع تعارض متعدد
@@ -1364,6 +1378,7 @@ db.auth.onAuthStateChange(async (event, session) => {
 
   // ── INITIAL_SESSION: أول تحميل للصفحة ──
   if(event === 'INITIAL_SESSION') {
+    clearTimeout(_overlayForceTimeout); // إلغاء الـ timeout الإجباري — الـ session جت طبيعي
     authReady = true;
     document.body.classList.add('auth-ready');
     const ov = document.getElementById('session-check-overlay');
@@ -1683,16 +1698,25 @@ document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click
 
 function switchDash(el, id) {
   document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
-  el.classList.add('active');
-  ['d-overview','d-wallet','d-history','d-kyc','d-notif','d-invest','d-security'].forEach(d=>{const e=document.getElementById(d);if(e)e.style.display='none';});
-  const p=document.getElementById(id); if(p) p.style.display='';
-  if(id==='d-history') loadTransactions();
-  if(id==='d-notif') loadNotifications();
-  if(id==='d-invest') loadInvestments();
-  if(id==='d-kyc') renderKYCStatus();
-  if(id==='d-wallet') renderWalletDashboardList();
-  if(id==='d-security') render2FAStatus();
+  if(el) el.classList.add('active');
+  // إخفاء كل الأقسام
+  ['d-overview','d-wallet','d-history','d-kyc','d-notif','d-invest',
+   'd-security','d-profits-log'].forEach(d=>{
+    const e=document.getElementById(d);
+    if(e) e.style.display='none';
+  });
+  // إظهار القسم المطلوب
+  const p=document.getElementById(id);
+  if(p) p.style.display='block';
+  if(id==='d-history')     loadTransactions();
+  if(id==='d-notif')       loadNotifications();
+  if(id==='d-invest')      loadInvestments();
+  if(id==='d-kyc')         renderKYCStatus();
+  if(id==='d-wallet')      renderWalletDashboardList();
+  if(id==='d-security')    render2FAStatus();
   if(id==='d-profits-log') loadMyDailyProfits();
+  if(id==='d-overview')    loadDashboard();
+}
 }
 
 function switchDW(el, id) {
@@ -2184,6 +2208,13 @@ function afterLogin() {
     setTimeout(() => showPage(p.id, p.el), 100);
   } else {
     showPage('dashboard', null);
+    // تأكد إن overview ظاهر بعد الـ refresh
+    setTimeout(() => {
+      const ov = document.getElementById('d-overview');
+      if(ov && ov.style.display === 'none') {
+        switchDash(document.querySelector('.sidebar-item'), 'd-overview');
+      }
+    }, 150);
   }
 }
 
