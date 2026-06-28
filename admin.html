@@ -508,11 +508,11 @@ body.ltr .toast{left:auto;right:24px;}
 
     <!-- ══ INVESTMENTS ══ -->
     <div id="s-investments" class="section-wrap" style="display:none">
-      <div class="section-title" id="inv-title">الاستثمارات النشطة</div>
-      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
-        <div class="sc gold"><div class="sc-icon">⭐</div><div class="sc-label" id="inv-sc1l">الباقة الأساسية</div><div class="sc-val">1,240</div><div class="sc-trend up">مستثمر نشط</div></div>
-        <div class="sc gold"><div class="sc-icon">🥇</div><div class="sc-label" id="inv-sc2l">الباقة الذهبية</div><div class="sc-val">3,820</div><div class="sc-trend up">مستثمر نشط</div></div>
-        <div class="sc purple"><div class="sc-icon">💎</div><div class="sc-label" id="inv-sc3l">باقة VIP</div><div class="sc-val">892</div><div class="sc-trend up">مستثمر نشط</div></div>
+      <div class="section-title" id="inv-title">الاستثمارات</div>
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+        <div class="sc gold"><div class="sc-icon">📈</div><div class="sc-label">استثمارات نشطة</div><div class="sc-val" id="inv-stat-active">—</div></div>
+        <div class="sc green"><div class="sc-icon">💰</div><div class="sc-label">إجمالي رأس المال</div><div class="sc-val" id="inv-stat-capital">—</div></div>
+        <div class="sc purple"><div class="sc-icon">✅</div><div class="sc-label">مكتملة</div><div class="sc-val" id="inv-stat-done">—</div></div>
       </div>
       <div class="panel">
         <div class="tbl-wrap" id="inv-table-wrap"></div>
@@ -521,8 +521,15 @@ body.ltr .toast{left:auto;right:24px;}
 
     <!-- ══ KYC ══ -->
     <div id="s-kyc" class="section-wrap" style="display:none">
-      <div class="section-title" id="kyc-main-title">طلبات التحقق KYC</div>
-      <div class="alert-bar" id="kyc-alert">🪪 يوجد 8 طلبات KYC جديدة تحتاج مراجعة</div>
+      <div class="section-title" id="kyc-main-title">طلبات التحقق KYC
+        <span id="kyc-pending-badge" style="background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;margin-right:8px;display:none">0</span>
+      </div>
+      <div class="filter-tabs" style="margin-bottom:16px">
+        <button class="ft on" onclick="filterKYC(this,'all')">الكل</button>
+        <button class="ft" onclick="filterKYC(this,'pending')" style="border-color:var(--gold);color:var(--gold)">⏳ معلّق</button>
+        <button class="ft" onclick="filterKYC(this,'verified')" style="border-color:var(--green);color:var(--green)">✅ موافق</button>
+        <button class="ft" onclick="filterKYC(this,'rejected')" style="border-color:var(--red);color:var(--red)">✗ مرفوض</button>
+      </div>
       <div class="panel">
         <div class="tbl-wrap" id="kyc-table-wrap"></div>
       </div>
@@ -1308,10 +1315,18 @@ async function renderInvestments(){
     .select('*, users(name, email)')
     .order('created_at', { ascending: false });
   if (error) {
-    console.error('renderInvestments error:', error);
     wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل الاستثمارات':'Error loading investments'}: ${error.message}</div>`;
     return;
   }
+
+  // ملء stats حقيقية
+  const active = (data||[]).filter(i => i.status==='active');
+  const done   = (data||[]).filter(i => i.status==='completed');
+  const capital = active.reduce((s,i) => s + parseFloat(i.amount||0), 0);
+  const setEl = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  setEl('inv-stat-active',  active.length);
+  setEl('inv-stat-capital', '$' + capital.toLocaleString(undefined,{maximumFractionDigits:0}));
+  setEl('inv-stat-done',    done.length);
   if (!data || !data.length) {
     wrap.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">${lang==='ar'?'لا توجد استثمارات':'No investments'}</div>`;
     return;
@@ -1362,16 +1377,40 @@ async function cancelInvestment(id, planName){
 }
 
 // ── KYC — Supabase ──
+let _kycFilter = 'all';
+
+function filterKYC(el, f) {
+  _kycFilter = f;
+  document.querySelectorAll('#s-kyc .ft').forEach(b => b.classList.remove('on'));
+  if(el) el.classList.add('on');
+  renderKYC();
+}
+
 async function renderKYC(){
   const wrap = document.getElementById('kyc-table-wrap');
   showTableSkeleton('kyc-table-wrap', 6);
-  const { data, error } = await sdb
-    .from('users')
+
+  let query = sdb.from('users')
     .select('id, name, email, kyc_status, kyc_data, created_at')
     .not('kyc_data', 'is', null)
     .order('created_at', { ascending: false });
+
+  if(_kycFilter !== 'all') query = query.eq('kyc_status', _kycFilter);
+
+  const { data, error } = await query;
   if(error || !data){ wrap.innerHTML='<div style="color:var(--muted);text-align:center;padding:30px">—</div>'; return; }
-  if(!data.length){ wrap.innerHTML=`<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">${lang==='ar'?'لا توجد طلبات KYC':'No KYC requests'}</div>`; return; }
+
+  // تحديث الـ badge بعدد المعلقين
+  const pendingCount = _kycFilter === 'all'
+    ? (data.filter(u => u.kyc_status === 'pending').length)
+    : (_kycFilter === 'pending' ? data.length : 0);
+  const badge = document.getElementById('kyc-pending-badge');
+  if(badge) { badge.textContent = pendingCount; badge.style.display = pendingCount > 0 ? 'inline-flex' : 'none'; }
+
+  if(!data.length){
+    wrap.innerHTML=`<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">${lang==='ar'?'لا توجد طلبات في هذه الفئة':'No requests in this category'}</div>`;
+    return;
+  }
   wrap.innerHTML = `<table>
     <thead><tr>
       <th>${lang==='ar'?'المستخدم':'User'}</th>
@@ -1401,7 +1440,6 @@ async function renderKYC(){
       </tr>`;
     }).join('')}
     </tbody></table>`;
-  // نخزن بيانات الـ KYC مؤقتًا عشان viewKycDocs تقدر توصلها من غير كويري تاني
   window.__kycDataCache = {};
   data.forEach(u => { window.__kycDataCache[u.id] = u.kyc_data; });
 }
@@ -1768,9 +1806,7 @@ function copyWallet(i){
 }
 
 // ── STATS CHARTS ──
-function renderStats(){
-  setTimeout(()=>{ drawMonthlyChart(); drawRegChart(); drawCoinsChart(); drawGeo(); },100);
-}
+// renderStats — تعريف واحد فقط موجود في الأسفل (async نسخة حقيقية من DB)
 async function drawGeo(){
   const el = document.getElementById('geo-list');
   const { data, error } = await sdb.from('users').select('country');
@@ -2809,6 +2845,32 @@ function setupRealtime() {
       loadRealOverviewStats();
       if(currentSection==='s-contact') renderContactMessages();
       showToast(lang==='ar'?'✉️ رسالة تواصل جديدة':'✉️ New contact message');
+    })
+    .subscribe();
+
+  // ✅ NEW: Security alerts realtime
+  sdb.channel('admin-security-alerts')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'security_alerts'}, (payload) => {
+      loadSecurityBadge();
+      if(currentSection==='s-security') loadSecurityAlerts();
+      const sev = payload.new?.severity || 'medium';
+      const icon = sev==='critical'?'🔴':sev==='high'?'🟠':'🟡';
+      showToast(`${icon} ${lang==='ar'?'تنبيه أمان جديد':'New security alert'}: ${payload.new?.alert_type||''}`);
+    })
+    .subscribe();
+
+  // ✅ NEW: Daily profits realtime
+  sdb.channel('admin-daily-profits')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'daily_profits'}, () => {
+      if(currentSection==='s-daily-profits') { loadDailyProfitStats(); loadDailyProfits(); }
+    })
+    .subscribe();
+
+  // ✅ NEW: Investments realtime
+  sdb.channel('admin-investments')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'investments'}, () => {
+      loadRealOverviewStats();
+      if(currentSection==='s-investments') renderInvestments();
     })
     .subscribe();
 }
