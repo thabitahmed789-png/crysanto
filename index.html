@@ -2259,11 +2259,82 @@ async function loadNotifications() {
   if(!userProfile) return;
   const el=document.getElementById('notif-list');
   try {
-    const {data}=await db.from('notifications').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(15);
-    if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+(lang==='ar'?'لا توجد إشعارات':lang==='tr'?'Bildirim yok':'No notifications')+'</div>';return;}
-    const icons={info:'💬',success:'✅',warning:'⚠️',profit:'💰',system:'🔔'};
-    el.innerHTML=data.map(n=>'<div style="display:flex;gap:12px;padding:14px;background:var(--dark3);border-radius:10px;border:1px solid var(--border);margin-bottom:8px"><span style="font-size:20px;flex-shrink:0">'+(icons[n.type]||'🔔')+'</span><div><div style="font-weight:600;font-size:13px;margin-bottom:3px">'+escapeHtml(n.title)+'</div><div style="font-size:12px;color:var(--muted)">'+escapeHtml(n.body||'')+'</div></div></div>').join('');
+    const {data}=await db.from('notifications').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(30);
+    if(!data||!data.length){
+      el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+(lang==='ar'?'لا توجد إشعارات':lang==='tr'?'Bildirim yok':'No notifications')+'</div>';
+      return;
+    }
+    const icons={info:'💬',success:'✅',warning:'⚠️',profit:'💰',system:'🔔',error:'❌'};
+    // عرض العنوان والـ body باللغة الصح
+    const getTitle = n => {
+      if(lang==='en' && n.title_en) return n.title_en;
+      if(lang==='tr' && n.title_tr) return n.title_tr;
+      return n.title || '';
+    };
+    const getBody = n => {
+      if(lang==='en' && n.body_en) return n.body_en;
+      if(lang==='tr' && n.body_tr) return n.body_tr;
+      return n.body || '';
+    };
+    // فصل المقروءة من غير المقروءة
+    const unread = data.filter(n=>!n.is_read);
+    const read   = data.filter(n=>n.is_read);
+    const renderNotif = n => `
+      <div style="display:flex;gap:12px;padding:14px;background:${n.is_read?'var(--dark3)':'var(--dark2)'};border-radius:10px;border:1px solid ${n.is_read?'var(--border)':'var(--gold)'};margin-bottom:8px;opacity:${n.is_read?'.7':'1'}">
+        <span style="font-size:20px;flex-shrink:0">${icons[n.type]||'🔔'}</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:13px;margin-bottom:3px;direction:auto">${escapeHtml(getTitle(n))}</div>
+          <div style="font-size:12px;color:var(--muted);direction:auto">${escapeHtml(getBody(n))}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">${timeAgo(n.created_at)}</div>
+        </div>
+        ${!n.is_read?`<button onclick="markNotifRead('${n.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0;line-height:1;flex-shrink:0" title="Mark as read">✓</button>`:''}
+      </div>`;
+    let html = '';
+    if(unread.length) {
+      html += `<div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <span>${lang==='ar'?'غير مقروءة':'Unread'} (${unread.length})</span>
+        <button onclick="markAllNotifsRead()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px">
+          ${lang==='ar'?'✓ تعليم الكل مقروء':lang==='tr'?'✓ Tümünü okundu say':'✓ Mark all read'}
+        </button>
+      </div>`;
+      html += unread.map(renderNotif).join('');
+    }
+    if(read.length) {
+      if(unread.length) html += `<div style="font-size:11px;color:var(--muted);margin:12px 0 8px">${lang==='ar'?'المقروءة':'Read'}</div>`;
+      html += read.map(renderNotif).join('');
+    }
+    el.innerHTML = html;
+    // حدّث عداد الـ badge
+    const badge = document.getElementById('notif-badge');
+    if(badge){ badge.textContent=unread.length; badge.style.display=unread.length>0?'flex':'none'; }
+  } catch(e){ el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">—</div>'; }
+}
+
+async function markNotifRead(notifId) {
+  try {
+    await db.from('notifications').update({is_read:true}).eq('id',notifId);
+    loadNotifications();
   } catch(e){}
+}
+
+async function markAllNotifsRead() {
+  if(!userProfile) return;
+  try {
+    await db.from('notifications').update({is_read:true}).eq('user_id',userProfile.id).eq('is_read',false);
+    loadNotifications();
+  } catch(e){}
+}
+
+function timeAgo(dateStr) {
+  if(!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff/60000);
+  const h = Math.floor(diff/3600000);
+  const d = Math.floor(diff/86400000);
+  if(m<1)  return lang==='ar'?'الآن':lang==='tr'?'Şimdi':'Just now';
+  if(m<60) return lang==='ar'?`منذ ${m} دقيقة`:lang==='tr'?`${m} dakika önce`:`${m}m ago`;
+  if(h<24) return lang==='ar'?`منذ ${h} ساعة`:lang==='tr'?`${h} saat önce`:`${h}h ago`;
+  return lang==='ar'?`منذ ${d} يوم`:lang==='tr'?`${d} gün önce`:`${d}d ago`;
 }
 
 async function loadInvestments() {
@@ -2405,7 +2476,16 @@ async function submitKYC() {
       if(!error) uploads.push({name,path});
     }
     await db.from('users').update({kyc_status:'pending',kyc_data:JSON.stringify({doc_type:docType,files:uploads,submitted_at:new Date().toISOString()})}).eq('id',uid);
-    await db.from('notifications').insert({user_id:uid,title:'✅ '+(lang==='ar'?'تم استلام مستندات KYC':lang==='tr'?'KYC belgeleri alındı':'KYC documents received'),body:(lang==='ar'?'سيتم المراجعة خلال 24 ساعة':lang==='tr'?'24 saat içinde incelenecek':'Will be reviewed within 24 hours'),type:'info'});
+    await db.from('notifications').insert({
+      user_id:uid,
+      title:'🪪 '+(lang==='ar'?'تم استلام مستندات KYC':lang==='tr'?'KYC belgeleri alındı':'KYC documents received'),
+      title_en:'🪪 KYC Documents Received',
+      title_tr:'🪪 KYC Belgeleri Alındı',
+      body:(lang==='ar'?'سيتم المراجعة خلال 24 ساعة':lang==='tr'?'24 saat içinde incelenecek':'Will be reviewed within 24 hours'),
+      body_en:'Your documents will be reviewed within 24 hours',
+      body_tr:'Belgeleriniz 24 saat içinde incelenecek',
+      type:'info'
+    });
     userProfile.kyc_status='pending';userProfile.kyc_data=true;
     closeModal('kyc');
     renderKYCStatus();
@@ -2441,7 +2521,16 @@ async function submitDeposit() {
     }
 
     await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,tx_hash:hash,status:'pending',plan_id:planId});
-    await db.from('notifications').insert({user_id:userProfile.id,title:'📥 '+(lang==='ar'?'تم استلام طلب إيداعك':lang==='tr'?'Yatırım talebi alındı':'Deposit request received'),body:(lang==='ar'?'طلب إيداع $':lang==='tr'?'Yatırım talebi $':'Deposit request $')+amount+' '+(lang==='ar'?'قيد المراجعة':lang==='tr'?'inceleniyor':'under review'),type:'info'});
+    await db.from('notifications').insert({
+      user_id:userProfile.id,
+      title:'📥 '+(lang==='ar'?'تم استلام طلب إيداعك':lang==='tr'?'Yatırım talebi alındı':'Deposit request received'),
+      title_en:'📥 Deposit Request Received',
+      title_tr:'📥 Yatırım Talebi Alındı',
+      body:(lang==='ar'?'طلب إيداع $':lang==='tr'?'Yatırım talebi $':'Deposit request $')+amount+' '+(lang==='ar'?'قيد المراجعة':lang==='tr'?'inceleniyor':'under review'),
+      body_en:'Deposit request of $'+amount+' is under review',
+      body_tr:'$'+amount+' yatırım talebi inceleniyor',
+      type:'info'
+    });
     showToast(lang==='ar'?'✓ تم إرسال طلب الإيداع بنجاح':lang==='tr'?'✓ Yatırım talebi gönderildi':'✓ Deposit request submitted');
     document.getElementById('dep-hash').value='';
     document.getElementById('dep-amount').value='';
@@ -2484,7 +2573,16 @@ async function submitWithdrawal() {
 
   try {
     await db.from('withdrawals').insert({user_id:userProfile.id,amount,coin:coin.split('-')[0],network:coin,wallet_address:addr,status:'pending'});
-    await db.from('notifications').insert({user_id:userProfile.id,title:'📤 '+(lang==='ar'?'تم استلام طلب سحبك':lang==='tr'?'Çekim talebi alındı':'Withdrawal request received'),body:(lang==='ar'?'طلب سحب $':lang==='tr'?'Çekim talebi $':'Withdrawal request $')+amount+' '+(lang==='ar'?'قيد المراجعة':lang==='tr'?'inceleniyor':'under review'),type:'info'});
+    await db.from('notifications').insert({
+      user_id:userProfile.id,
+      title:'📤 '+(lang==='ar'?'تم استلام طلب سحبك':lang==='tr'?'Çekim talebi alındı':'Withdrawal request received'),
+      title_en:'📤 Withdrawal Request Received',
+      title_tr:'📤 Çekim Talebi Alındı',
+      body:(lang==='ar'?'طلب سحب $':lang==='tr'?'Çekim talebi $':'Withdrawal request $')+amount+' '+(lang==='ar'?'قيد المراجعة':lang==='tr'?'inceleniyor':'under review'),
+      body_en:'Withdrawal request of $'+amount+' is under review',
+      body_tr:'$'+amount+' çekim talebi inceleniyor',
+      type:'info'
+    });
     showToast(lang==='ar'?'✓ تم إرسال طلب السحب':lang==='tr'?'✓ Çekim talebi gönderildi':'✓ Withdrawal request sent');
     document.getElementById('wd-addr').value='';
     document.getElementById('wd-amount').value='';
