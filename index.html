@@ -2077,10 +2077,12 @@ function afterLogin() {
       if(nm) nm.textContent = (userProfile.name||_displayName).split(' ')[0];
       if(m)  m.textContent  = userProfile.memo || userProfile.ref_code || '---';
       if(r)  r.textContent  = 'https://crysanto.io/ref/' + (userProfile.ref_code || '---');
-      db.rpc('update_last_seen').catch(()=>{});
+      db.rpc('update_last_seen').then(()=>{}).catch(()=>{});
+      trackDeviceLogin();
     });
   } else {
-    db.rpc('update_last_seen').catch(()=>{});
+    db.rpc('update_last_seen').then(()=>{}).catch(()=>{});
+    trackDeviceLogin();
   }
 
   // lang buttons
@@ -2429,11 +2431,63 @@ async function cancelInvestment(investmentId) {
   await loadDashboard();
 }
 
-function loadReferral() {
+async function loadReferral() {
   if(!userProfile) return;
-  const rc=document.getElementById('d-ref-count');if(rc)rc.textContent=userProfile.ref_count||0;
-  const rt=document.getElementById('d-ref-total');if(rt)rt.textContent='$'+(userProfile.ref_earnings||0).toLocaleString();
-  const rl=document.getElementById('ref-link-txt');if(rl)rl.textContent='https://crysanto.io/ref/'+(userProfile.ref_code||'---');
+  const rl=document.getElementById('ref-link-txt');
+  if(rl) rl.textContent='https://crysanto.io/ref/'+(userProfile.ref_code||'---');
+
+  try {
+    const {data:refs}=await db.from('referrals')
+      .select('id,commission,status,created_at,users!referrals_referred_id_fkey(name,email)')
+      .eq('referrer_id',userProfile.id)
+      .order('created_at',{ascending:false});
+
+    const total   = refs?.length || userProfile.ref_count || 0;
+    const earned  = refs?.reduce((s,r)=>s+parseFloat(r.commission||0),0) || userProfile.ref_earnings || 0;
+    const pending = refs?.filter(r=>r.status==='pending').reduce((s,r)=>s+parseFloat(r.commission||0),0) || 0;
+    const fmt = v=>'$'+parseFloat(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+
+    const rc=document.getElementById('d-ref-count'); if(rc) rc.textContent=total;
+    const rt=document.getElementById('d-ref-total'); if(rt) rt.textContent=fmt(earned);
+
+    // إضافة جدول الإحالات لو موجود
+    if(refs&&refs.length>0) {
+      const existing=document.getElementById('ref-history-table');
+      if(existing) existing.remove();
+      const wrap=document.querySelector('#page-referral .panel')||document.querySelector('#page-referral');
+      if(wrap) {
+        const tbl=document.createElement('div');
+        tbl.id='ref-history-table';
+        tbl.style.cssText='margin-top:20px';
+        tbl.innerHTML=`
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--gold)">
+            ${lang==='ar'?'سجل الإحالات':lang==='tr'?'Referans Geçmişi':'Referral History'}
+          </div>
+          ${refs.map(r=>{
+            const name=r.users?.name||r.users?.email?.split('@')[0]||'—';
+            const amt=parseFloat(r.commission||0);
+            const paid=r.status==='paid'||r.status==='credited';
+            return`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--dark3);border-radius:8px;border:1px solid var(--border);margin-bottom:6px">
+              <div>
+                <div style="font-size:13px;font-weight:600">${escapeHtml(name)}</div>
+                <div style="font-size:11px;color:var(--muted)">${(r.created_at||'').slice(0,10)}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:11px;background:${paid?'rgba(34,211,160,.15)':'rgba(249,115,22,.15)'};color:${paid?'var(--green)':'var(--orange)'};padding:2px 8px;border-radius:100px">
+                  ${paid?(lang==='ar'?'مدفوع':lang==='tr'?'Ödendi':'Paid'):(lang==='ar'?'معلق':lang==='tr'?'Bekliyor':'Pending')}
+                </span>
+                <span style="font-family:var(--mono);color:var(--green);font-weight:700">+${fmt(amt)}</span>
+              </div>
+            </div>`;
+          }).join('')}`;
+        wrap.appendChild(tbl);
+      }
+    }
+  } catch(e) {
+    // fallback للبيانات المحلية
+    const rc=document.getElementById('d-ref-count'); if(rc) rc.textContent=userProfile.ref_count||0;
+    const rt=document.getElementById('d-ref-total'); if(rt) rt.textContent='$'+(userProfile.ref_earnings||0).toLocaleString();
+  }
 }
 
 // ── KYC ──
@@ -2691,7 +2745,7 @@ async function confirm2FAEnrollment() {
 }
 
 function cancel2FAEnrollment() {
-  if (_mfaPendingFactorId) { db.auth.mfa.unenroll({ factorId: _mfaPendingFactorId }).catch(()=>{}); }
+  if (_mfaPendingFactorId) { db.auth.mfa.unenroll({ factorId: _mfaPendingFactorId }).then(()=>{}).catch(()=>{}); }
   _mfaPendingFactorId = null;
   document.getElementById('mfa-enroll-box').style.display = 'none';
   document.getElementById('mfa-verify-code').value = '';
@@ -2988,6 +3042,7 @@ function init(){
     if (plans && plans.length) {
       __plansCache = plans;
       buildPlans(); // تحديث الباقات ببيانات DB الحقيقية
+      loadCalcPlans(); // تحديث الـ calculator بالباقات الحقيقية
     }
   });
 
@@ -3110,6 +3165,45 @@ async function loadMyDailyProfits() {
   } catch(e) {
     listEl.innerHTML='<div style="color:var(--red);text-align:center;padding:20px;font-size:13px">✗ '+escapeHtml(e.message)+'</div>';
   }
+}
+
+// تحديث calculator بالباقات من DB
+async function loadCalcPlans() {
+  try {
+    if(!__plansCache) __plansCache=await fetchPlansFromDB();
+    const rows=__plansCache;
+    if(!rows||!rows.length) return;
+    const sel=document.getElementById('calc-plan');
+    if(!sel) return;
+    const nameKey={ar:'name_ar',en:'name_en',tr:'name_tr'}[lang]||'name_en';
+    sel.innerHTML=rows.map((r,i)=>
+      `<option value="${r.daily_rate},${r.duration_days}" ${i===1?'selected':''}>
+        ${escapeHtml(r[nameKey]||r.name_en||'Plan')} — ${r.daily_rate}%/day
+      </option>`
+    ).join('');
+    calcProfit();
+  } catch(e){}
+}
+
+// تحقق من wallet addresses
+async function checkWalletAddressesSet() {
+  try {
+    const {data}=await db.from('settings')
+      .select('key,value')
+      .in('key',['wallet_usdt_trc20','wallet_usdt_erc20','wallet_btc','wallet_eth']);
+    if(!data) return;
+    const allEmpty=data.every(r=>!r.value||r.value.trim()==='');
+    if(allEmpty) {
+      const depWrap=document.getElementById('dw-dep');
+      if(depWrap&&!document.getElementById('wallet-warn-bar')) {
+        const warn=document.createElement('div');
+        warn.id='wallet-warn-bar';
+        warn.style.cssText='background:rgba(255,80,80,.1);border:1px solid var(--red);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--red);text-align:center';
+        warn.textContent={ar:'⚠️ عناوين المحافظ غير مضبوطة — تواصل مع الدعم',en:'⚠️ Wallet addresses not configured — contact support',tr:'⚠️ Cüzdan adresleri ayarlanmamış'}[lang];
+        depWrap.insertBefore(warn,depWrap.firstChild);
+      }
+    }
+  } catch(e){}
 }
 </script>
 </body>
