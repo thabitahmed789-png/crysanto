@@ -824,7 +824,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <div style="font-size:44px;margin-bottom:12px">🎁</div>
         <h3 style="font-size:26px;font-weight:800" id="ref-earn" data-ar="اكسب 5% عمولة" data-en="Earn 5% Commission" data-tr="%5 Komisyon Kazan">اكسب 5% عمولة</h3>
         <p style="color:var(--muted);font-size:13px;margin-top:6px" id="ref-desc" data-ar="من كل إيداع يقوم به المستخدم الذي أحلته" data-en="From every deposit by your referred user" data-tr="Davet ettiğiniz kullanıcının her yatırımından">من كل إيداع يقوم به المستخدم الذي أحلته</p>
-        <div class="ref-link"><span id="ref-link-txt">https://crysanto.io/ref/---</span><button class="copy-btn" onclick="copyRef()" id="ref-copy-btn" data-ar="نسخ" data-en="Copy" data-tr="Kopyala">نسخ</button></div>
+        <div class="ref-link"><span id="ref-link-txt">...</span><button class="copy-btn" onclick="copyRef()" id="ref-copy-btn" data-ar="نسخ" data-en="Copy" data-tr="Kopyala">نسخ</button></div>
       </div>
       <div class="stat-cards" style="grid-template-columns:repeat(3,1fr)">
         <div class="stat-card"><div class="sc-label" id="re1" data-ar="إجمالي الإحالات" data-en="Total Referrals" data-tr="Toplam Referans">إجمالي الإحالات</div><div class="sc-val" id="d-ref-count">0</div></div>
@@ -1382,6 +1382,29 @@ async function checkPasswordRecoveryLink(){
   if(!error) openModal('reset-password');
 }
 checkPasswordRecoveryLink();
+
+// ✅ FIX: قراءة كود الإحالة من اللينك (?ref=CODE) وفتح صفحة التسجيل تلقائيًا
+;(function checkReferralLink(){
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('ref');
+    if(refCode && refCode !== '---') {
+      window._incomingRefCode = refCode;
+      // امسح الـ query من الـ URL بدون إعادة تحميل عشان مايتكررش
+      history.replaceState(null, '', window.location.pathname + window.location.hash);
+      // افتح مودال التسجيل تلقائيًا وعبّي كود الإحالة بعد ما الصفحة تخلص تحميل
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+          if(!isLoggedIn) {
+            openModal('register');
+            const refInput = document.getElementById('reg-ref');
+            if(refInput) refInput.value = refCode;
+          }
+        }, 300);
+      });
+    }
+  } catch(e) {}
+})();
 
 // ── بيانات العملات — تُحدَّث من CoinGecko مع fallback ──
 let coins = [
@@ -2061,7 +2084,7 @@ function afterLogin() {
   if(av) av.textContent = _firstLetter;
   if(nm) nm.textContent = _displayName;
   if(m)  m.textContent  = userProfile?.memo || userProfile?.ref_code || '---';
-  if(r)  r.textContent  = 'https://crysanto.io/ref/' + (userProfile?.ref_code || '---');
+  if(r)  r.textContent  = buildReferralLink(userProfile?.ref_code);
   // تحديث رصيد الـ dropdown
   const _balNav = document.getElementById('user-balance-nav');
   if(_balNav && userProfile) {
@@ -2076,7 +2099,7 @@ function afterLogin() {
       if(av) av.textContent = (userProfile.name||_firstLetter)[0].toUpperCase();
       if(nm) nm.textContent = (userProfile.name||_displayName).split(' ')[0];
       if(m)  m.textContent  = userProfile.memo || userProfile.ref_code || '---';
-      if(r)  r.textContent  = 'https://crysanto.io/ref/' + (userProfile.ref_code || '---');
+      if(r)  r.textContent  = buildReferralLink(userProfile.ref_code);
       db.rpc('update_last_seen').then(()=>{}).catch(()=>{});
       trackDeviceLogin();
     });
@@ -2434,7 +2457,7 @@ async function cancelInvestment(investmentId) {
 async function loadReferral() {
   if(!userProfile) return;
   const rl=document.getElementById('ref-link-txt');
-  if(rl) rl.textContent='https://crysanto.io/ref/'+(userProfile.ref_code||'---');
+  if(rl) rl.textContent=buildReferralLink(userProfile.ref_code);
 
   try {
     const {data:refs}=await db.from('referrals')
@@ -3022,6 +3045,12 @@ document.addEventListener('click',function(e){
     closeMobileMenu();
   }
 });
+
+// ✅ FIX: بناء لينك الإحالة من الدومين الفعلي + query param بدل path وهمي
+function buildReferralLink(code) {
+  if(!code || code === '---') return window.location.origin + window.location.pathname + '?ref=---';
+  return window.location.origin + window.location.pathname + '?ref=' + code;
+}
 
 // ── INIT ──
 function init(){
