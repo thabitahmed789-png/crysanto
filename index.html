@@ -69,6 +69,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--gold-dim);border:1px solid var(--border);padding:6px 18px;border-radius:100px;font-size:12px;color:var(--gold);margin-bottom:28px;}
 .badge-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin{to{transform:rotate(360deg)}}
 .hero h1{font-size:clamp(38px,7vw,86px);font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:20px;}
 .gold{color:var(--gold);}
 .outline{-webkit-text-stroke:1px var(--gold);color:transparent;}
@@ -1364,16 +1365,20 @@ db.auth.onAuthStateChange(async (event, session) => {
     if(_bL) _bL.style.display = 'none';
     if(_bR) _bR.style.display = 'none';
     document.body.classList.add('logged-in');
-    // جلب البروفايل
-    await fetchProfile(3, 500);
-    if(userProfile) {
-      afterLogin();
-    } else {
-      // fetchProfile فشل — ارجع للوضع الطبيعي
-      document.body.classList.remove('logged-in');
-      if(_bL) _bL.style.display = '';
-      if(_bR) _bR.style.display = '';
-    }
+    // ✅ FIX: استدعِ afterLogin فورًا (مش بعد ما fetchProfile يخلص) — هي أصلًا بتتعامل
+    // مع userProfile=null بعرض حالة تحميل، وبتكمل التحديث لما fetchProfile يخلص في الخلفية
+    afterLogin(false);
+    fetchProfile(3, 500).then(() => {
+      if(userProfile) {
+        afterLogin(true); // إعادة تحديث الواجهة بالبيانات الحقيقية — بدون تكرار toast/idle-timer/device-tracking
+      } else {
+        // fetchProfile فشلت فعليًا (مش بس بطيئة) — ارجع للوضع الطبيعي
+        isLoggedIn = false;
+        document.body.classList.remove('logged-in');
+        if(_bL) _bL.style.display = '';
+        if(_bR) _bR.style.display = '';
+      }
+    });
   } else if(event === 'SIGNED_OUT') {
     isLoggedIn = false; currentUser = null; userProfile = null;
     document.body.classList.remove('logged-in');
@@ -2126,11 +2131,11 @@ async function fetchProfile(retries = 3, delay = 500) {
   console.error('fetchProfile: FAILED after', retries, 'attempts');
 }
 
-function afterLogin() {
+function afterLogin(isUpdate) {
   isLoggedIn = true;
   _optimisticAuth = false; // ✅ FIX: الجلسة اتأكدت رسميًا، مش محتاجين الـ optimistic flag بعد كده
   document.body.classList.add('logged-in');
-  resetIdleTimer(); // ✅ FIX: تشغيل عداد الخمول لما اليوزر يسجل دخول
+  if(!isUpdate) resetIdleTimer(); // ✅ FIX: تشغيل عداد الخمول مرة واحدة بس عند أول دخول فعلي
 
   // شيل الـ overlay فوراً
   const _ov = document.getElementById('session-check-overlay');
@@ -2174,25 +2179,7 @@ function afterLogin() {
   if(userProfile) {
     if(_pendingDashboardLoad) { loadDashboard(); _pendingDashboardLoad = false; }
     if(_pendingReferralLoad)  { loadReferral();  _pendingReferralLoad = false; }
-  }
-
-  // لو البروفايل جه بعدين، نحدث الـ nav تاني
-  if (!userProfile) {
-    fetchProfile(2, 600).then(() => {
-      if (!userProfile) return;
-      if(av) av.textContent = (userProfile.name||_firstLetter)[0].toUpperCase();
-      if(nm) nm.textContent = (userProfile.name||_displayName).split(' ')[0];
-      if(m)  m.textContent  = userProfile.memo || userProfile.ref_code || '---';
-      if(r)  r.textContent  = buildReferralLink(userProfile.ref_code);
-      db.rpc('update_last_seen').then(()=>{}).catch(()=>{});
-      trackDeviceLogin();
-      // ✅ FIX: نفّذ الـ pending loads هنا كمان لو كانت لسه مستنية
-      if(_pendingDashboardLoad) { loadDashboard(); _pendingDashboardLoad = false; }
-      if(_pendingReferralLoad)  { loadReferral();  _pendingReferralLoad = false; }
-    });
-  } else {
-    db.rpc('update_last_seen').then(()=>{}).catch(()=>{});
-    trackDeviceLogin();
+    if(!isUpdate) { db.rpc('update_last_seen').then(()=>{}).catch(()=>{}); trackDeviceLogin(); }
   }
 
   // lang buttons
@@ -2201,7 +2188,10 @@ function afterLogin() {
     b.classList.toggle('on', oc.includes("setLang('" + lang + "')"));
   });
 
-  showToast({ar:'مرحباً ' + (_name||_email||'') + ' 👋', en:'Welcome ' + (_name||_email||'') + ' 👋', tr:'Hoşgeldiniz ' + (_name||_email||'') + ' 👋'}[lang] || 'Welcome 👋');
+  // ✅ FIX: رسالة الترحيب مرة واحدة بس — مش عند كل تحديث للبروفايل
+  if(!isUpdate) {
+    showToast({ar:'مرحباً ' + (_name||_email||'') + ' 👋', en:'Welcome ' + (_name||_email||'') + ' 👋', tr:'Hoşgeldiniz ' + (_name||_email||'') + ' 👋'}[lang] || 'Welcome 👋');
+  }
 
   if(pendingPage) {
     const p = pendingPage; pendingPage = null;
@@ -2220,7 +2210,15 @@ function getPlanName(inv) {
   return inv.plan_name || {ar:'استثمار',en:'Investment',tr:'Yatırım'}[lang] || 'Investment';
 }
 async function loadDashboard() {
-  if(!userProfile) return;
+  if(!userProfile) {
+    // ✅ FIX: لسه مفيش بروفايل — اعرض حالة تحميل بدل أرقام $0 المضلّلة
+    const loadingTxt = lang==='ar' ? '...' : lang==='tr' ? '...' : '...';
+    ['d-bal','d-profit','d-invested','d-ref-total'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.innerHTML='<span style="opacity:.4;display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite"></span>';
+    });
+    return;
+  }
 
   // ── بيانات من الـ profile ──
   document.getElementById('d-bal').textContent     = '$'+(userProfile.balance||0).toLocaleString();
