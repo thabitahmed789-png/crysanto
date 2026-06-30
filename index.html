@@ -1299,6 +1299,7 @@ function escapeHtml(str) {
 }
 
 let lang = localStorage.getItem('crysanto_lang') || "en";
+let _optimisticAuth = false; // ✅ FIX: true مؤقتًا لو فيه كاش محلي، لحد ما Supabase يتأكد فعليًا
 
 // ✅ FIX: استرجاع فوري للحالة (optimistic UI) — نعرض الواجهة logged-in فورًا
 // من آخر بيانات محفوظة محليًا، بدل ما نستنى رد Supabase اللي ممكن ياخد ثواني
@@ -1308,6 +1309,7 @@ let lang = localStorage.getItem('crysanto_lang') || "en";
     if(cached) {
       const u = JSON.parse(cached);
       if(u && u.name) {
+        _optimisticAuth = true; // ✅ FIX: يسمح بفتح الصفحات المحمية فورًا بدون ما يطلب تسجيل دخول
         document.body.classList.add('logged-in');
         const av = document.getElementById('user-av');
         const nm = document.getElementById('user-name-nav');
@@ -1343,6 +1345,7 @@ setTimeout(() => {
   }
 }, 3000);
 let isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
+let _pendingDashboardLoad = false, _pendingReferralLoad = false; // ✅ FIX: لو الصفحة اتفتحت optimistically قبل ما البروفايل يجهز
 let _authHandled = false; // منع تعارض login/register مع onAuthStateChange
 const PROTECTED = ['dashboard','deposit','referral'];
 
@@ -1392,6 +1395,7 @@ db.auth.onAuthStateChange(async (event, session) => {
 
     // ✅ FIX: لو مفيش session فعلية بس كان عندنا optimistic UI من كاش قديم — نظّف الواجهة
     if(!session && !isLoggedIn) {
+      _optimisticAuth = false; // ✅ FIX: الكاش كان غلط — إلغاء الحالة المؤقتة
       try { localStorage.removeItem('crysanto_last_user'); } catch(e) {}
       document.body.classList.remove('logged-in');
       const _bL = document.getElementById('btnLogin');
@@ -1400,6 +1404,12 @@ db.auth.onAuthStateChange(async (event, session) => {
       if(_bL) _bL.style.display = '';
       if(_bR) _bR.style.display = '';
       if(_uM) _uM.style.display = 'none';
+      // ✅ FIX: لو كان فاتح صفحة محمية اعتمادًا على الكاش الغلط، رجّعه للرئيسية واطلب تسجيل الدخول
+      const activeProtected = document.querySelector('.page.active');
+      if(activeProtected && PROTECTED.some(p => activeProtected.id === 'page-'+p)) {
+        showPage('home', document.querySelector('.nav-links a'));
+        showToast(lang==='ar'?'انتهت الجلسة، يرجى تسجيل الدخول':lang==='tr'?'Oturum sona erdi, lütfen giriş yapın':'Session expired, please sign in','err');
+      }
     }
 
     // لو المستخدم كان ضغط على صفحة محمية (زي تحديد باقة استثمار) قبل ما نتأكد من الجلسة، نكمله دلوقتي
@@ -1660,11 +1670,12 @@ const features = {
 
 // ── NAVIGATION ──
 function showPage(id, el) {
-  if(PROTECTED.includes(id) && !isLoggedIn) {
+  // ✅ FIX: لو فيه جلسة optimistic (من الكاش المحلي) أو المستخدم فعليًا داخل، اسمح بفتح الصفحة المحمية
+  // وما تستناش authReady — البيانات هتتحدث لوحدها لما fetchProfile يخلص في الخلفية
+  if(PROTECTED.includes(id) && !isLoggedIn && !_optimisticAuth) {
     if(!authReady) {
       // لسه بنتأكد فيه جلسة محفوظة ولا لأ — منستعجلش بإظهار صفحة تسجيل الدخول
       pendingPage = {id, el};
-      showToast(lang==='ar'?'⏳ لحظة...':lang==='tr'?'⏳ Bir dakika...':'⏳ One moment...');
       return;
     }
     pendingPage={id,el}; openModal('login'); return;
@@ -1676,9 +1687,9 @@ function showPage(id, el) {
   document.querySelectorAll('.nav-links a, .mobile-menu a').forEach(a=>a.classList.remove('active'));
   if(el && el.classList) el.classList.add('active');
   window.scrollTo({top:0,behavior:'smooth'});
-  if(id==='dashboard' && userProfile) loadDashboard();
-  if(id==='referral'  && userProfile) loadReferral();
-  if(id==='deposit'   && userProfile) { const m=document.getElementById('user-memo'); if(m) m.textContent=userProfile.memo||userProfile.ref_code||'---'; }
+  if(id==='dashboard') { if(userProfile) loadDashboard(); else _pendingDashboardLoad = true; }
+  if(id==='referral')  { if(userProfile) loadReferral();  else _pendingReferralLoad = true; }
+  if(id==='deposit')   { const m=document.getElementById('user-memo'); if(m) m.textContent=userProfile?.memo||userProfile?.ref_code||'---'; }
 }
 
 function openModal(type) {
@@ -2117,6 +2128,7 @@ async function fetchProfile(retries = 3, delay = 500) {
 
 function afterLogin() {
   isLoggedIn = true;
+  _optimisticAuth = false; // ✅ FIX: الجلسة اتأكدت رسميًا، مش محتاجين الـ optimistic flag بعد كده
   document.body.classList.add('logged-in');
   resetIdleTimer(); // ✅ FIX: تشغيل عداد الخمول لما اليوزر يسجل دخول
 
@@ -2158,6 +2170,12 @@ function afterLogin() {
     _balNav.textContent = ({ar:'الرصيد: $',en:'Balance: $',tr:'Bakiye: $'}[lang]||'Balance: $') + _b.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
   }
 
+  // ✅ FIX: لو الصفحة اتفتحت optimistically قبل ما البروفايل يجهز، حمّل بياناتها دلوقتي
+  if(userProfile) {
+    if(_pendingDashboardLoad) { loadDashboard(); _pendingDashboardLoad = false; }
+    if(_pendingReferralLoad)  { loadReferral();  _pendingReferralLoad = false; }
+  }
+
   // لو البروفايل جه بعدين، نحدث الـ nav تاني
   if (!userProfile) {
     fetchProfile(2, 600).then(() => {
@@ -2168,6 +2186,9 @@ function afterLogin() {
       if(r)  r.textContent  = buildReferralLink(userProfile.ref_code);
       db.rpc('update_last_seen').then(()=>{}).catch(()=>{});
       trackDeviceLogin();
+      // ✅ FIX: نفّذ الـ pending loads هنا كمان لو كانت لسه مستنية
+      if(_pendingDashboardLoad) { loadDashboard(); _pendingDashboardLoad = false; }
+      if(_pendingReferralLoad)  { loadReferral();  _pendingReferralLoad = false; }
     });
   } else {
     db.rpc('update_last_seen').then(()=>{}).catch(()=>{});
