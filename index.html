@@ -46,7 +46,7 @@ body:not(.auth-ready) #page-dashboard,
 body:not(.auth-ready) #page-deposit,
 body:not(.auth-ready) #page-referral { visibility: hidden; }
 
-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:68px;background:rgba(8,12,18,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);;overflow:hidden;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:68px;background:rgba(8,12,18,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
 .logo{font-family:Georgia,serif;font-size:20px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:10px;letter-spacing:2px;}
 .logo-icon{width:34px;height:34px;display:flex;align-items:center;justify-content:center;}
 .nav-links{display:flex;gap:2px;list-style:none;flex-wrap:nowrap;overflow:hidden;flex:1;justify-content:center;}
@@ -321,8 +321,8 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <span id="user-name-nav" style="font-size:13px;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">User</span>
         <span style="color:var(--muted);font-size:10px;margin-right:2px;">▾</span>
       </div>
-      <!-- dropdown -->
-      <div id="user-dropdown" style="display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;min-width:200px;background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:8px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+      <!-- dropdown — fixed عشان مايتقصش جوه أي overflow في الـ nav -->
+      <div id="user-dropdown" style="display:none;position:fixed;top:76px;min-width:220px;background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:8px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,0.6);backdrop-filter:blur(12px);">
         <div onclick="showPage('dashboard',null);closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
           <span style="font-size:15px">📊</span>
           <span style="font-size:13px" data-ar="لوحتي" data-en="My Dashboard" data-tr="Panelim">My Dashboard</span>
@@ -1299,6 +1299,38 @@ function escapeHtml(str) {
 }
 
 let lang = localStorage.getItem('crysanto_lang') || "en";
+
+// ✅ FIX: استرجاع فوري للحالة (optimistic UI) — نعرض الواجهة logged-in فورًا
+// من آخر بيانات محفوظة محليًا، بدل ما نستنى رد Supabase اللي ممكن ياخد ثواني
+;(function restoreOptimisticUI(){
+  try {
+    const cached = localStorage.getItem('crysanto_last_user');
+    if(cached) {
+      const u = JSON.parse(cached);
+      if(u && u.name) {
+        document.body.classList.add('logged-in');
+        const av = document.getElementById('user-av');
+        const nm = document.getElementById('user-name-nav');
+        const bL = document.getElementById('btnLogin');
+        const bR = document.getElementById('btnRegister');
+        const uM = document.getElementById('user-menu');
+        if(av) av.textContent = (u.name||'?')[0].toUpperCase();
+        if(nm) nm.textContent = u.name.split(' ')[0];
+        if(bL) bL.style.display = 'none';
+        if(bR) bR.style.display = 'none';
+        if(uM) uM.style.display = 'flex';
+        // شيل الـ overlay فورًا — عندنا بيانات نعرضها
+        const ov = document.getElementById('session-check-overlay');
+        if(ov) { ov.style.display='none'; ov.style.visibility='hidden'; ov.style.pointerEvents='none'; }
+      }
+    } else {
+      // مفيش حساب محفوظ محليًا — شيل الـ overlay فورًا برضو (مفيش داعي ننتظر)
+      const ov = document.getElementById('session-check-overlay');
+      if(ov) { ov.style.display='none'; ov.style.visibility='hidden'; ov.style.pointerEvents='none'; }
+    }
+  } catch(e) {}
+})();
+
 // شبكة أمان: لو لأي سبب الـ INITIAL_SESSION ماجتش، منسيبش شاشة التحميل عالقة للأبد
 // authReady بعد 3 ثواني max — بعدها بيشغل زي ما لو مفيش session
 setTimeout(() => {
@@ -1357,6 +1389,19 @@ db.auth.onAuthStateChange(async (event, session) => {
     const ov = document.getElementById('session-check-overlay');
     if (ov) { ov.style.display = 'none'; ov.style.visibility = 'hidden'; ov.style.pointerEvents = 'none'; }
     document.body.classList.add('auth-ready'); // نعرف إن الـ auth check خلص
+
+    // ✅ FIX: لو مفيش session فعلية بس كان عندنا optimistic UI من كاش قديم — نظّف الواجهة
+    if(!session && !isLoggedIn) {
+      try { localStorage.removeItem('crysanto_last_user'); } catch(e) {}
+      document.body.classList.remove('logged-in');
+      const _bL = document.getElementById('btnLogin');
+      const _bR = document.getElementById('btnRegister');
+      const _uM = document.getElementById('user-menu');
+      if(_bL) _bL.style.display = '';
+      if(_bR) _bR.style.display = '';
+      if(_uM) _uM.style.display = 'none';
+    }
+
     // لو المستخدم كان ضغط على صفحة محمية (زي تحديد باقة استثمار) قبل ما نتأكد من الجلسة، نكمله دلوقتي
     if(pendingPage && pendingPage.id && pendingPage.id !== 'login') {
       const pp = pendingPage; pendingPage = null;
@@ -1967,26 +2012,41 @@ async function doRegister() {
 
 function toggleUserDropdown() {
   const dd = document.getElementById('user-dropdown');
+  const btn = document.getElementById('user-menu-btn');
   if (!dd) return;
   const isOpen = dd.style.display === 'block';
-  dd.style.display = isOpen ? 'none' : 'block';
-  if (!isOpen) {
-    // تحديث الرصيد في الـ dropdown
-    const balEl = document.getElementById('user-balance-nav');
-    if (balEl && userProfile) {
-      const bal = parseFloat(userProfile.balance || 0);
-      balEl.textContent = ({ar:'الرصيد: $', en:'Balance: $', tr:'Bakiye: $'}[lang]||'Balance: $') + bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  if (isOpen) { closeUserDropdown(); return; }
+
+  // ✅ FIX: احسب مكان الـ dropdown ديناميكيًا بناءً على موضع الزرار — يشتغل صح بـ position:fixed
+  if (btn) {
+    const rect = btn.getBoundingClientRect();
+    const isLtr = document.body.classList.contains('ltr');
+    dd.style.top = (rect.bottom + 8) + 'px';
+    if (isLtr) {
+      dd.style.left = rect.left + 'px';
+      dd.style.right = 'auto';
+    } else {
+      dd.style.right = (window.innerWidth - rect.right) + 'px';
+      dd.style.left = 'auto';
     }
-    // إغلاق لو ضغط برا
-    setTimeout(() => {
-      document.addEventListener('click', function _close(e) {
-        if (!document.getElementById('user-menu')?.contains(e.target)) {
-          closeUserDropdown();
-          document.removeEventListener('click', _close);
-        }
-      });
-    }, 10);
   }
+
+  dd.style.display = 'block';
+  // تحديث الرصيد في الـ dropdown
+  const balEl = document.getElementById('user-balance-nav');
+  if (balEl && userProfile) {
+    const bal = parseFloat(userProfile.balance || 0);
+    balEl.textContent = ({ar:'الرصيد: $', en:'Balance: $', tr:'Bakiye: $'}[lang]||'Balance: $') + bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  // إغلاق لو ضغط برا
+  setTimeout(() => {
+    document.addEventListener('click', function _close(e) {
+      if (!document.getElementById('user-menu')?.contains(e.target) && !dd.contains(e.target)) {
+        closeUserDropdown();
+        document.removeEventListener('click', _close);
+      }
+    });
+  }, 10);
 }
 
 function closeUserDropdown() {
@@ -2001,6 +2061,7 @@ async function doLogout() {
   _authHandled = false;
   isLoggedIn = false; currentUser = null; userProfile = null;
   document.body.classList.remove('logged-in');
+  try { localStorage.removeItem('crysanto_last_user'); } catch(e) {} // ✅ FIX: امسح الكاش المحلي
   const btnL = document.getElementById('btnLogin');
   const btnR = document.getElementById('btnRegister');
   const uMenu = document.getElementById('user-menu');
@@ -2085,6 +2146,11 @@ function afterLogin() {
   if(nm) nm.textContent = _displayName;
   if(m)  m.textContent  = userProfile?.memo || userProfile?.ref_code || '---';
   if(r)  r.textContent  = buildReferralLink(userProfile?.ref_code);
+
+  // ✅ FIX: احفظ بيانات أساسية محليًا عشان الـ refresh الجاي يعرضها فورًا (optimistic UI)
+  try {
+    localStorage.setItem('crysanto_last_user', JSON.stringify({ name: _displayName }));
+  } catch(e) {}
   // تحديث رصيد الـ dropdown
   const _balNav = document.getElementById('user-balance-nav');
   if(_balNav && userProfile) {
