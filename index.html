@@ -2233,6 +2233,10 @@ function afterLogin(isUpdate) {
 
 // helper: اسم الباقة بالـ lang الصح
 function getPlanName(inv) {
+  // ✅ FIX: أولوية للاسم من الـ join (plans table) — بعدين الـ cache — بعدين العربي كـ fallback
+  if (inv.plans) {
+    return inv.plans['name_'+lang] || inv.plans.name_en || inv.plans.name_ar || inv.plan_name || 'Plan';
+  }
   const row = (__plansCache||[]).find(p => String(p.id) === String(inv.plan_id));
   if (row) return row['name_'+lang] || row.name_en || row.name_ar || inv.plan_name || 'Plan';
   return inv.plan_name || {ar:'استثمار',en:'Investment',tr:'Yatırım'}[lang] || 'Investment';
@@ -2490,7 +2494,11 @@ async function loadInvestments() {
   if(!userProfile) return;
   const el=document.getElementById('inv-list');
   try {
-    const {data}=await db.from('investments').select('*').eq('user_id',userProfile.id).order('created_at',{ascending:false});
+    // ✅ FIX: جيب اسم الباقة بالـ 3 لغات مباشرة من جدول plans عبر plan_id
+    const {data}=await db.from('investments')
+      .select('*, plans(name_ar, name_en, name_tr)')
+      .eq('user_id',userProfile.id)
+      .order('created_at',{ascending:false});
     window.__myInvestments = data || [];
     if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">—</div>';return;}
     const statusColors = {active:'var(--green)',completed:'var(--muted)',cancelled:'var(--red)'};
@@ -2548,9 +2556,12 @@ async function cancelInvestment(investmentId) {
   // نتحقق إن الاستثمار فعلاً active وتابع لليوزر الحالي
   const inv = (window.__myInvestments||[]).find(i=>i.id===investmentId && i.status==='active');
   if(!inv) { showToast(lang==='ar'?'✗ الاستثمار غير موجود أو تم معالجته مسبقاً':lang==='tr'?'✗ Yatırım bulunamadı veya zaten işlendi':'✗ Investment not found or already processed','err'); return; }
+  const planDisplayName = getPlanName(inv);
   const ok = confirm(lang==='ar'
-    ? `هل أنت متأكد من إلغاء استثمارك في "${inv.plan_name}"؟\nسيتوقف الربح اليومي ويُرجع المبلغ لرصيدك.`
-    : `Cancel your investment in "${inv.plan_name}"?\nDaily profit will stop and amount will be refunded.`);
+    ? `هل أنت متأكد من إلغاء استثمارك في "${planDisplayName}"؟\nسيتوقف الربح اليومي ويُرجع المبلغ لرصيدك.`
+    : lang==='tr'
+    ? `"${planDisplayName}" yatırımınızı iptal etmek istediğinizden emin misiniz?\nGünlük kâr durur ve tutar bakiyenize iade edilir.`
+    : `Cancel your investment in "${planDisplayName}"?\nDaily profit will stop and amount will be refunded.`);
   if (!ok) return;
   // الـ trigger protect_investment_fields يحمي الحقول المهمة — فقط status يتغير
   const { error } = await db.from('investments').update({ status: 'cancelled' }).eq('id', investmentId).eq('user_id', userProfile.id);
