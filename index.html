@@ -2233,12 +2233,15 @@ function afterLogin(isUpdate) {
 
 // helper: اسم الباقة بالـ lang الصح
 function getPlanName(inv) {
-  // ✅ FIX: أولوية للاسم من الـ join (plans table) — بعدين الـ cache — بعدين العربي كـ fallback
-  if (inv.plans) {
-    return inv.plans['name_'+lang] || inv.plans.name_en || inv.plans.name_ar || inv.plan_name || 'Plan';
-  }
+  // ✅ FIX: استخدم الأسماء المخزّنة مباشرة في جدول investments كـ cache
+  if (lang === 'en' && inv.plan_name_en) return inv.plan_name_en;
+  if (lang === 'tr' && inv.plan_name_tr) return inv.plan_name_tr;
+  // fallback: من الـ join مع plans
+  if (inv.plans) return inv.plans['name_'+lang] || inv.plans.name_en || inv.plans.name_ar || inv.plan_name || 'Plan';
+  // fallback: من الـ cache المحلي
   const row = (__plansCache||[]).find(p => String(p.id) === String(inv.plan_id));
   if (row) return row['name_'+lang] || row.name_en || row.name_ar || inv.plan_name || 'Plan';
+  // آخر fallback: الاسم العربي المخزّن
   return inv.plan_name || {ar:'استثمار',en:'Investment',tr:'Yatırım'}[lang] || 'Investment';
 }
 async function loadDashboard() {
@@ -2494,7 +2497,6 @@ async function loadInvestments() {
   if(!userProfile) return;
   const el=document.getElementById('inv-list');
   try {
-    // ✅ FIX: جيب اسم الباقة بالـ 3 لغات مباشرة من جدول plans عبر plan_id
     const {data}=await db.from('investments')
       .select('*, plans(name_ar, name_en, name_tr)')
       .eq('user_id',userProfile.id)
