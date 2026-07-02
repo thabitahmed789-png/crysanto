@@ -2270,7 +2270,7 @@ async function loadDashboard() {
   // invested و ref_earnings بنحسبهم من الـ investments table
   try {
     const [invRes, depRes] = await Promise.all([
-      db.from('investments').select('*').eq('user_id',userProfile.id),
+      db.from('investments').select('*, plans(name_ar,name_en,name_tr)').eq('user_id',userProfile.id),
       db.from('deposits').select('amount').eq('user_id',userProfile.id).eq('status','approved')
     ]);
 
@@ -2315,7 +2315,7 @@ async function loadDashboard() {
           const msUntilNextProfit = 86400000 - msIntoCurrentDay;
           const h = Math.floor(msUntilNextProfit/3600000), m = Math.floor((msUntilNextProfit%3600000)/60000);
           return '<div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:var(--gold-dim);color:var(--gold)">💹</div>'+
-          '<div><div class="w-name">'+escapeHtml(inv.plan_name)+'</div>'+
+          '<div><div class="w-name">'+escapeHtml(getPlanName(inv))+'</div>'+
           '<div class="w-addr">'+inv.daily_rate+'%/day · '+({ar:'اليوم ',en:'Day ',tr:'Gün '}[lang]||'Day ')+dayNum+({ar:' من ',en:'/',tr:'/'}[lang]||'/')+totalDays+' · ⏱ '+h+'h '+m+'m</div></div></div>'+
           '<div class="w-bal">$'+parseFloat(inv.amount).toLocaleString()+'</div></div>';
         }).join('')+'</div>';
