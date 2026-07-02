@@ -2965,13 +2965,181 @@ function copyRef() {
 
 // ── PLAN BUTTONS ──
 function handlePlanClick(rate) {
-  if(isLoggedIn) { goToDeposit(rate); return; }
-  if(!authReady) {
-    pendingPage={id:'deposit',el:null,planRate:rate};
-    showToast(lang==='ar'?'⏳ لحظة...':lang==='tr'?'⏳ Bir dakika...':'⏳ One moment...');
+  if(!isLoggedIn && !_optimisticAuth) {
+    if(!authReady) { pendingPage={id:'deposit',el:null,planRate:rate}; return; }
+    pendingPage={id:'deposit',el:null,planRate:rate}; openModal('login'); return;
+  }
+  // ✅ NEW: عرض مودال الاختيار — من الرصيد أو إيداع جديد
+  showInvestmentChoiceModal(rate);
+}
+
+async function showInvestmentChoiceModal(rate) {
+  if(!__plansCache) __plansCache = await fetchPlansFromDB();
+  const row = (__plansCache||[]).find(r => String(parseFloat(r.daily_rate)) === String(rate));
+  if(!row) { goToDeposit(rate); return; }
+
+  const planName = row['name_'+lang] || row.name_en;
+  const minAmt   = parseFloat(row.min_amount || 100);
+  const balance  = parseFloat(userProfile?.balance || 0);
+  const canUseBalance = balance >= minAmt;
+
+  // شيل أي مودال قديم
+  const existing = document.getElementById('invest-choice-modal');
+  if(existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'invest-choice-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)';
+  modal.innerHTML = `
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:18px;padding:28px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.6)">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:28px;margin-bottom:8px">💹</div>
+        <h3 style="font-size:17px;font-weight:800;color:var(--gold);margin-bottom:4px">${escapeHtml(planName)}</h3>
+        <div style="font-size:13px;color:var(--muted)">${rate}%/day · ${row.duration_days} ${lang==='ar'?'يوم':lang==='tr'?'gün':'days'}</div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">
+        ${lang==='ar'?'كيف تريد الاستثمار؟':lang==='tr'?'Nasıl yatırım yapmak istersiniz?':'How would you like to invest?'}
+      </div>
+
+      <!-- الخيار 1: من الرصيد -->
+      <div id="invest-from-balance-box" style="border:2px solid ${canUseBalance?'var(--border)':'rgba(255,255,255,.08)'};border-radius:12px;padding:16px;margin-bottom:10px;cursor:${canUseBalance?'pointer':'not-allowed'};opacity:${canUseBalance?'1':'.45'};transition:.2s"
+        ${canUseBalance?`onclick="investFromBalance('${row.id}','${escapeHtml(planName)}',${rate},${row.duration_days},${minAmt})"
+        onmouseover="this.style.borderColor='var(--gold)'"
+        onmouseout="this.style.borderColor='var(--border)'"`:''}>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:24px">💰</span>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px">${lang==='ar'?'الاستثمار من رصيدي':lang==='tr'?'Bakiyemden Yatır':'Invest from My Balance'}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">
+              ${lang==='ar'?'رصيدك الحالي:':lang==='tr'?'Mevcut bakiye:':'Current balance:'}
+              <span style="color:${canUseBalance?'var(--green)':'var(--red)'}">$${balance.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+            </div>
+            ${!canUseBalance?`<div style="font-size:11px;color:var(--red);margin-top:4px">${lang==='ar'?'رصيدك أقل من الحد الأدنى $'+minAmt:lang==='tr'?'Bakiye yetersiz, min. $'+minAmt:'Balance below minimum $'+minAmt}</div>`:''}
+          </div>
+          ${canUseBalance?'<span style="color:var(--gold);font-size:18px">›</span>':''}
+        </div>
+      </div>
+
+      <!-- الخيار 2: إيداع جديد -->
+      <div style="border:2px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;cursor:pointer;transition:.2s"
+        onclick="document.getElementById('invest-choice-modal').remove();goToDeposit(${rate})"
+        onmouseover="this.style.borderColor='var(--gold)'"
+        onmouseout="this.style.borderColor='var(--border)'">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:24px">📥</span>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px">${lang==='ar'?'إيداع جديد والاستثمار':lang==='tr'?'Yeni Yatırım Yap':'Deposit & Invest'}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">${lang==='ar'?'إيداع عملات رقمية والاشتراك في الباقة':lang==='tr'?'Kripto para yatır ve plana katıl':'Deposit crypto and join the plan'}</div>
+          </div>
+          <span style="color:var(--gold);font-size:18px">›</span>
+        </div>
+      </div>
+
+      <button onclick="document.getElementById('invest-choice-modal').remove()" style="width:100%;padding:10px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:13px;cursor:pointer">
+        ${lang==='ar'?'إلغاء':lang==='tr'?'İptal':'Cancel'}
+      </button>
+    </div>`;
+
+  // إغلاق بالضغط على الخلفية
+  modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+async function investFromBalance(planId, planName, rate, durationDays, minAmount) {
+  const balance = parseFloat(userProfile?.balance || 0);
+
+  // إغلاق الـ modal
+  document.getElementById('invest-choice-modal')?.remove();
+
+  if(balance < minAmount) {
+    showToast(lang==='ar'?`رصيدك $${balance.toFixed(2)} أقل من الحد الأدنى $${minAmount}`:lang==='tr'?`Bakiye yetersiz. Min: $${minAmount}`:`Balance $${balance.toFixed(2)} below minimum $${minAmount}`, 'err');
     return;
   }
-  pendingPage={id:'deposit',el:null,planRate:rate}; openModal('login');
+
+  // مودال إدخال المبلغ
+  const maxAmt = Math.min(balance, parseFloat(((__plansCache||[]).find(p=>p.id===planId)||{}).max_amount || 999999));
+  const amountInput = prompt(
+    (lang==='ar'?`ادخل مبلغ الاستثمار من رصيدك:\nالحد الأدنى: $${minAmount} | الحد الأقصى: $${maxAmt.toFixed(0)}\nرصيدك: $${balance.toFixed(2)}`:
+     lang==='tr'?`Yatırım miktarını girin:\nMin: $${minAmount} | Max: $${maxAmt.toFixed(0)}\nBakiye: $${balance.toFixed(2)}`:
+     `Enter investment amount:\nMin: $${minAmount} | Max: $${maxAmt.toFixed(0)}\nBalance: $${balance.toFixed(2)}`)
+  );
+
+  if(!amountInput) return;
+  const amount = parseFloat(amountInput);
+
+  if(isNaN(amount) || amount < minAmount) {
+    showToast(lang==='ar'?`الحد الأدنى $${minAmount}`:lang==='tr'?`Min $${minAmount}`:`Minimum $${minAmount}`, 'err'); return;
+  }
+  if(amount > balance) {
+    showToast(lang==='ar'?'رصيدك غير كافٍ':lang==='tr'?'Yetersiz bakiye':'Insufficient balance', 'err'); return;
+  }
+  if(amount > maxAmt) {
+    showToast(lang==='ar'?`الحد الأقصى $${maxAmt.toFixed(0)}`:lang==='tr'?`Max $${maxAmt.toFixed(0)}`:`Maximum $${maxAmt.toFixed(0)}`, 'err'); return;
+  }
+
+  const confirmed = confirm(
+    lang==='ar'?`تأكيد الاستثمار:\n${planName}\nالمبلغ: $${amount.toLocaleString()}\nالعائد اليومي: ${rate}% ($${(amount*rate/100).toFixed(2)})\nالمدة: ${durationDays} يوم`:
+    lang==='tr'?`Yatırımı Onayla:\n${planName}\nTutar: $${amount.toLocaleString()}\nGünlük kâr: ${rate}% ($${(amount*rate/100).toFixed(2)})\nSüre: ${durationDays} gün`:
+    `Confirm Investment:\n${planName}\nAmount: $${amount.toLocaleString()}\nDaily profit: ${rate}% ($${(amount*rate/100).toFixed(2)})\nDuration: ${durationDays} days`
+  );
+  if(!confirmed) return;
+
+  try {
+    // خصم من الرصيد
+    const { error: balErr } = await db.from('users').update({
+      balance:   userProfile.balance - amount,
+      invested:  (userProfile.invested || 0) + amount,
+      updated_at: new Date().toISOString()
+    }).eq('id', userProfile.id);
+    if(balErr) throw balErr;
+
+    // إنشاء الاستثمار
+    const startDate = new Date().toISOString().slice(0,10);
+    const endDate   = new Date(Date.now() + durationDays*86400000).toISOString().slice(0,10);
+    const { error: invErr } = await db.from('investments').insert({
+      user_id: userProfile.id, plan_id: planId,
+      plan_name: planName,
+      plan_name_en: ((__plansCache||[]).find(p=>p.id===planId)||{}).name_en || planName,
+      plan_name_tr: ((__plansCache||[]).find(p=>p.id===planId)||{}).name_tr || planName,
+      amount, daily_rate: rate, duration_days: durationDays,
+      daily_profit: parseFloat((amount*rate/100).toFixed(2)),
+      total_profit: 0, start_date: startDate, end_date: endDate, status: 'active'
+    });
+    if(invErr) throw invErr;
+
+    // سجّل في transactions
+    await db.from('transactions').insert({
+      user_id: userProfile.id, type: 'invest', amount,
+      description: (lang==='ar'?'استثمار في ':lang==='tr'?'Yatırım: ':'Investment in ') + planName
+    });
+
+    // إشعار
+    await db.from('notifications').insert({
+      user_id: userProfile.id, type: 'success',
+      title: lang==='ar'?'✅ تم الاستثمار بنجاح':lang==='tr'?'✅ Yatırım Başarılı':'✅ Investment Successful',
+      title_en: '✅ Investment Successful', title_tr: '✅ Yatırım Başarılı',
+      body: (lang==='ar'?`تم استثمار $${amount.toLocaleString()} في ${planName}`:lang==='tr'?`$${amount.toLocaleString()} tutarında ${planName} yatırımı yapıldı`:`$${amount.toLocaleString()} invested in ${planName}`),
+      body_en: `$${amount.toLocaleString()} invested in ${planName}`,
+      body_tr: `$${amount.toLocaleString()} tutarında ${planName} yatırımı`
+    });
+
+    // حدّث الـ userProfile محلياً
+    userProfile.balance  -= amount;
+    userProfile.invested  = (userProfile.invested || 0) + amount;
+
+    showToast(lang==='ar'?`✅ تم الاستثمار بنجاح!`:lang==='tr'?'✅ Yatırım başarılı!':'✅ Investment successful!');
+
+    // انتقل للداشبورد وافتح My Investments
+    showPage('dashboard', null);
+    setTimeout(()=>{ switchDash(document.querySelector('.sidebar-item'), 'd-invest'); }, 300);
+
+  } catch(e) {
+    showToast('✗ ' + e.message, 'err');
+    // استرجاع الحالة المحلية لو فشل
+    userProfile.balance  += amount;
+    userProfile.invested  -= amount;
+  }
 }
 
 async function goToDeposit(rate) {
