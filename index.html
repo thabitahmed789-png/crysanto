@@ -1720,6 +1720,8 @@ function showPage(id, el) {
   document.querySelectorAll('.nav-links a, .mobile-menu a').forEach(a=>a.classList.remove('active'));
   if(el && el.classList) el.classList.add('active');
   window.scrollTo({top:0,behavior:'smooth'});
+  // ✅ تتبع الصفحة
+  if(window._trackPage) window._trackPage(id);
   if(id==='dashboard') { if(userProfile) loadDashboard(); else _pendingDashboardLoad = true; }
   if(id==='referral')  { if(userProfile) loadReferral();  else _pendingReferralLoad = true; }
   if(id==='deposit')   { const m=document.getElementById('user-memo'); if(m) m.textContent=userProfile?.memo||userProfile?.ref_code||'---'; }
@@ -3426,6 +3428,69 @@ function init(){
   setInterval(updateLiveStats, 60000);
 }
 document.addEventListener('DOMContentLoaded', init);
+
+// ══ VISITOR TRACKING ══
+;(function initVisitorTracking(){
+  try {
+    // session ID — يتجدد كل جلسة متصفح جديدة
+    let sid = sessionStorage.getItem('_cry_sid');
+    if(!sid){ sid = 'v_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); sessionStorage.setItem('_cry_sid',sid); }
+
+    // is_new_visitor — أول مرة يفتح الموقع على الجهاز
+    const isNew = !localStorage.getItem('_cry_visited');
+    if(isNew) localStorage.setItem('_cry_visited','1');
+
+    // معلومات الجهاز
+    const ua = navigator.userAgent;
+    const browser = /Edg/.test(ua)?'Edge':/Chrome/.test(ua)?'Chrome':/Firefox/.test(ua)?'Firefox':/Safari/.test(ua)?'Safari':'Other';
+    const os = /Windows/.test(ua)?'Windows':/Mac/.test(ua)?'macOS':/Android/.test(ua)?'Android':/iPhone|iPad/.test(ua)?'iOS':'Other';
+    const deviceType = /Mobi|Android/i.test(ua)?'mobile':/iPad/i.test(ua)?'tablet':'desktop';
+
+    // المصدر (referrer)
+    const ref = document.referrer;
+    const referrer = !ref?'direct'
+      :/google/.test(ref)?'google'
+      :/facebook/.test(ref)?'facebook'
+      :/twitter|t\.co/.test(ref)?'twitter'
+      :/instagram/.test(ref)?'instagram'
+      :/youtube/.test(ref)?'youtube'
+      :/t\.me|telegram/.test(ref)?'telegram'
+      :new URL(ref).hostname;
+
+    // انتظر ثانية عشان الـ supabase client يكون جاهز
+    setTimeout(async()=>{
+      try {
+        // الصفحة الحالية
+        const page = window.location.hash ? window.location.hash.replace('#','') : 'home';
+        await db.from('page_views').insert({
+          session_id: sid,
+          user_id: userProfile?.id || null,
+          page: page || 'home',
+          referrer,
+          device_type: deviceType,
+          browser,
+          os,
+          is_new_visitor: isNew
+        });
+      } catch(e){ /* silent */ }
+    }, 1500);
+
+    // تتبع تغيير الصفحة داخل الـ SPA
+    window._trackPage = async function(pageName){
+      try {
+        await db.from('page_views').insert({
+          session_id: sid,
+          user_id: userProfile?.id || null,
+          page: pageName,
+          referrer,
+          device_type: deviceType,
+          browser, os,
+          is_new_visitor: false
+        });
+      } catch(e){}
+    };
+  } catch(e){}
+})();
 
 // ══ NEW FUNCTIONS ══
 
