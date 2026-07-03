@@ -3122,7 +3122,8 @@ async function investFromBalance(planId, planName, rate, durationDays, minAmount
       plan_name_tr: ((__plansCache||[]).find(p=>p.id===planId)||{}).name_tr || planName,
       amount, daily_rate: rate, duration_days: durationDays,
       daily_profit: parseFloat((amount*rate/100).toFixed(2)),
-      total_profit: 0, start_date: startDate, end_date: endDate, status: 'active'
+      total_profit: 0, start_date: startDate, end_date: endDate,
+      status: 'active', source: 'balance'
     });
     if(invErr) throw invErr;
 
