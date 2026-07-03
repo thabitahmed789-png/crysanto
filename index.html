@@ -2964,18 +2964,20 @@ function copyRef() {
 }
 
 // ── PLAN BUTTONS ──
-function handlePlanClick(rate) {
+function handlePlanClick(rate, planId) {
   if(!isLoggedIn && !_optimisticAuth) {
     if(!authReady) { pendingPage={id:'deposit',el:null,planRate:rate}; return; }
     pendingPage={id:'deposit',el:null,planRate:rate}; openModal('login'); return;
   }
-  // ✅ NEW: عرض مودال الاختيار — من الرصيد أو إيداع جديد
-  showInvestmentChoiceModal(rate);
+  showInvestmentChoiceModal(rate, planId);
 }
 
-async function showInvestmentChoiceModal(rate) {
+async function showInvestmentChoiceModal(rate, planId) {
   if(!__plansCache) __plansCache = await fetchPlansFromDB();
-  const row = (__plansCache||[]).find(r => String(parseFloat(r.daily_rate)) === String(rate));
+  // ✅ FIX: ابحث بالـ planId أولاً (أدق) ثم بالـ rate كـ fallback
+  const row = planId
+    ? (__plansCache||[]).find(r => r.id === planId)
+    : (__plansCache||[]).find(r => String(parseFloat(r.daily_rate)) === String(rate));
   if(!row) { goToDeposit(rate); return; }
 
   const planName = row['name_'+lang] || row.name_en;
@@ -3056,6 +3058,22 @@ async function investFromBalance(planId, planName, rate, durationDays, minAmount
     showToast(lang==='ar'?`رصيدك $${balance.toFixed(2)} أقل من الحد الأدنى $${minAmount}`:lang==='tr'?`Bakiye yetersiz. Min: $${minAmount}`:`Balance $${balance.toFixed(2)} below minimum $${minAmount}`, 'err');
     return;
   }
+
+  // ✅ FIX: تحقق من وجود استثمار نشط في نفس الباقة
+  try {
+    const { data: existing } = await db.from('investments')
+      .select('id').eq('user_id', userProfile.id)
+      .eq('plan_id', planId).eq('status', 'active');
+    if(existing && existing.length > 0) {
+      const msg = lang==='ar'
+        ? `لديك استثمار نشط بالفعل في باقة "${planName}". يمكنك الاستثمار في باقة مختلفة أو الانتظار حتى انتهاء الاستثمار الحالي.`
+        : lang==='tr'
+        ? `"${planName}" planında zaten aktif bir yatırımınız var. Farklı bir plan seçin veya mevcut yatırımın bitmesini bekleyin.`
+        : `You already have an active investment in "${planName}". Choose a different plan or wait for the current one to complete.`;
+      showToast(msg, 'err');
+      return;
+    }
+  } catch(e) { /* لو فشل الـ check، كمّل — مش نوقف العملية كلها */ }
 
   // مودال إدخال المبلغ
   const maxAmt = Math.min(balance, parseFloat(((__plansCache||[]).find(p=>p.id===planId)||{}).max_amount || 999999));
@@ -3187,11 +3205,14 @@ function setLang(l) {
   if (isLoggedIn && userProfile) {
     const activeDash = document.querySelector('.sidebar-item.active');
     const activeId = activeDash ? activeDash.getAttribute('onclick')?.match(/switchDash\(this,'([^']+)'\)/)?.[1] : null;
-    if (activeId === 'd-overview') loadDashboard();
-    else if (activeId === 'd-history') loadTransactions();
-    else if (activeId === 'd-invest') loadInvestments();
-    else if (activeId === 'd-notif') loadNotifications();
-    else loadDashboard(); // default
+    if      (activeId === 'd-overview')     loadDashboard();
+    else if (activeId === 'd-history')      loadTransactions();
+    else if (activeId === 'd-invest')       loadInvestments();
+    else if (activeId === 'd-notif')        loadNotifications();
+    else if (activeId === 'd-profits-log')  loadMyDailyProfits();
+    else if (activeId === 'd-wallet')       renderWalletDashboardList();
+    else if (activeId === 'd-referral')     loadReferral();
+    else loadDashboard();
   }
 
   // لو فيه modal قانوني مفتوح، نحدّث محتواه
@@ -3262,7 +3283,7 @@ async function buildPlans(){
   const pl = rows.map(planRowToCard);
   const popL={ar:'الأكثر شعبية',en:'Most Popular',tr:'En Popüler'};
   const invL={ar:'استثمر الآن',en:'Invest Now',tr:'Şimdi Yatır'};
-  document.getElementById('plans-grid').innerHTML=pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>/day</span></div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\')">'+invL[lang]+'</button></div>').join('');
+  document.getElementById('plans-grid').innerHTML=pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>/day</span></div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\',\''+( p.planId||'')+'\')">'+invL[lang]+'</button></div>').join('');
 }
 
 function calcProfit(){const a=parseFloat(document.getElementById('calc-amt').value)||0;const [r,d]=document.getElementById('calc-plan').value.split(',').map(Number);const dl=a*r/100,tot=dl*d,ret=a+tot;document.getElementById('c-daily').textContent='$'+dl.toFixed(2);document.getElementById('c-total').textContent='$'+tot.toFixed(0);document.getElementById('c-return').textContent='$'+ret.toFixed(0);}
