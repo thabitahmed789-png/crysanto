@@ -1350,10 +1350,10 @@ async function renderInvestments(){
       <th>${lang==='ar'?'الإجراءات':'Actions'}</th>
     </tr></thead>
     <tbody>${data.map(inv=>{
-      // المصدر: لو approved_by موجود = من إيداع، لو لأ = من الرصيد
-      const srcLabel = inv.deposit_id
-        ? `<span style="background:rgba(201,168,76,.15);color:var(--gold);font-size:11px;padding:2px 8px;border-radius:100px">📥 ${lang==='ar'?'إيداع':'Deposit'}</span>`
-        : `<span style="background:rgba(34,211,160,.12);color:var(--green);font-size:11px;padding:2px 8px;border-radius:100px">💰 ${lang==='ar'?'رصيد':'Balance'}</span>`;
+      // المصدر: من الـ source column الجديد
+      const srcLabel = inv.source === 'balance'
+        ? `<span style="background:rgba(34,211,160,.12);color:var(--green);font-size:11px;padding:2px 8px;border-radius:100px">💰 ${lang==='ar'?'رصيد':'Balance'}</span>`
+        : `<span style="background:rgba(201,168,76,.15);color:var(--gold);font-size:11px;padding:2px 8px;border-radius:100px">📥 ${lang==='ar'?'إيداع':'Deposit'}</span>`;
       return `
       <tr>
         <td style="font-weight:600">${escapeHtml(inv.users?.name || '—')}<div style="font-size:11px;color:var(--muted)">${escapeHtml(inv.users?.email||'')}</div></td>
