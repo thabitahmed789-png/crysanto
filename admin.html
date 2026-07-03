@@ -418,6 +418,9 @@ body.ltr .toast{left:auto;right:24px;}
       <span class="sb-icon">🛡️</span><span class="sb-lbl" data-ar="تنبيهات الأمان" data-en="Security Alerts" data-tr="Güvenlik Uyarıları">تنبيهات الأمان</span>
       <span class="sb-badge" id="security-badge" style="background:var(--red);display:none">0</span>
     </div>
+    <div class="sb-item" onclick="switchSection('s-analytics')" id="sb-analytics">
+      <span class="sb-icon">📈</span><span class="sb-lbl" data-ar="تحليلات الزيارات" data-en="Visitor Analytics" data-tr="Ziyaretçi Analitiği">تحليلات الزيارات</span>
+    </div>
     <div class="sb-item" onclick="switchSection('s-daily-profits')" id="sb-daily-profits">
       <span class="sb-icon">💸</span><span class="sb-lbl" data-ar="الأرباح اليومية" data-en="Daily Profits" data-tr="Günlük Karlar">الأرباح اليومية</span>
     </div>
@@ -818,6 +821,65 @@ body.ltr .toast{left:auto;right:24px;}
       </div>
     </div>
 
+    <!-- ══ ANALYTICS ══ -->
+    <div id="s-analytics" class="section-wrap" style="display:none">
+      <div class="section-title">تحليلات الزيارات
+        <button class="act-btn" onclick="loadAnalytics()" style="font-size:12px;margin-right:auto">🔄 تحديث</button>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+        <div class="sc blue"><div class="sc-icon">👁️</div><div class="sc-label">مشاهدات اليوم</div><div class="sc-val" id="an-today-views">—</div><div class="sc-trend" id="an-today-unique" style="color:var(--muted);font-size:11px"></div></div>
+        <div class="sc green"><div class="sc-icon">👤</div><div class="sc-label">زوار جدد اليوم</div><div class="sc-val" id="an-new-today">—</div></div>
+        <div class="sc gold"><div class="sc-icon">📅</div><div class="sc-label">مشاهدات الأسبوع</div><div class="sc-val" id="an-week-views">—</div><div class="sc-trend" id="an-week-unique" style="color:var(--muted);font-size:11px"></div></div>
+        <div class="sc purple"><div class="sc-icon">📆</div><div class="sc-label">مشاهدات الشهر</div><div class="sc-val" id="an-month-views">—</div><div class="sc-trend" id="an-month-unique" style="color:var(--muted);font-size:11px"></div></div>
+      </div>
+
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+        <div class="sc"><div class="sc-icon">📊</div><div class="sc-label">إجمالي المشاهدات</div><div class="sc-val" id="an-total-views">—</div></div>
+        <div class="sc"><div class="sc-icon">📱</div><div class="sc-label">نسبة الموبايل</div><div class="sc-val" id="an-mobile-pct">—</div></div>
+        <div class="sc"><div class="sc-icon">🌍</div><div class="sc-label">أعلى دولة اليوم</div><div class="sc-val" id="an-top-country">—</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <!-- Chart يومي -->
+        <div class="panel">
+          <div class="panel-head">
+            <span>الزيارات اليومية (آخر 30 يوم)</span>
+          </div>
+          <div id="an-daily-chart" style="padding:16px">
+            <div style="color:var(--muted);text-align:center;padding:30px">جاري التحميل...</div>
+          </div>
+        </div>
+
+        <!-- أكثر الصفحات زيارة -->
+        <div class="panel">
+          <div class="panel-head">أكثر الصفحات زيارة (آخر 30 يوم)</div>
+          <div id="an-top-pages" style="padding:8px">
+            <div style="color:var(--muted);text-align:center;padding:30px">جاري التحميل...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- آخر الزوار -->
+      <div class="panel">
+        <div class="panel-head">
+          <span>آخر الزوار</span>
+          <div style="display:flex;gap:8px">
+            <select id="an-filter-device" onchange="loadRecentVisitors()" style="background:var(--dark);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px">
+              <option value="">كل الأجهزة</option>
+              <option value="mobile">📱 موبايل</option>
+              <option value="desktop">💻 كمبيوتر</option>
+              <option value="tablet">📟 تابليت</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-wrap" id="an-visitors-table">
+          <div style="color:var(--muted);text-align:center;padding:30px">جاري التحميل...</div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /main -->
 </div><!-- /app -->
 
@@ -1128,6 +1190,7 @@ function renderCurrentSection(){
   if(currentSection==='s-contact') { renderContactMessages(); return; }
   if(currentSection==='s-security') { loadSecurityAlerts(); loadSecurityStats(); return; }
   if(currentSection==='s-daily-profits') { loadDailyProfitStats(); loadDailyProfits(); return; }
+  if(currentSection==='s-analytics') { loadAnalytics(); return; }
   const renders = {
     's-overview':renderOverview,'s-users':renderUsers,'s-deposits':loadRealDeposits,
     's-withdrawals':loadRealWithdrawals,'s-investments':renderInvestments,
@@ -3364,5 +3427,141 @@ async function loadUnreadNotifCount() {
     const el = document.getElementById('unread-notif-count');
     if(el) el.textContent = count > 0 ? count : '';
   } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════════
+// 📈 VISITOR ANALYTICS
+// ══════════════════════════════════════════════════════════════
+async function loadAnalytics() {
+  loadVisitStats();
+  loadDailyChart();
+  loadTopPages();
+  loadRecentVisitors();
+}
+
+async function loadVisitStats() {
+  try {
+    const { data, error } = await sdb.rpc('admin_get_visit_stats');
+    if(error || !data || !data[0]) return;
+    const s = data[0];
+    const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v??'—'; };
+    set('an-today-views',  s.today_views ?? 0);
+    set('an-today-unique', `${s.today_unique ?? 0} ${lang==='ar'?'زائر فريد':'unique'}`);
+    set('an-new-today',    s.new_visitors_today ?? 0);
+    set('an-week-views',   s.week_views ?? 0);
+    set('an-week-unique',  `${s.week_unique ?? 0} ${lang==='ar'?'زائر فريد':'unique'}`);
+    set('an-month-views',  s.month_views ?? 0);
+    set('an-month-unique', `${s.month_unique ?? 0} ${lang==='ar'?'زائر فريد':'unique'}`);
+    set('an-total-views',  (s.total_views ?? 0).toLocaleString());
+    set('an-mobile-pct',   (s.mobile_pct ?? 0) + '%');
+    set('an-top-country',  s.top_country || '—');
+  } catch(e) { console.error('loadVisitStats:', e); }
+}
+
+async function loadDailyChart() {
+  const wrap = document.getElementById('an-daily-chart');
+  if(!wrap) return;
+  try {
+    const { data, error } = await sdb.rpc('admin_get_daily_visits', { p_days: 30 });
+    if(error || !data || !data.length) {
+      wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:30px;font-size:13px">${lang==='ar'?'لا توجد بيانات بعد':'No data yet'}</div>`;
+      return;
+    }
+    const sorted = [...data].reverse(); // أقدم → أحدث
+    const maxV = Math.max(...sorted.map(d => d.views), 1);
+    wrap.innerHTML = `
+      <div style="display:flex;align-items:flex-end;gap:3px;height:120px;padding:0 4px">
+        ${sorted.map(d => {
+          const h = Math.max(4, Math.round((d.views / maxV) * 110));
+          const date = (d.visit_date||'').slice(5); // MM-DD
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px" title="${d.visit_date}: ${d.views} views, ${d.unique_visitors} unique">
+            <div style="width:100%;background:var(--gold);border-radius:3px 3px 0 0;height:${h}px;opacity:.8;transition:.2s;cursor:pointer" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.8"></div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 4px 0;font-size:10px;color:var(--muted)">
+        <span>${sorted[0]?.visit_date?.slice(5)||''}</span>
+        <span>${sorted[Math.floor(sorted.length/2)]?.visit_date?.slice(5)||''}</span>
+        <span>${sorted[sorted.length-1]?.visit_date?.slice(5)||''}</span>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:8px;font-size:11px;color:var(--muted)">
+        <span>📊 ${lang==='ar'?'إجمالي':'Total'}: ${data.reduce((s,d)=>s+parseInt(d.views),0).toLocaleString()}</span>
+        <span>👤 ${lang==='ar'?'فريد':'Unique'}: ${data.reduce((s,d)=>s+parseInt(d.unique_visitors),0).toLocaleString()}</span>
+      </div>`;
+  } catch(e) { wrap.innerHTML = `<div style="color:var(--red);padding:16px">✗ ${escapeHtml(e.message)}</div>`; }
+}
+
+async function loadTopPages() {
+  const wrap = document.getElementById('an-top-pages');
+  if(!wrap) return;
+  try {
+    const { data, error } = await sdb.rpc('admin_get_top_pages', { p_days: 30 });
+    if(error || !data || !data.length) {
+      wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:20px;font-size:13px">${lang==='ar'?'لا توجد بيانات بعد':'No data yet'}</div>`;
+      return;
+    }
+    const maxV = Math.max(...data.map(d => d.views), 1);
+    const pageIcons = { home:'🏠', plans:'📋', markets:'📊', dashboard:'📈', deposit:'💳', referral:'🎁', contact:'✉️', about:'ℹ️', faq:'❓' };
+    wrap.innerHTML = data.map(d => {
+      const pct = Math.round((d.views / maxV) * 100);
+      const icon = pageIcons[d.page] || '📄';
+      return `<div style="margin-bottom:10px;padding:8px 12px;background:var(--dark);border-radius:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="font-size:13px;font-weight:600">${icon} ${escapeHtml(d.page||'—')}</span>
+          <span style="font-size:12px;color:var(--gold);font-family:var(--mono)">${d.views} <span style="color:var(--muted);font-size:10px">(${d.unique_visitors} unique)</span></span>
+        </div>
+        <div style="height:4px;background:var(--border);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:var(--gold);border-radius:4px;transition:.3s"></div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { wrap.innerHTML = `<div style="color:var(--red);padding:12px">✗ ${escapeHtml(e.message)}</div>`; }
+}
+
+async function loadRecentVisitors() {
+  const wrap = document.getElementById('an-visitors-table');
+  if(!wrap) return;
+  wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:24px">⏳</div>`;
+  try {
+    const { data, error } = await sdb.rpc('admin_get_recent_visitors', { p_limit: 100 });
+    if(error || !data || !data.length) {
+      wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:24px;font-size:13px">${lang==='ar'?'لا توجد زيارات مسجّلة بعد':'No visits recorded yet'}</div>`;
+      return;
+    }
+    const deviceFilter = document.getElementById('an-filter-device')?.value || '';
+    const filtered = deviceFilter ? data.filter(v => v.device_type === deviceFilter) : data;
+    const devIcon = { mobile:'📱', desktop:'💻', tablet:'📟' };
+    wrap.innerHTML = `<table>
+      <thead><tr>
+        <th>${lang==='ar'?'الزائر':'Visitor'}</th>
+        <th>${lang==='ar'?'الصفحة':'Page'}</th>
+        <th>${lang==='ar'?'الجهاز':'Device'}</th>
+        <th>${lang==='ar'?'المتصفح / OS':'Browser / OS'}</th>
+        <th>${lang==='ar'?'المصدر':'Source'}</th>
+        <th>${lang==='ar'?'جديد؟':'New?'}</th>
+        <th>${lang==='ar'?'الوقت':'Time'}</th>
+      </tr></thead>
+      <tbody>
+        ${filtered.map(v => `
+        <tr>
+          <td>
+            ${v.user_name
+              ? `<div style="font-weight:600">👤 ${escapeHtml(v.user_name)}</div><div style="font-size:11px;color:var(--muted)">${escapeHtml(v.user_email||'')}</div>`
+              : `<span style="color:var(--muted);font-size:12px">👻 ${lang==='ar'?'زائر مجهول':'Anonymous'}</span>`}
+          </td>
+          <td style="font-size:12px">📄 ${escapeHtml(v.page||'—')}</td>
+          <td style="font-size:13px">${devIcon[v.device_type]||'💻'} <span style="font-size:11px;color:var(--muted)">${escapeHtml(v.device_type||'—')}</span></td>
+          <td style="font-size:11px;color:var(--muted)">${escapeHtml(v.browser||'—')} / ${escapeHtml(v.os||'—')}</td>
+          <td style="font-size:11px">
+            <span style="background:var(--dark);padding:2px 8px;border-radius:100px;color:var(--muted)">
+              ${escapeHtml(v.referrer||'direct')}
+            </span>
+          </td>
+          <td style="text-align:center">${v.is_new_visitor?'<span style="color:var(--green);font-size:11px">✦ جديد</span>':'<span style="color:var(--muted);font-size:11px">—</span>'}</td>
+          <td style="font-size:11px;color:var(--muted)">${(v.visited_at||'').slice(0,16).replace('T',' ')}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  } catch(e) { wrap.innerHTML = `<div style="color:var(--red);padding:16px">✗ ${escapeHtml(e.message)}</div>`; }
 }
 </script>
