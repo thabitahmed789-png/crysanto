@@ -2797,37 +2797,57 @@ async function confirmBalanceEdit(userId, name) {
 // ── إحصائيات الـ Overview من Supabase ──
 async function loadRealOverviewStats() {
   try {
-    const { data: stats, error } = await sdb.rpc('get_admin_overview_stats');
-    if (error) { console.error('Overview stats error:', error); return; }
+    // ✅ استخدام admin_get_full_stats الأشمل
+    const { data: fullData, error: fullErr } = await sdb.rpc('admin_get_full_stats');
+    const s = fullData?.[0] || {};
 
-    const s = stats;
-    const sc2v = document.getElementById('sc2v'); if(sc2v) sc2v.textContent = (s.total_users||0).toLocaleString();
-
-    const todayTotal = 0; // already in daily stats
-    const sc3v = document.getElementById('sc3v');
-    if(sc3v) {
-      const dep = s.total_deposited || 0;
-      if(dep >= 1000000) sc3v.textContent = '$'+(dep/1000000).toFixed(1)+'M';
-      else if(dep >= 1000) sc3v.textContent = '$'+(dep/1000).toFixed(1)+'K';
-      else sc3v.textContent = '$'+dep.toLocaleString();
+    // fallback للـ RPC القديمة لو الجديدة فشلت
+    if(fullErr) {
+      const { data: stats } = await sdb.rpc('get_admin_overview_stats');
+      if(stats) Object.assign(s, stats);
     }
 
-    const sc4v = document.getElementById('sc4v'); if(sc4v) sc4v.textContent = (s.pending_withdrawals||0).toString();
-    const sc6v = document.getElementById('sc6v'); if(sc6v) sc6v.textContent = (s.pending_kyc||0).toString();
+    const fmt = v => {
+      if(!v) return '$0';
+      if(v>=1000000) return '$'+(v/1000000).toFixed(1)+'M';
+      if(v>=1000)    return '$'+(v/1000).toFixed(1)+'K';
+      return '$'+parseFloat(v).toLocaleString();
+    };
+    const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
 
-    // stat cards extra
-    const el1 = document.getElementById('sc1v'); if(el1) {
-      const inv = s.total_invested||0;
-      if(inv>=1000000) el1.textContent='$'+(inv/1000000).toFixed(1)+'M';
-      else if(inv>=1000) el1.textContent='$'+(inv/1000).toFixed(1)+'K';
-      else el1.textContent='$'+inv.toLocaleString();
+    // Stats cards
+    set('sc1v', fmt(s.total_balance || s.total_invested || 0));
+    set('sc2v', (s.total_users||0).toLocaleString());
+    set('sc3v', fmt(s.total_deposits_amount || s.total_deposited || 0));
+    set('sc4v', (s.pending_withdrawals||0).toString());
+    set('sc5v', (s.kyc_pending||0).toString());
+    set('sc6v', (s.kyc_pending||0).toString());
+
+    // Labels محدّثة
+    const l1 = document.getElementById('sc1l'); if(l1) l1.textContent = lang==='ar'?'إجمالي الأرصدة':'Total Balances';
+    const l2 = document.getElementById('sc2l'); if(l2) l2.textContent = lang==='ar'?'المستخدمون':'Users';
+    const l3 = document.getElementById('sc3l'); if(l3) l3.textContent = lang==='ar'?'إجمالي الإيداعات':'Total Deposits';
+    const l4 = document.getElementById('sc4l'); if(l4) l4.textContent = lang==='ar'?'سحوبات معلقة':'Pending Withdrawals';
+    const l5 = document.getElementById('sc5l'); if(l5) l5.textContent = lang==='ar'?'KYC معلّق':'Pending KYC';
+
+    // Trends
+    const t2 = document.querySelector('#sc2v + .sc-trend, .sc.green .sc-trend');
+    if(t2 && s.new_users_today !== undefined) {
+      t2.textContent = `↑ +${s.new_users_today} ${lang==='ar'?'اليوم':'today'}`;
+      t2.className = 'sc-trend up';
     }
+
+    // زيارات اليوم — لو موجود عنصر
+    const visEl = document.getElementById('visits-today-val');
+    if(visEl) visEl.textContent = (s.visits_today||0).toLocaleString();
 
     // Sidebar badges
     const depBadge = document.getElementById('dep-badge');
-    if(depBadge) depBadge.textContent = s.pending_deposits||0;
+    if(depBadge) { depBadge.textContent=s.pending_deposits||0; depBadge.style.display=s.pending_deposits>0?'flex':'none'; }
     const wdBadge = document.getElementById('wd-badge');
-    if(wdBadge) wdBadge.textContent = s.pending_withdrawals||0;
+    if(wdBadge)  { wdBadge.textContent=s.pending_withdrawals||0; wdBadge.style.display=s.pending_withdrawals>0?'flex':'none'; }
+    const kycBadge = document.getElementById('kyc-pending-badge');
+    if(kycBadge) { kycBadge.textContent=s.kyc_pending||0; kycBadge.style.display=s.kyc_pending>0?'inline-flex':'none'; }
 
     // Contact badge
     const cBadge = document.getElementById('contact-badge');
