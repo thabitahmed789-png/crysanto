@@ -1503,7 +1503,7 @@ function filterUsers(el,f){
   renderUsers();
 }
 
-// ✅ FIX: toggleBlock الآن بتستخدم Supabase الحقيقي
+// ✅ FIX: toggleBlock بتستخدم RPC مُدقَّقة (audit log + إشعار) بدل الكتابة المباشرة على الجدول
 async function toggleBlock(id){
   const u = (window.realUsers||[]).find(u=>u.id===id);
   if(!u) return;
@@ -1515,8 +1515,9 @@ async function toggleBlock(id){
     ? `هل تريد ${action} المستخدم "${u.name}"؟`
     : `Are you sure you want to ${action} "${u.name}"?`);
   if(!confirmed) return;
-  const { error } = await sdb.from('users').update({ status: newStatus }).eq('id', id);
-  if(error){ showToast((lang==='ar'?'✗ فشل التحديث: ':'✗ Failed: ')+error.message); return; }
+  const { data, error } = await sdb.rpc('admin_set_account_status', { p_user_id: id, p_status: newStatus });
+  const result = Array.isArray(data) ? data[0] : data;
+  if(error || !result?.success){ showToast((lang==='ar'?'✗ فشل التحديث: ':'✗ Failed: ')+(result?.message||error?.message||'')); return; }
   showToast(newStatus==='blocked' ? (lang==='ar'?'✓ تم حظر المستخدم':'✓ User blocked') : (lang==='ar'?'✓ تم رفع الحظر':'✓ User unblocked'));
   loadRealUsers();
 }
@@ -1763,16 +1764,16 @@ async function viewKycDocs(userId, userName){
   body.innerHTML = cards.join('') || `<div style="color:var(--muted)">${lang==='ar'?'لا توجد صور':'No images'}</div>`;
 }
 async function approveKyc(userId){
-  const { error } = await sdb.from('users').update({ kyc_status:'verified' }).eq('id', userId);
-  if (error) { showToast((lang==='ar'?'✗ فشل قبول KYC: ':'✗ Failed to approve KYC: ')+error.message); console.error('approveKyc error:', error); return; }
-  await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'✅ تم التحقق من هويتك':'✅ Identity Verified', body: lang==='ar'?'تم قبول مستنداتك بنجاح':'Your documents have been approved', type:'success' });
+  const { data, error } = await sdb.rpc('admin_review_kyc', { p_user_id: userId, p_decision: 'verified' });
+  const result = Array.isArray(data) ? data[0] : data;
+  if (error || !result?.success) { showToast((lang==='ar'?'✗ فشل قبول KYC: ':'✗ Failed to approve KYC: ')+(result?.message||error?.message||'')); return; }
   showToast(lang==='ar'?'✓ تم قبول KYC':'KYC Approved');
   renderKYC();
 }
 async function rejectKyc(userId){
-  const { error } = await sdb.from('users').update({ kyc_status:'rejected' }).eq('id', userId);
-  if (error) { showToast((lang==='ar'?'✗ فشل رفض KYC: ':'✗ Failed to reject KYC: ')+error.message); console.error('rejectKyc error:', error); return; }
-  await sdb.from('notifications').insert({ user_id: userId, title: lang==='ar'?'❌ تم رفض طلب KYC':'❌ KYC Rejected', body: lang==='ar'?'يرجى إعادة رفع المستندات بجودة أفضل':'Please re-upload your documents with better quality', type:'warning' });
+  const { data, error } = await sdb.rpc('admin_review_kyc', { p_user_id: userId, p_decision: 'rejected' });
+  const result = Array.isArray(data) ? data[0] : data;
+  if (error || !result?.success) { showToast((lang==='ar'?'✗ فشل رفض KYC: ':'✗ Failed to reject KYC: ')+(result?.message||error?.message||'')); return; }
   showToast(lang==='ar'?'✗ تم رفض KYC':'KYC Rejected');
   renderKYC();
 }
