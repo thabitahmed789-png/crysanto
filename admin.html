@@ -326,6 +326,7 @@ body.ltr .toast{left:auto;right:24px;}
       <label id="ll-pass">كلمة المرور</label>
       <input type="password" id="li-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
       <div class="err-msg" id="li-err">❌ بيانات خاطئة، حاول مجدداً</div>
+      <div class="err-msg" id="li-lock-msg" style="display:none">⛔ محاولات كتير غلط — حاول تاني بعد <span id="li-lock-secs">60</span> ثانية</div>
     </div>
     <button class="btn-login-main" onclick="doLogin()" id="ll-btn"><span id="ll-btn-el">دخول لوحة الإدارة</span></button>
     <div style="margin-top:16px;text-align:center">
@@ -335,6 +336,18 @@ body.ltr .toast{left:auto;right:24px;}
         <button class="lb" onclick="setLang('tr')">TR</button>
       </div>
     </div>
+  </div>
+
+  <!-- 2FA CHALLENGE (يظهر بعد باسورد صحيح لو الحساب مفعّل عليه 2FA) -->
+  <div class="login-card" id="admin-mfa-card" style="display:none;margin-top:16px">
+    <div class="login-sub" id="mfa-card-title">🔐 التحقق بخطوتين</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px" id="mfa-card-sub">افتح تطبيق المصادقة وأدخل الكود المكوّن من 6 أرقام</p>
+    <div class="form-g">
+      <input type="text" id="admin-mfa-code" inputmode="numeric" maxlength="6" placeholder="123456" style="text-align:center;letter-spacing:6px;font-size:20px" onkeydown="if(event.key==='Enter')verifyAdminMfa()">
+      <div class="err-msg" id="admin-mfa-err"></div>
+    </div>
+    <button class="btn-login-main" onclick="verifyAdminMfa()" id="admin-mfa-btn"><span id="admin-mfa-btn-txt">تأكيد</span></button>
+    <button class="act-btn" style="width:100%;margin-top:8px" onclick="cancelAdminMfa()">إلغاء والرجوع لتسجيل الدخول</button>
   </div>
 </div>
 
@@ -413,6 +426,9 @@ body.ltr .toast{left:auto;right:24px;}
     </div>
     <div class="sb-item" onclick="switchSection('s-audit')" id="sb-audit">
       <span class="sb-icon">📋</span><span class="sb-lbl" data-ar="سجل العمليات" data-en="Audit Log" data-tr="İşlem Kaydı">سجل العمليات</span>
+    </div>
+    <div class="sb-item" onclick="switchSection('s-admins')" id="sb-admins" style="display:none">
+      <span class="sb-icon">👤</span><span class="sb-lbl" data-ar="إدارة الأدمنز" data-en="Admin Management" data-tr="Yönetici Yönetimi">إدارة الأدمنز</span>
     </div>
     <div class="sb-item" onclick="switchSection('s-security')" id="sb-security">
       <span class="sb-icon">🛡️</span><span class="sb-lbl" data-ar="تنبيهات الأمان" data-en="Security Alerts" data-tr="Güvenlik Uyarıları">تنبيهات الأمان</span>
@@ -721,6 +737,29 @@ body.ltr .toast{left:auto;right:24px;}
           </div>
           <button class="act-btn-primary" onclick="saveAdminPassword()" id="set-sec-save">🔐 حفظ إعدادات الأمان</button>
         </div>
+        <div class="panel" id="admin-2fa-panel">
+          <div class="panel-head"><span>🔐 التحقق بخطوتين (2FA)</span></div>
+          <div id="admin-2fa-status-wrap">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--dark);border-radius:8px;margin-bottom:12px">
+              <span style="font-size:13px" id="admin-2fa-status-label">جارِ التحقق من الحالة...</span>
+              <span id="admin-2fa-status-badge"></span>
+            </div>
+            <button class="act-btn-primary" onclick="startAdminMfaEnroll()" id="admin-2fa-enroll-btn" style="display:none">➕ تفعيل 2FA</button>
+            <button class="act-btn" onclick="disableAdminMfa()" id="admin-2fa-disable-btn" style="display:none;background:var(--red);color:#fff">🗑️ تعطيل 2FA</button>
+          </div>
+          <div id="admin-2fa-enroll-wrap" style="display:none;margin-top:14px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:10px">امسح الكود من تطبيق المصادقة (Google Authenticator/Authy)، أو أدخل هذا الكود يدويًا:</div>
+            <div id="admin-2fa-qr" style="background:#fff;padding:12px;border-radius:8px;width:fit-content;margin-bottom:10px"></div>
+            <div class="form-g"><code id="admin-2fa-secret" style="font-size:12px;word-break:break-all;color:var(--gold)"></code></div>
+            <div class="form-g">
+              <label>أدخل الكود المكوّن من 6 أرقام لتأكيد التفعيل</label>
+              <input type="text" id="admin-2fa-confirm-code" inputmode="numeric" maxlength="6" placeholder="123456" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:16px;text-align:center;letter-spacing:4px">
+            </div>
+            <div class="err-msg" id="admin-2fa-enroll-err"></div>
+            <button class="act-btn-primary" onclick="confirmAdminMfaEnroll()">✅ تأكيد التفعيل</button>
+            <button class="act-btn" onclick="cancelAdminMfaEnroll()">إلغاء</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -751,6 +790,37 @@ body.ltr .toast{left:auto;right:24px;}
           <button class="act-btn" onclick="renderAuditLog()" style="font-size:12px">🔄 تحديث</button>
         </div>
         <div class="tbl-wrap" id="audit-table-wrap"></div>
+      </div>
+    </div>
+    <!-- ══ ADMIN MANAGEMENT (superadmin only) ══ -->
+    <div id="s-admins" class="section-wrap" style="display:none">
+      <div class="section-title">إدارة الأدمنز والموظفين</div>
+      <div class="alert-bar">🔐 <span>super admin بس هو اللي يقدر يضيف/يشيل أدمن أو يغيّر صلاحيات حد</span></div>
+      <div class="panel" style="margin-bottom:20px">
+        <div class="panel-head"><span>➕ إضافة أدمن جديد</span></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-g" style="flex:2;min-width:220px;margin-bottom:0">
+            <label>البريد الإلكتروني (لازم يكون له حساب فعلاً)</label>
+            <input type="email" id="new-admin-email" placeholder="employee@crysanto.io" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px">
+          </div>
+          <div class="form-g" style="flex:1;min-width:160px;margin-bottom:0">
+            <label>الصلاحية</label>
+            <select id="new-admin-role" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px">
+              <option value="viewer">👁️ Viewer — عرض بس</option>
+              <option value="admin">🛠️ Admin — تنفيذ العمليات</option>
+              <option value="superadmin">👑 Superadmin — صلاحيات كاملة</option>
+            </select>
+          </div>
+          <button class="act-btn-primary" onclick="addNewAdmin()">إضافة</button>
+        </div>
+        <div class="err-msg" id="new-admin-err"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between">
+          <span>قائمة الأدمنز الحاليين</span>
+          <button class="act-btn" onclick="renderAdminsList()" style="font-size:12px">🔄 تحديث</button>
+        </div>
+        <div class="tbl-wrap" id="admins-table-wrap"></div>
       </div>
     </div>
     <!-- ══ SECURITY ALERTS ══ -->
@@ -1034,10 +1104,57 @@ const T = {
 
 function t(key){ return (T[lang]||T.ar)[key] || key; }
 
-// ── LOGIN — Supabase Auth + Admin Role Check ──
-// لازم تعمل جدول admins في Supabase أو column is_admin=true في users
-// أو تستخدم Supabase custom claims عشان تفحص الدور server-side
+// ── LOGIN — Supabase Auth + Admin Role Check + 2FA + Lockout ──
 let adminSession = null;
+let currentAdminRole = null;   // 'superadmin' | 'admin' | 'viewer' — يتحمل بعد لوجين ناجح
+let _pendingAdminMfaFactorId = null;
+let _pendingAdminUser = null;
+let _lockCountdownTimer = null;
+
+// -- Brute-force lockout (client-side, defense-in-depth) --
+// بعد 5 محاولات غلط ورا بعض بيتقفل الفورم 60 ثانية. الحماية الأساسية الحقيقية
+// (rate limiting على مستوى السيرفر) لازم تتظبط كمان من Supabase Auth settings.
+const LOGIN_LOCK_KEY = 'crysanto_admin_login_lock';
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_LOCK_MS = 60000;
+
+function getLockState(){
+  try { return JSON.parse(localStorage.getItem(LOGIN_LOCK_KEY)) || { attempts:0, lockUntil:0 }; }
+  catch(e){ return { attempts:0, lockUntil:0 }; }
+}
+function setLockState(state){
+  try { localStorage.setItem(LOGIN_LOCK_KEY, JSON.stringify(state)); } catch(e){}
+}
+function recordFailedLoginAttempt(){
+  const s = getLockState();
+  s.attempts = (s.attempts||0) + 1;
+  if(s.attempts >= LOGIN_MAX_ATTEMPTS){
+    s.lockUntil = Date.now() + LOGIN_LOCK_MS;
+    s.attempts = 0;
+  }
+  setLockState(s);
+}
+function resetLoginLockState(){ setLockState({ attempts:0, lockUntil:0 }); }
+function isLoginLocked(){ return getLockState().lockUntil > Date.now(); }
+function showLoginLockUI(){
+  const msg = document.getElementById('li-lock-msg');
+  const secsEl = document.getElementById('li-lock-secs');
+  const btn = document.getElementById('ll-btn');
+  const remaining = () => Math.max(0, Math.ceil((getLockState().lockUntil - Date.now())/1000));
+  msg.style.display='block';
+  if(btn) btn.disabled = true;
+  clearInterval(_lockCountdownTimer);
+  _lockCountdownTimer = setInterval(()=>{
+    const s = remaining();
+    secsEl.textContent = s;
+    if(s<=0){
+      clearInterval(_lockCountdownTimer);
+      msg.style.display='none';
+      if(btn) btn.disabled = false;
+    }
+  }, 1000);
+  secsEl.textContent = remaining();
+}
 
 async function doLogin(){
   const email = document.getElementById('li-user').value.trim();
@@ -1045,6 +1162,8 @@ async function doLogin(){
   const err = document.getElementById('li-err');
   const btn = document.getElementById('ll-btn-el');
   err.style.display='none';
+
+  if(isLoginLocked()){ showLoginLockUI(); return; }
 
   if(!email||!pass){
     err.style.display='block';
@@ -1059,10 +1178,12 @@ async function doLogin(){
     const { data, error } = await sdb.auth.signInWithPassword({ email, password: pass });
 
     if(error){
+      recordFailedLoginAttempt();
       err.style.display='block';
       err.textContent = t('liErr');
       document.getElementById('li-pass').value='';
       if(btn){ btn.textContent=t('llBtn'); btn.disabled=false; }
+      if(isLoginLocked()) showLoginLockUI();
       return;
     }
 
@@ -1073,25 +1194,39 @@ async function doLogin(){
       .eq('user_id', data.user.id)
       .single();
 
-    console.log('🔍 Admin check — user_id:', data.user.id);
-    console.log('🔍 Admin data:', adminData);
-    console.log('🔍 Admin error:', adminErr);
-
     if(adminErr || !adminData){
       // مش أدمن — اطلع منه فوراً
       await sdb.auth.signOut();
+      recordFailedLoginAttempt();
       err.style.display='block';
       err.textContent = lang==='ar' ? 'ليس لديك صلاحيات الدخول' : 'Access denied — not an admin';
       if(btn){ btn.textContent=t('llBtn'); btn.disabled=false; }
+      if(isLoginLocked()) showLoginLockUI();
       return;
     }
 
-    // 3. أدمن مؤكد ✓
-    adminSession = data.session;
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('app').style.display='block';
-    if(btn){ btn.textContent=t('llBtn'); btn.disabled=false; }
-    initApp();
+    resetLoginLockState();
+    currentAdminRole = adminData.role;
+    _pendingAdminUser = data.user;
+
+    // 3. التحقق من 2FA (TOTP) لو مفعّل على حساب الأدمن ده — Supabase Auth MFA
+    try {
+      const { data: aal } = await sdb.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal && aal.nextLevel === 'aal2' && aal.currentLevel !== aal.nextLevel) {
+        const { data: factorsData } = await sdb.auth.mfa.listFactors();
+        const factor = (factorsData?.totp || []).find(f => f.status === 'verified');
+        if (factor) {
+          _pendingAdminMfaFactorId = factor.id;
+          if(btn){ btn.textContent=t('llBtn'); btn.disabled=false; }
+          document.getElementById('admin-mfa-card').style.display='block';
+          document.getElementById('admin-mfa-code').focus();
+          return;
+        }
+      }
+    } catch(mfaCheckErr){ console.error('admin mfa check error:', mfaCheckErr); }
+
+    // 4. أدمن مؤكد ✓ (مفيش 2FA مفعّل أو الفحص فشل بأمان)
+    completeAdminLogin(data.session);
 
   } catch(e){
     err.style.display='block';
@@ -1100,9 +1235,59 @@ async function doLogin(){
   }
 }
 
+function completeAdminLogin(session){
+  adminSession = session;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  initApp();
+}
+
+async function verifyAdminMfa(){
+  const code = document.getElementById('admin-mfa-code').value.trim();
+  const errEl = document.getElementById('admin-mfa-err');
+  const btn = document.getElementById('admin-mfa-btn-txt');
+  errEl.style.display='none';
+  if(!/^\d{6}$/.test(code)){
+    errEl.style.display='block'; errEl.textContent='أدخل كود مكوّن من 6 أرقام';
+    return;
+  }
+  if(!_pendingAdminMfaFactorId) return;
+  if(btn){ btn.textContent='⏳'; document.getElementById('admin-mfa-btn').disabled=true; }
+  try {
+    const { data: ch, error: chErr } = await sdb.auth.mfa.challenge({ factorId: _pendingAdminMfaFactorId });
+    if(chErr){ errEl.style.display='block'; errEl.textContent='حصل خطأ، حاول تاني'; return; }
+    const { error: vErr } = await sdb.auth.mfa.verify({ factorId: _pendingAdminMfaFactorId, challengeId: ch.id, code });
+    if(vErr){
+      errEl.style.display='block'; errEl.textContent='الكود غير صحيح، حاول مرة أخرى';
+      document.getElementById('admin-mfa-code').value='';
+      return;
+    }
+    document.getElementById('admin-mfa-code').value='';
+    document.getElementById('admin-mfa-card').style.display='none';
+    const { data: { session: freshSession } } = await sdb.auth.getSession();
+    completeAdminLogin(freshSession);
+  } catch(e){
+    console.error('verifyAdminMfa exception:', e);
+    errEl.style.display='block'; errEl.textContent='حصل خطأ، حاول تاني';
+  } finally {
+    if(btn){ btn.textContent='تأكيد'; document.getElementById('admin-mfa-btn').disabled=false; }
+  }
+}
+
+async function cancelAdminMfa(){
+  _pendingAdminMfaFactorId = null;
+  currentAdminRole = null;
+  _pendingAdminUser = null;
+  await sdb.auth.signOut();
+  document.getElementById('admin-mfa-card').style.display='none';
+  document.getElementById('admin-mfa-code').value='';
+}
+
 async function doLogout(){
   await sdb.auth.signOut();
   adminSession = null;
+  currentAdminRole = null;
+  _pendingAdminUser = null;
   document.getElementById('app').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('li-user').value='';
@@ -1110,24 +1295,43 @@ async function doLogout(){
 }
 
 // ── Auto-restore session on page reload ──
+// بيحافظ على نفس متطلبات الـ 2FA اللي في doLogin — مش هيسمح بدخول بدون كود
+// التحقق لو الحساب مفعّل عليه 2FA ومحقّقش aal2 لسه.
 (async function checkExistingSession(){
   const { data: { session } } = await sdb.auth.getSession();
   if(!session) return;
 
   const { data: adminData } = await sdb
     .from('admins')
-    .select('id')
+    .select('id, role')
     .eq('user_id', session.user.id)
     .single();
 
-  if(adminData){
-    adminSession = session;
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('app').style.display='block';
-    initApp();
-  } else {
+  if(!adminData){
     await sdb.auth.signOut();
+    return;
   }
+
+  currentAdminRole = adminData.role;
+  _pendingAdminUser = session.user;
+
+  try {
+    const { data: aal } = await sdb.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.nextLevel === 'aal2' && aal.currentLevel !== aal.nextLevel) {
+      const { data: factorsData } = await sdb.auth.mfa.listFactors();
+      const factor = (factorsData?.totp || []).find(f => f.status === 'verified');
+      if (factor) {
+        _pendingAdminMfaFactorId = factor.id;
+        document.getElementById('admin-mfa-card').style.display='block';
+        return; // لسه محتاج يدخل كود 2FA قبل ما يشوف الداشبورد
+      }
+    }
+  } catch(e){ console.error('session restore mfa check error:', e); }
+
+  adminSession = session;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  initApp();
 })();
 
 // ── LANG ──
@@ -1198,7 +1402,7 @@ function renderCurrentSection(){
     's-packages':renderPackages,'s-notifs':renderNotifs,'s-wallets':renderWallets,
     's-stats':renderStats,'s-settings':renderSettings,'s-audit':renderAuditLog,
     's-contact':renderContactMessages,'s-security':loadSecurityAlerts,
-    's-daily-profits':loadDailyProfits
+    's-daily-profits':loadDailyProfits,'s-admins':renderAdminsList
   };
   if(renders[currentSection]) renders[currentSection]();
 }
@@ -1211,6 +1415,14 @@ function initApp(){
   setupRealtime();
   loadSecurityBadge();
   loadUnreadNotifCount();
+  applyRoleVisibility();
+}
+
+// ── ROLE-BASED UI (superadmin / admin / viewer) ──
+// currentAdminRole اتحمّل وقت اللوجين من جدول admins
+function applyRoleVisibility(){
+  const sbAdmins = document.getElementById('sb-admins');
+  if (sbAdmins) sbAdmins.style.display = (currentAdminRole === 'superadmin') ? '' : 'none';
 }
 
 // ── OVERVIEW ──
@@ -2103,6 +2315,102 @@ async function renderSettings(){
   const regTrack = document.getElementById('reg-toggle-track'); const regThumb = document.getElementById('reg-toggle-thumb');
   if (regTrack) regTrack.style.background = regOn ? 'var(--green)' : 'var(--border2)';
   if (regThumb) { regThumb.style.left = regOn ? '3px' : ''; regThumb.style.right = regOn ? '' : '3px'; }
+
+  renderAdmin2FAStatus();
+}
+
+// ── ADMIN 2FA (TOTP) — Supabase Auth MFA ──
+async function renderAdmin2FAStatus(){
+  const label = document.getElementById('admin-2fa-status-label');
+  const badge = document.getElementById('admin-2fa-status-badge');
+  const enrollBtn = document.getElementById('admin-2fa-enroll-btn');
+  const disableBtn = document.getElementById('admin-2fa-disable-btn');
+  try {
+    const { data, error } = await sdb.auth.mfa.listFactors();
+    if (error) throw error;
+    const verified = (data?.totp || []).filter(f => f.status === 'verified');
+    if (verified.length) {
+      label.textContent = 'مفعّل على هذا الحساب';
+      badge.innerHTML = '<span style="color:var(--green);font-weight:700">✓ مفعّل</span>';
+      enrollBtn.style.display = 'none';
+      disableBtn.style.display = 'inline-block';
+      disableBtn.dataset.factorId = verified[0].id;
+    } else {
+      label.textContent = 'غير مفعّل — حسابك غير محمي بخطوة تحقق إضافية';
+      badge.innerHTML = '<span style="color:var(--orange);font-weight:700">⚠ غير مفعّل</span>';
+      enrollBtn.style.display = 'inline-block';
+      disableBtn.style.display = 'none';
+    }
+  } catch(e) {
+    console.error('renderAdmin2FAStatus error:', e);
+    label.textContent = 'تعذّر تحميل حالة 2FA';
+  }
+}
+
+async function startAdminMfaEnroll(){
+  const err = document.getElementById('admin-2fa-enroll-err');
+  err.style.display = 'none';
+  try {
+    const { data, error } = await sdb.auth.mfa.enroll({ factorType: 'totp' });
+    if (error) { err.style.display='block'; err.textContent = 'فشل بدء التفعيل: ' + error.message; return; }
+    _pendingAdminEnrollFactorId = data.id;
+    document.getElementById('admin-2fa-qr').innerHTML = data.totp.qr_code;
+    document.getElementById('admin-2fa-secret').textContent = data.totp.secret;
+    document.getElementById('admin-2fa-enroll-wrap').style.display = 'block';
+    document.getElementById('admin-2fa-enroll-btn').style.display = 'none';
+  } catch(e) {
+    console.error('startAdminMfaEnroll error:', e);
+    err.style.display='block'; err.textContent = 'حصل خطأ غير متوقع';
+  }
+}
+
+let _pendingAdminEnrollFactorId = null;
+async function confirmAdminMfaEnroll(){
+  const code = document.getElementById('admin-2fa-confirm-code').value.trim();
+  const err = document.getElementById('admin-2fa-enroll-err');
+  err.style.display = 'none';
+  if (!/^\d{6}$/.test(code)) { err.style.display='block'; err.textContent='أدخل كود مكوّن من 6 أرقام'; return; }
+  if (!_pendingAdminEnrollFactorId) return;
+  try {
+    const { data: ch, error: chErr } = await sdb.auth.mfa.challenge({ factorId: _pendingAdminEnrollFactorId });
+    if (chErr) { err.style.display='block'; err.textContent = chErr.message; return; }
+    const { error: vErr } = await sdb.auth.mfa.verify({ factorId: _pendingAdminEnrollFactorId, challengeId: ch.id, code });
+    if (vErr) { err.style.display='block'; err.textContent = 'الكود غير صحيح، حاول تاني'; return; }
+    document.getElementById('admin-2fa-enroll-wrap').style.display = 'none';
+    document.getElementById('admin-2fa-confirm-code').value = '';
+    _pendingAdminEnrollFactorId = null;
+    showToast('✓ تم تفعيل 2FA بنجاح');
+    renderAdmin2FAStatus();
+  } catch(e) {
+    console.error('confirmAdminMfaEnroll error:', e);
+    err.style.display='block'; err.textContent = 'حصل خطأ غير متوقع';
+  }
+}
+
+async function cancelAdminMfaEnroll(){
+  if (_pendingAdminEnrollFactorId) {
+    try { await sdb.auth.mfa.unenroll({ factorId: _pendingAdminEnrollFactorId }); } catch(e){}
+  }
+  _pendingAdminEnrollFactorId = null;
+  document.getElementById('admin-2fa-enroll-wrap').style.display = 'none';
+  document.getElementById('admin-2fa-confirm-code').value = '';
+  document.getElementById('admin-2fa-enroll-btn').style.display = 'inline-block';
+}
+
+async function disableAdminMfa(){
+  const btn = document.getElementById('admin-2fa-disable-btn');
+  const factorId = btn?.dataset.factorId;
+  if (!factorId) return;
+  if (!confirm('متأكد إنك عايز تعطّل 2FA؟ ده هيقلل حماية حسابك.')) return;
+  try {
+    const { error } = await sdb.auth.mfa.unenroll({ factorId });
+    if (error) { showToast('✗ فشل التعطيل: ' + error.message); return; }
+    showToast('✓ تم تعطيل 2FA');
+    renderAdmin2FAStatus();
+  } catch(e) {
+    console.error('disableAdminMfa error:', e);
+    showToast('✗ حصل خطأ غير متوقع');
+  }
 }
 
 async function saveSiteSettings(){
@@ -2182,24 +2490,6 @@ window.addEventListener('resize',()=>{
     el.textContent = now.toLocaleTimeString('en-GB') + ' UTC';
   }
   tick(); setInterval(tick, 1000);
-})();
-
-// ── LIVE STATS SIMULATION (subtle ticks) ──
-(function(){
-  let depCount = 12, wdCount = 27;
-  setInterval(()=>{
-    const roll = Math.random();
-    if(roll < 0.15){
-      depCount++;
-      document.getElementById('dep-badge').textContent = depCount;
-      document.getElementById('sc3v').textContent = '$' + (284 + depCount*2).toLocaleString() + 'K';
-    }
-    if(roll > 0.85){
-      wdCount++;
-      document.getElementById('wd-badge').textContent = wdCount;
-      document.getElementById('sc4v').textContent = wdCount;
-    }
-  }, 6000);
 })();
 
 // ── KEYBOARD SHORTCUTS ──
@@ -3017,6 +3307,87 @@ async function renderAuditLog(){
     </tbody></table>`;
 }
 
+// ══════════════════════════════════════════════
+// ADMIN / EMPLOYEE MANAGEMENT (superadmin only)
+// كل العمليات دي بتتنفذ عبر RPCs بتتحقق من الصلاحية على مستوى السيرفر (SECURITY DEFINER)
+// ══════════════════════════════════════════════
+const roleLabel = { superadmin: '👑 Superadmin', admin: '🛠️ Admin', viewer: '👁️ Viewer' };
+
+async function renderAdminsList(){
+  const wrap = document.getElementById('admins-table-wrap');
+  if(!wrap) return;
+  showTableSkeleton('admins-table-wrap', 4);
+  const { data, error } = await sdb.rpc('admin_list_admins');
+  if(error){
+    wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:30px">${error.message.includes('Unauthorized') ? 'مسموح لل-superadmin بس' : 'تعذّر تحميل القائمة'}</div>`;
+    return;
+  }
+  if(!data || !data.length){
+    wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:30px">لا يوجد أدمنز مسجّلين</div>`;
+    return;
+  }
+  const myUserId = _pendingAdminUser?.id || adminSession?.user?.id;
+  wrap.innerHTML = `<table>
+    <thead><tr><th>البريد الإلكتروني</th><th>الصلاحية</th><th>تاريخ الإضافة</th><th>إجراءات</th></tr></thead>
+    <tbody>${data.map(a => `
+      <tr>
+        <td>${escapeHtml(a.email||'—')}</td>
+        <td>
+          <select onchange="updateAdminRoleUI('${a.id}', this.value)" style="background:var(--dark);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px" ${a.user_id===myUserId?'disabled title="مينفعش تغيّر صلاحيتك انت"':''}>
+            <option value="viewer" ${a.role==='viewer'?'selected':''}>👁️ Viewer</option>
+            <option value="admin" ${a.role==='admin'?'selected':''}>🛠️ Admin</option>
+            <option value="superadmin" ${a.role==='superadmin'?'selected':''}>👑 Superadmin</option>
+          </select>
+        </td>
+        <td style="font-size:12px;color:var(--muted)">${(a.created_at||'').slice(0,10)}</td>
+        <td>${a.user_id===myUserId ? '<span style="font-size:11px;color:var(--muted)">أنت</span>' : `<button class="act-btn" style="background:var(--red);color:#fff;font-size:11px" onclick="removeAdminUI('${a.id}','${escapeHtml(a.email||'')}')">🗑️ حذف</button>`}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function addNewAdmin(){
+  const emailEl = document.getElementById('new-admin-email');
+  const roleEl = document.getElementById('new-admin-role');
+  const err = document.getElementById('new-admin-err');
+  err.style.display = 'none';
+  const email = emailEl.value.trim();
+  const role = roleEl.value;
+  if(!email){ err.style.display='block'; err.textContent='أدخل البريد الإلكتروني'; return; }
+  const { data, error } = await sdb.rpc('admin_add_admin', { p_email: email, p_role: role });
+  const result = Array.isArray(data) ? data[0] : data;
+  if(error || !result?.success){
+    err.style.display='block';
+    err.textContent = result?.message || error?.message || 'فشلت العملية';
+    return;
+  }
+  emailEl.value = '';
+  showToast('✓ ' + (result.message || 'تمت الإضافة'));
+  renderAdminsList();
+}
+
+async function updateAdminRoleUI(adminId, newRole){
+  const { data, error } = await sdb.rpc('admin_update_admin_role', { p_admin_id: adminId, p_role: newRole });
+  const result = Array.isArray(data) ? data[0] : data;
+  if(error || !result?.success){
+    showToast('✗ ' + (result?.message || error?.message || 'فشل التحديث'));
+    renderAdminsList();
+    return;
+  }
+  showToast('✓ ' + (result.message || 'تم التحديث'));
+  renderAdminsList();
+}
+
+async function removeAdminUI(adminId, email){
+  if(!confirm(`متأكد إنك عايز تشيل ${email} من الأدمنز؟`)) return;
+  const { data, error } = await sdb.rpc('admin_remove_admin', { p_admin_id: adminId });
+  const result = Array.isArray(data) ? data[0] : data;
+  if(error || !result?.success){
+    showToast('✗ ' + (result?.message || error?.message || 'فشل الحذف'));
+    return;
+  }
+  showToast('✓ ' + (result.message || 'تم الحذف'));
+  renderAdminsList();
+}
 
 // ══════════════════════════════════════════════
 // CONTACT MESSAGES
