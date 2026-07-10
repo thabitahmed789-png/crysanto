@@ -2309,10 +2309,11 @@ async function loadDashboard() {
       if(activeInvs.length) {
         const now = new Date();
         invBox.innerHTML = '<div class="wallet-list">'+activeInvs.map(inv=>{
-          const start = new Date(inv.start_date);
-          const end   = new Date(inv.end_date);
-          const totalDays = Math.max(1, Math.round((end-start)/86400000));
-          const dayNum = Math.min(totalDays, Math.floor((now-start)/86400000)+1);
+          const start = new Date(inv.start_date + 'T00:00:00');
+          const end   = new Date(inv.end_date + 'T00:00:00');
+          const totalDays = inv.duration_days || Math.max(1, Math.round((end-start)/86400000));
+          const todayD = new Date(new Date().toISOString().slice(0,10)+'T00:00:00');
+          const dayNum = Math.min(totalDays, Math.max(1, Math.floor((todayD-start)/86400000)+1));
           const msIntoCurrentDay = (now-start) % 86400000;
           const msUntilNextProfit = 86400000 - msIntoCurrentDay;
           const h = Math.floor(msUntilNextProfit/3600000), m = Math.floor((msUntilNextProfit%3600000)/60000);
@@ -2507,17 +2508,19 @@ async function loadInvestments() {
     if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">—</div>';return;}
     const statusColors = {active:'var(--green)',completed:'var(--muted)',cancelled:'var(--red)'};
     el.innerHTML=data.map(inv=>{
-      const start = new Date(inv.start_date);
-      const end   = new Date(inv.end_date);
+      const start = new Date(inv.start_date + 'T00:00:00');
+      const end   = new Date(inv.end_date + 'T00:00:00');
       const now   = new Date();
       const totalMs = end - start;
       const doneMs  = now - start;
-      const pct = Math.min(100, Math.max(0, Math.round((doneMs/totalMs)*100)));
+      // ✅ FIX: استخدم duration_days من الـ DB مباشرة
+      const totalDays = inv.duration_days || Math.max(1, Math.round(totalMs / 86400000));
+      const startDay = new Date(inv.start_date + 'T00:00:00');
+      const todayDay = new Date(new Date().toISOString().slice(0,10) + 'T00:00:00');
+      const daysPassed = Math.floor((todayDay - startDay) / 86400000);
+      const dayNum = Math.min(totalDays, Math.max(1, daysPassed + 1));
+      const pct = Math.min(100, Math.max(0, Math.round((daysPassed / totalDays) * 100)));
       const statusLabel = {active:lang==='ar'?'نشط':lang==='tr'?'Aktif':'Active', completed:lang==='ar'?'منتهي':lang==='tr'?'Tamamlandı':'Completed', cancelled:lang==='ar'?'ملغي':lang==='tr'?'İptal Edildi':'Cancelled'};
-
-      // حساب اليوم الحالي من إجمالي الأيام + موعد الربح القادم (ربح يومي ثابت كل 24 ساعة من بداية الاستثمار)
-      const totalDays = Math.max(1, Math.round(totalMs / 86400000));
-      const dayNum = Math.min(totalDays, Math.max(0, Math.floor(doneMs / 86400000)) + (inv.status==='active'?1:0));
       let nextProfitHtml = '';
       if (inv.status === 'active') {
         const msSinceStart = now - start;
@@ -2567,26 +2570,16 @@ async function cancelInvestment(investmentId) {
     ? `"${planDisplayName}" yatırımınızı iptal etmek istediğinizden emin misiniz?\nGünlük kâr durur ve tutar bakiyenize iade edilir.`
     : `Cancel your investment in "${planDisplayName}"?\nDaily profit will stop and amount will be refunded.`);
   if (!ok) return;
-  // الـ trigger protect_investment_fields يحمي الحقول المهمة — فقط status يتغير
-  const { error } = await db.from('investments').update({ status: 'cancelled' }).eq('id', investmentId).eq('user_id', userProfile.id);
-  if (error) { showToast(lang==='ar'?'✗ فشل إلغاء الاستثمار: '+error.message:lang==='tr'?'✗ İptal başarısız: '+error.message:'✗ Failed: '+error.message,'err'); return; }
-  // إرجاع المبلغ يدوي (الـ trigger مش بيعمله — بس الأدمن لو عمل cancel بالـ RPC بيرجعه)
-  // نعمله manual هنا للـ user cancel
-  await db.from('users').update({
-    balance: userProfile.balance + parseFloat(inv.amount||0),
-    updated_at: new Date().toISOString()
-  }).eq('id', userProfile.id);
-  await db.from('transactions').insert({
-    user_id: userProfile.id, type:'deposit', amount: parseFloat(inv.amount||0),
-    description: (lang==='ar'?'إرجاع رأس مال استثمار ملغي — ':lang==='tr'?'İptal edilen yatırımın geri ödemesi — ':'Refund for cancelled investment — ') + inv.plan_name,
-    ref_id: investmentId
-  });
-  await db.from('notifications').insert({
-    user_id: userProfile.id,
-    title: lang==='ar'?'⚠️ تم إلغاء استثمارك':lang==='tr'?'⚠️ Yatırımınız İptal Edildi':'⚠️ Investment Cancelled',
-    body: (lang==='ar'?'تم إلغاء استثمارك في "':lang==='tr'?'Yatırımınız "':'Your investment in "') + inv.plan_name + (lang==='ar'?'" وإرجاع $':lang==='tr'?'" iptal edildi, $':'" refunded $') + inv.amount,
-    type:'warning'
-  });
+  // الإلغاء والاسترجاع بيحصلوا في معاملة واحدة ذرية جوه RPC آمن على السيرفر
+  // (كان فيه باج قبل كده: التحديث المباشر على users.balance كان بيترفض بصمت من trigger الحماية،
+  // فاليوزر كان بيلغي الاستثمار من غير ما يرجعله فلوسه)
+  const { data, error } = await db.rpc('user_cancel_investment', { p_investment_id: investmentId });
+  const result = Array.isArray(data) ? data[0] : data;
+  if (error || !result?.success) {
+    const msg = error?.message || result?.message || 'Unknown error';
+    showToast(lang==='ar'?'✗ فشل إلغاء الاستثمار: '+msg:lang==='tr'?'✗ İptal başarısız: '+msg:'✗ Failed: '+msg,'err');
+    return;
+  }
   showToast(lang==='ar'?'✓ تم إلغاء الاستثمار — تم رجوع الفلوس لرصيدك':lang==='tr'?'✓ Yatırım iptal edildi — bakiyenize geri ödendi':'✓ Investment cancelled — funds refunded to balance');
   await loadInvestments();
   await loadDashboard();
@@ -3115,8 +3108,12 @@ async function investFromBalance(planId, planName, rate, durationDays, minAmount
     if(balErr) throw balErr;
 
     // إنشاء الاستثمار
-    const startDate = new Date().toISOString().slice(0,10);
-    const endDate   = new Date(Date.now() + durationDays*86400000).toISOString().slice(0,10);
+    // ✅ FIX: حساب التواريخ بدون تأثير التوقيت
+    const today = new Date();
+    const startDate = today.toISOString().slice(0,10);
+    const endDay = new Date(today);
+    endDay.setDate(endDay.getDate() + durationDays);
+    const endDate = endDay.toISOString().slice(0,10);
     const { error: invErr } = await db.from('investments').insert({
       user_id: userProfile.id, plan_id: planId,
       plan_name: planName,
