@@ -1872,6 +1872,10 @@ async function doLogin() {
       userProfile = newP;
     }
 
+    // ✅ FIX: إيميل ترحيب حقيقي عند إنشاء بروفايل جديد (تسجيل مباشر أو أول دخول عبر OAuth)
+    // — قالب ثابت آمن، السيرفر بيحدد إيميل المستخدم من جلسته مش من المتصفح، ومابيبلوكش لو فشل.
+    db.functions.invoke('send-email', { body: { template: 'welcome' } }).catch(e => console.error('welcome email error:', e));
+
     _authHandled = false;
     if(btn) { btn.textContent = '✅'; btn.disabled = true; }
     await new Promise(r => setTimeout(r, 400));
@@ -1925,6 +1929,10 @@ async function verifyMfaAndContinueLogin() {
       if (insErr) { console.error('mfa/profile insert error:', insErr); showToast(genericErrMsg()[lang]||genericErrMsg().en,'err'); return; }
       userProfile = newP;
     }
+
+    // ✅ FIX: إيميل ترحيب حقيقي عند إنشاء بروفايل جديد (تسجيل مباشر أو أول دخول عبر OAuth)
+    // — قالب ثابت آمن، السيرفر بيحدد إيميل المستخدم من جلسته مش من المتصفح، ومابيبلوكش لو فشل.
+    db.functions.invoke('send-email', { body: { template: 'welcome' } }).catch(e => console.error('welcome email error:', e));
     afterLogin();
   } catch (e) {
     console.error('verifyMfaAndContinueLogin exception:', e);
@@ -2040,6 +2048,10 @@ async function doRegister() {
       }
       userProfile = newP;
     }
+
+    // ✅ FIX: إيميل ترحيب حقيقي عند إنشاء بروفايل جديد (تسجيل مباشر أو أول دخول عبر OAuth)
+    // — قالب ثابت آمن، السيرفر بيحدد إيميل المستخدم من جلسته مش من المتصفح، ومابيبلوكش لو فشل.
+    db.functions.invoke('send-email', { body: { template: 'welcome' } }).catch(e => console.error('welcome email error:', e));
 
     _authHandled = false;
     if(btn) { btn.textContent = '✅'; btn.disabled = true; }
@@ -2784,7 +2796,12 @@ async function submitWithdrawal() {
     if(wdErr) throw wdErr;
     const wdResult = Array.isArray(wdRpc) ? wdRpc[0] : wdRpc;
     if(!wdResult || !wdResult.success) {
-      showToast(wdResult?.message || (lang==='ar'?'تعذر إرسال طلب السحب':lang==='tr'?'Çekim talebi gönderilemedi':'Could not submit withdrawal request'), 'err');
+      // ✅ FIX: رسالة مترجمة وواضحة لو الرفض بسبب حد الـ KYC، مع توجيه المستخدم لصفحة التوثيق
+      if((wdResult?.message||'').includes('KYC verification required')) {
+        showToast(lang==='ar'?'⚠️ لازم توثّق هويتك (KYC) الأول عشان تقدر تسحب هذا المبلغ':lang==='tr'?'⚠️ Bu tutarı çekmek için önce kimliğinizi doğrulamanız (KYC) gerekiyor':'⚠️ Please verify your identity (KYC) first to withdraw this amount', 'err');
+      } else {
+        showToast(wdResult?.message || (lang==='ar'?'تعذر إرسال طلب السحب':lang==='tr'?'Çekim talebi gönderilemedi':'Could not submit withdrawal request'), 'err');
+      }
       return;
     }
     userProfile.balance -= amount; // الرصيد اتخصم فعلياً في الـ RPC، نعكسها محلياً فوراً
