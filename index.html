@@ -3099,48 +3099,18 @@ async function investFromBalance(planId, planName, rate, durationDays, minAmount
   if(!confirmed) return;
 
   try {
-    // خصم من الرصيد
-    const { error: balErr } = await db.from('users').update({
-      balance:   userProfile.balance - amount,
-      invested:  (userProfile.invested || 0) + amount,
-      updated_at: new Date().toISOString()
-    }).eq('id', userProfile.id);
-    if(balErr) throw balErr;
-
-    // إنشاء الاستثمار
-    // ✅ FIX: حساب التواريخ بدون تأثير التوقيت
-    const today = new Date();
-    const startDate = today.toISOString().slice(0,10);
-    const endDay = new Date(today);
-    endDay.setDate(endDay.getDate() + durationDays);
-    const endDate = endDay.toISOString().slice(0,10);
-    const { error: invErr } = await db.from('investments').insert({
-      user_id: userProfile.id, plan_id: planId,
-      plan_name: planName,
-      plan_name_en: ((__plansCache||[]).find(p=>p.id===planId)||{}).name_en || planName,
-      plan_name_tr: ((__plansCache||[]).find(p=>p.id===planId)||{}).name_tr || planName,
-      amount, daily_rate: rate, duration_days: durationDays,
-      daily_profit: parseFloat((amount*rate/100).toFixed(2)),
-      total_profit: 0, start_date: startDate, end_date: endDate,
-      status: 'active', source: 'balance'
+    // ✅ FIX: كل عملية الاستثمار (خصم الرصيد + إنشاء الاستثمار + السجلات) بقت
+    // بتتعمل سيرفر-سايد جوه RPC واحدة آمنة (user_create_investment) بدل الكتابة
+    // المباشرة على الجداول، اللي أصلاً كانت هتترفض من الـ RLS ومن تريجر حماية الرصيد.
+    const { data: invRpc, error: invErr } = await db.rpc('user_create_investment', {
+      p_plan_id: planId, p_amount: amount
     });
     if(invErr) throw invErr;
-
-    // سجّل في transactions
-    await db.from('transactions').insert({
-      user_id: userProfile.id, type: 'invest', amount,
-      description: (lang==='ar'?'استثمار في ':lang==='tr'?'Yatırım: ':'Investment in ') + planName
-    });
-
-    // إشعار
-    await db.from('notifications').insert({
-      user_id: userProfile.id, type: 'success',
-      title: lang==='ar'?'✅ تم الاستثمار بنجاح':lang==='tr'?'✅ Yatırım Başarılı':'✅ Investment Successful',
-      title_en: '✅ Investment Successful', title_tr: '✅ Yatırım Başarılı',
-      body: (lang==='ar'?`تم استثمار $${amount.toLocaleString()} في ${planName}`:lang==='tr'?`$${amount.toLocaleString()} tutarında ${planName} yatırımı yapıldı`:`$${amount.toLocaleString()} invested in ${planName}`),
-      body_en: `$${amount.toLocaleString()} invested in ${planName}`,
-      body_tr: `$${amount.toLocaleString()} tutarında ${planName} yatırımı`
-    });
+    const invResult = Array.isArray(invRpc) ? invRpc[0] : invRpc;
+    if(!invResult || !invResult.success) {
+      showToast(invResult?.message || (lang==='ar'?'تعذر إتمام الاستثمار':lang==='tr'?'Yatırım tamamlanamadı':'Could not complete investment'), 'err');
+      return;
+    }
 
     // حدّث الـ userProfile محلياً
     userProfile.balance  -= amount;
@@ -3153,10 +3123,8 @@ async function investFromBalance(planId, planName, rate, durationDays, minAmount
     setTimeout(()=>{ switchDash(document.querySelector('.sidebar-item'), 'd-invest'); }, 300);
 
   } catch(e) {
+    // ✅ FIX: الرصيد بقى بيتحدث محلياً بس بعد نجاح الـ RPC (فوق)، فمفيش حاجة نرجعها هنا
     showToast('✗ ' + e.message, 'err');
-    // استرجاع الحالة المحلية لو فشل
-    userProfile.balance  += amount;
-    userProfile.invested  -= amount;
   }
 }
 
