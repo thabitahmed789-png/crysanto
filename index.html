@@ -2529,7 +2529,15 @@ async function loadInvestments() {
       const dayNum = inv.status === 'completed'
         ? totalDays
         : Math.min(totalDays, Math.max(1, profitsPaid + 1));
-      const pct = Math.min(100, Math.max(0, Math.round((profitsPaid / totalDays) * 100)));
+      // ✅ FIX: الشريط كان بيفضل 0% طول أول 24 ساعة وبعدين يقفز فجأة لما الربح يتوزع
+      // (لأنه كان بيتحسب من عدد الأرباح المتوزعة فعلاً بس). دلوقتي بيتحرك تدريجياً مع الوقت
+      // جوه كل دورة، بنفس منطق عداد "الربح القادم بعد" اللي جنبه بالظبط.
+      let partialCycle = 0;
+      if (inv.status === 'active' && inv.next_profit_at) {
+        const cycleStart = new Date(inv.next_profit_at).getTime() - 24*3600000;
+        partialCycle = Math.min(1, Math.max(0, (now.getTime() - cycleStart) / (24*3600000)));
+      }
+      const pct = Math.min(100, Math.max(0, Math.round(((profitsPaid + partialCycle) / totalDays) * 100)));
       const statusLabel = {active:lang==='ar'?'نشط':lang==='tr'?'Aktif':'Active', completed:lang==='ar'?'منتهي':lang==='tr'?'Tamamlandı':'Completed', cancelled:lang==='ar'?'ملغي':lang==='tr'?'İptal Edildi':'Cancelled'};
       let nextProfitHtml = '';
       if (inv.status === 'active' && inv.next_profit_at) {
