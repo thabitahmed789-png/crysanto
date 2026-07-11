@@ -1768,6 +1768,7 @@ async function approveKyc(userId){
   const result = Array.isArray(data) ? data[0] : data;
   if (error || !result?.success) { showToast((lang==='ar'?'✗ فشل قبول KYC: ':'✗ Failed to approve KYC: ')+(result?.message||error?.message||'')); return; }
   showToast(lang==='ar'?'✓ تم قبول KYC':'KYC Approved');
+  sendKycEmailNotification(userId, 'verified'); // ✅ FIX: إيميل حقيقي عند قبول التوثيق
   renderKYC();
 }
 async function rejectKyc(userId){
@@ -1775,7 +1776,26 @@ async function rejectKyc(userId){
   const result = Array.isArray(data) ? data[0] : data;
   if (error || !result?.success) { showToast((lang==='ar'?'✗ فشل رفض KYC: ':'✗ Failed to reject KYC: ')+(result?.message||error?.message||'')); return; }
   showToast(lang==='ar'?'✗ تم رفض KYC':'KYC Rejected');
+  sendKycEmailNotification(userId, 'rejected'); // ✅ FIX: إيميل حقيقي عند رفض التوثيق
   renderKYC();
+}
+// ✅ FIX: إيميل مخصص لقرارات الـ KYC (منفصل عن sendEmailNotification لأنها مبنية على "مبلغ" وده مش مناسب للـ KYC)
+// لو فشل الإيميل، قرار الـ KYC نفسه يفضل متعمل بالفعل (الدالة دي async منفصلة ومحوطة بـ try/catch).
+async function sendKycEmailNotification(userId, decision) {
+  try {
+    const { data: u, error } = await sdb.from('users').select('email,name').eq('id', userId).single();
+    if (error || !u?.email) return;
+    const subject = decision === 'verified'
+      ? (lang==='ar' ? '✅ تم توثيق هويتك بنجاح — Crysanto' : '✅ Your identity has been verified — Crysanto')
+      : (lang==='ar' ? '❌ تم رفض طلب توثيق الهوية — Crysanto' : '❌ Your KYC request was rejected — Crysanto');
+    const bodyHtml = decision === 'verified'
+      ? `<div style="font-family:sans-serif"><h2>${lang==='ar'?'مرحبًا':'Hi'} ${escapeHtml(u.name||'')}،</h2><p>${lang==='ar'?'تم التحقق من هويتك بنجاح في Crysanto. حسابك الآن موثّق بالكامل.':'Your identity has been successfully verified on Crysanto. Your account is now fully verified.'}</p></div>`
+      : `<div style="font-family:sans-serif"><h2>${lang==='ar'?'مرحبًا':'Hi'} ${escapeHtml(u.name||'')}،</h2><p>${lang==='ar'?'للأسف تم رفض مستندات التحقق من الهوية. برجاء إعادة رفع المستندات بجودة أوضح والمحاولة مرة أخرى.':'Unfortunately your identity verification documents were rejected. Please re-upload clearer documents and try again.'}</p></div>`;
+    const { error: fnErr } = await sdb.functions.invoke('send-email', { body: { to: u.email, subject, html: bodyHtml } });
+    if (fnErr) console.error('send-email function error (kyc):', fnErr);
+  } catch (e) {
+    console.error('sendKycEmailNotification unexpected error:', e);
+  }
 }
 
 // ── REFERRALS ──
