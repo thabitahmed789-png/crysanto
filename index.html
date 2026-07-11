@@ -2736,6 +2736,8 @@ async function submitDeposit() {
     }
 
     await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,tx_hash:hash,status:'pending',plan_id:planId});
+    // ✅ FIX: إيميل تأكيد حقيقي لاستلام طلب الإيداع (قالب ثابت آمن، مش بلوك لو فشل)
+    db.functions.invoke('send-email', { body: { template: 'deposit_received', params: { amount } } }).catch(e => console.error('deposit email error:', e));
     await db.from('notifications').insert({
       user_id:userProfile.id,
       title:'📥 '+(lang==='ar'?'تم استلام طلب إيداعك':lang==='tr'?'Yatırım talebi alındı':'Deposit request received'),
