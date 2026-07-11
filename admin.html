@@ -2953,9 +2953,13 @@ async function approveWithdrawal(wdId, userId, amount, name, email) {
   const confirmed = confirm(lang==='ar' ? `موافقة على سحب $${amount} لـ ${name}؟` : `Approve $${amount} withdrawal for ${name}?`);
   if (!confirmed) return;
   const { data, error } = await sdb.rpc('admin_approve_withdrawal', { p_withdrawal_id: wdId });
-  if (error) {
-    showToast((lang==='ar'?'✗ فشل قبول السحب: ':'✗ Failed to approve withdrawal: ')+error.message);
-    console.error('approveWithdrawal RPC error:', error);
+  // ✅ FIX: الـ RPC بترجع {success,message} حتى لو مفيش error نقل (SQL) — كان الكود القديم
+  // بيتجاهل ده ويقول "تم القبول" حتى لو الدالة رجعت success=false فعلياً (مثلاً "already processed").
+  const result = Array.isArray(data) ? data[0] : data;
+  if (error || !result?.success) {
+    showToast((lang==='ar'?'✗ فشل قبول السحب: ':'✗ Failed to approve withdrawal: ')+(result?.message||error?.message||''));
+    console.error('approveWithdrawal RPC error:', error||result);
+    await loadRealWithdrawals();
     return;
   }
   await sendEmailNotification(email, name, amount, 'approved');
@@ -2964,8 +2968,14 @@ async function approveWithdrawal(wdId, userId, amount, name, email) {
 }
 
 async function rejectWithdrawal(wdId, userId, amount, name, email) {
-  const { error } = await sdb.rpc('admin_reject_withdrawal', { p_withdrawal_id: wdId, p_reason: '' });
-  if (error) { showToast((lang==='ar'?'✗ فشل رفض السحب: ':'✗ Failed to reject withdrawal: ')+error.message); console.error('rejectWithdrawal RPC error:', error); return; }
+  const { data, error } = await sdb.rpc('admin_reject_withdrawal', { p_withdrawal_id: wdId, p_reason: '' });
+  const result = Array.isArray(data) ? data[0] : data;
+  if (error || !result?.success) {
+    showToast((lang==='ar'?'✗ فشل رفض السحب: ':'✗ Failed to reject withdrawal: ')+(result?.message||error?.message||''));
+    console.error('rejectWithdrawal RPC error:', error||result);
+    await loadRealWithdrawals();
+    return;
+  }
   await sendEmailNotification(email, name, amount, 'rejected');
   showToast(lang==='ar'?`✗ تم رفض السحب`:`✗ Withdrawal rejected`);
   await loadRealWithdrawals();
