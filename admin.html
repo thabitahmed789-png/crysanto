@@ -2108,6 +2108,23 @@ function copyWallet(i){
   showToast(lang==='ar'?'✓ تم نسخ العنوان':'✓ Address copied');
 }
 
+// ✅ FIX: زرار نسخ عام لأي نص (عنوان محفظة، TX Hash، ...) — يستخدم نفس منطق copyWallet
+function copyText(text, label){
+  if(!text) return;
+  navigator.clipboard.writeText(text).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+  showToast((lang==='ar'?'✓ تم نسخ ':'✓ Copied ')+(label||(lang==='ar'?'النص':'text')));
+}
+// يمنع onclick من "يفتح" أي صف/مودال تاني لما تدوس على زرار النسخ
+function copyTextStop(ev, text, label){
+  if(ev) ev.stopPropagation();
+  copyText(text, label);
+}
+
 // ── STATS CHARTS ──
 // renderStats — تعريف واحد فقط موجود في الأسفل (async نسخة حقيقية من DB)
 async function drawGeo(){
@@ -2820,7 +2837,7 @@ function renderRealDeposits(data) {
         <td style="font-size:11px;color:var(--muted)">${escapeHtml(d.users?.email || '—')}</td>
         <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(d.amount).toLocaleString()}</td>
         <td><span style="font-family:var(--mono)">${escapeHtml(d.coin)}</span></td>
-        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.tx_hash ? escapeHtml(d.tx_hash.slice(0,16))+'...' : '—'}</td>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.tx_hash ? `<span onclick="copyTextStop(event,this.dataset.copyval,'TX Hash')" data-copyval="${escapeHtml(d.tx_hash)}" title="${escapeHtml(d.tx_hash)}" style="cursor:pointer;text-decoration:underline dotted">${escapeHtml(d.tx_hash.slice(0,16))}...  📋</span>` : '—'}</td>
         <td style="font-family:var(--mono);color:var(--blue)">${escapeHtml(d.memo || '—')}</td>
         <td style="font-size:11px;color:var(--muted)">${d.created_at?.slice(0,16)}</td>
         <td>${statusBadge(d.status)}</td>
@@ -2935,7 +2952,7 @@ function renderRealWithdrawals(data) {
         <td style="font-weight:600">${escapeHtml(w.users?.name || '—')}</td>
         <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(w.amount).toLocaleString()}</td>
         <td><span style="font-family:var(--mono)">${escapeHtml(w.coin)}</span></td>
-        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${w.wallet_address ? escapeHtml(w.wallet_address.slice(0,20))+'...' : '—'}</td>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${w.wallet_address ? `<span onclick="copyTextStop(event,this.dataset.copyval,'${lang==='ar'?'العنوان':'address'}')" data-copyval="${escapeHtml(w.wallet_address)}" title="${escapeHtml(w.wallet_address)}" style="cursor:pointer;text-decoration:underline dotted">${escapeHtml(w.wallet_address.slice(0,20))}...  📋</span>` : '—'}</td>
         <td style="font-size:11px;color:var(--muted)">${w.created_at?.slice(0,16)}</td>
         <td>${statusBadge(w.status)}</td>
         <td>
