@@ -2775,17 +2775,19 @@ async function submitWithdrawal() {
   }
 
   try {
-    await db.from('withdrawals').insert({user_id:userProfile.id,amount,coin:coin.split('-')[0],network:coin,wallet_address:addr,status:'pending'});
-    await db.from('notifications').insert({
-      user_id:userProfile.id,
-      title:'📤 '+(lang==='ar'?'تم استلام طلب سحبك':lang==='tr'?'Çekim talebi alındı':'Withdrawal request received'),
-      title_en:'📤 Withdrawal Request Received',
-      title_tr:'📤 Çekim Talebi Alındı',
-      body:(lang==='ar'?'طلب سحب $':lang==='tr'?'Çekim talebi $':'Withdrawal request $')+amount+' '+(lang==='ar'?'قيد المراجعة':lang==='tr'?'inceleniyor':'under review'),
-      body_en:'Withdrawal request of $'+amount+' is under review',
-      body_tr:'$'+amount+' çekim talebi inceleniyor',
-      type:'info'
+    // ✅ FIX: الطلب بقى بينادي RPC آمنة بتحجز (تخصم) المبلغ من الرصيد فوراً وقت الطلب نفسه،
+    // بدل ما تسيب الرصيد زي ما هو لحد ما الأدمن يوافق — ده كان بيسمح بطلب سحب أكتر من
+    // الرصيد الفعلي، وكان بيخلي "رفض الطلب" يرجّع فلوس ماكانتش اتخصمت أصلاً.
+    const { data: wdRpc, error: wdErr } = await db.rpc('user_request_withdrawal', {
+      p_amount: amount, p_coin: coin.split('-')[0], p_network: coin, p_wallet_address: addr
     });
+    if(wdErr) throw wdErr;
+    const wdResult = Array.isArray(wdRpc) ? wdRpc[0] : wdRpc;
+    if(!wdResult || !wdResult.success) {
+      showToast(wdResult?.message || (lang==='ar'?'تعذر إرسال طلب السحب':lang==='tr'?'Çekim talebi gönderilemedi':'Could not submit withdrawal request'), 'err');
+      return;
+    }
+    userProfile.balance -= amount; // الرصيد اتخصم فعلياً في الـ RPC، نعكسها محلياً فوراً
     showToast(lang==='ar'?'✓ تم إرسال طلب السحب':lang==='tr'?'✓ Çekim talebi gönderildi':'✓ Withdrawal request sent');
     document.getElementById('wd-addr').value='';
     document.getElementById('wd-amount').value='';
