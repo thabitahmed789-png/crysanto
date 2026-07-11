@@ -2508,25 +2508,20 @@ async function loadInvestments() {
     if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">—</div>';return;}
     const statusColors = {active:'var(--green)',completed:'var(--muted)',cancelled:'var(--red)'};
     el.innerHTML=data.map(inv=>{
-      const start = new Date(inv.start_date + 'T00:00:00');
-      const end   = new Date(inv.end_date + 'T00:00:00');
       const now   = new Date();
-      const totalMs = end - start;
-      const doneMs  = now - start;
-      // ✅ FIX: استخدم duration_days من الـ DB مباشرة
-      const totalDays = inv.duration_days || Math.max(1, Math.round(totalMs / 86400000));
-      const startDay = new Date(inv.start_date + 'T00:00:00');
-      const todayDay = new Date(new Date().toISOString().slice(0,10) + 'T00:00:00');
-      const daysPassed = Math.floor((todayDay - startDay) / 86400000);
-      const dayNum = Math.min(totalDays, Math.max(1, daysPassed + 1));
-      const pct = Math.min(100, Math.max(0, Math.round((daysPassed / totalDays) * 100)));
+      // ✅ FIX: بدل ما نحسب الموعد تقريباً من start_date على توقيت المتصفح المحلي (وده كان بيسبب
+      // فرق عن الميعاد الحقيقي حسب فرق التوقيت)، دلوقتي بنستخدم next_profit_at الحقيقي الجاي من
+      // قاعدة البيانات (بيتحدث سيرفر-سايد كل ما يتوزع ربح، بدقة 24 ساعة من لحظة الاستثمار الفعلية)
+      const totalDays   = inv.duration_days || 1;
+      const profitsPaid = inv.profits_paid || 0;
+      const dayNum = inv.status === 'completed'
+        ? totalDays
+        : Math.min(totalDays, Math.max(1, profitsPaid + 1));
+      const pct = Math.min(100, Math.max(0, Math.round((profitsPaid / totalDays) * 100)));
       const statusLabel = {active:lang==='ar'?'نشط':lang==='tr'?'Aktif':'Active', completed:lang==='ar'?'منتهي':lang==='tr'?'Tamamlandı':'Completed', cancelled:lang==='ar'?'ملغي':lang==='tr'?'İptal Edildi':'Cancelled'};
       let nextProfitHtml = '';
-      if (inv.status === 'active') {
-        const msSinceStart = now - start;
-        const msIntoCurrentDay = msSinceStart % 86400000;
-        const msUntilNextProfit = 86400000 - msIntoCurrentDay;
-        const nextProfitDate = new Date(now.getTime() + msUntilNextProfit);
+      if (inv.status === 'active' && inv.next_profit_at) {
+        const msUntilNextProfit = Math.max(0, new Date(inv.next_profit_at) - now);
         const h = Math.floor(msUntilNextProfit / 3600000);
         const m = Math.floor((msUntilNextProfit % 3600000) / 60000);
         nextProfitHtml = '<div style="font-size:11px;color:var(--gold);margin-top:6px;display:flex;justify-content:space-between">' +
