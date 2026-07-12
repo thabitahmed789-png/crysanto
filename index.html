@@ -400,7 +400,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
     <h1><span id="h1" data-ar="استثمر في" data-en="Invest in" data-tr="Yatırım Yap">استثمر في</span><br><span class="gold" id="h2" data-ar="مستقبلك الرقمي" data-en="Your Digital Future" data-tr="Dijital Geleceğine">مستقبلك الرقمي</span><br><span class="outline">Crysanto</span></h1>
     <p id="h-sub" data-ar="منصة استثمار رقمي آمنة وموثوقة. حقق عوائد يومية على استثماراتك." data-en="A secure digital investment platform. Earn daily returns on your crypto investments." data-tr="Güvenli dijital yatırım platformu. Günlük gelir elde edin.">منصة استثمار رقمي آمنة وموثوقة. حقق عوائد يومية على استثماراتك.</p>
     <div class="hero-cta">
-      <button class="btn-primary" onclick="openModal('register')" id="h-btn1" data-ar="ابدأ الآن مجاناً" data-en="Get Started Free" data-tr="Ücretsiz Başla">ابدأ الآن مجاناً</button>
+      <button class="btn-primary" onclick="ctaGetStarted()" id="h-btn1" data-ar="ابدأ الآن مجاناً" data-en="Get Started Free" data-tr="Ücretsiz Başla">ابدأ الآن مجاناً</button>
       <button class="btn-outline" onclick="showPage('plans',null)" id="h-btn2" data-ar="استعرض الباقات" data-en="View Plans" data-tr="Planları Gör">استعرض الباقات</button>
     </div>
   </div>
@@ -493,7 +493,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
       </div>
     </div>
     <div style="text-align:center;margin-top:40px">
-      <button class="btn-primary" onclick="openModal('register')" id="how-cta" data-ar="ابدأ الآن مجاناً" data-en="Start Now for Free" data-tr="Şimdi Ücretsiz Başla">Start Now for Free</button>
+      <button class="btn-primary" onclick="ctaGetStarted()" id="how-cta" data-ar="ابدأ الآن مجاناً" data-en="Start Now for Free" data-tr="Şimdi Ücretsiz Başla">Start Now for Free</button>
     </div>
   </div>
 </div>
@@ -1374,6 +1374,10 @@ setTimeout(() => {
   }
 }, 3000);
 let isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
+// ✅ FIX: عدّاد "جيل الجلسة" — بيتزوّد كل مرة الهوية بتتغيّر (دخول/خروج/تسجيل). أي طلب بيانات
+// غير متزامن (زي fetchProfile) بيتم تجاهل رده لو الجيل اتغيّر قبل ما يوصل، عشان رد متأخر من
+// حساب قديم مايكتبش فوق بيانات الحساب الحالي (ده كان سبب "رجوع تلقائي للحساب القديم").
+let _sessionGen = 0;
 let _pendingDashboardLoad = false, _pendingReferralLoad = false; // ✅ FIX: لو الصفحة اتفتحت optimistically قبل ما البروفايل يجهز
 let _authHandled = false; // منع تعارض login/register مع onAuthStateChange
 const PROTECTED = ['dashboard','deposit','referral'];
@@ -1387,6 +1391,8 @@ db.auth.onAuthStateChange(async (event, session) => {
   // SIGNED_IN = بعد login جديد (عبر onAuthStateChange مش doLogin)
   if((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session && !isLoggedIn) {
     currentUser = session.user;
+    _sessionGen++; // ✅ FIX: جلسة جديدة — أي رد قديم لسه شغال في الخلفية هيتجاهل
+    const myGen = _sessionGen;
     // إخفاء زراير Login/Register فوراً — قبل ما fetchProfile يخلص
     const _bL = document.getElementById('btnLogin');
     const _bR = document.getElementById('btnRegister');
@@ -1397,6 +1403,7 @@ db.auth.onAuthStateChange(async (event, session) => {
     // مع userProfile=null بعرض حالة تحميل، وبتكمل التحديث لما fetchProfile يخلص في الخلفية
     afterLogin(false);
     fetchProfile(3, 500).then(() => {
+      if(myGen !== _sessionGen) return; // ✅ FIX: الجلسة اتغيّرت قبل ما الرد يوصل — تجاهله
       if(userProfile) {
         afterLogin(true); // إعادة تحديث الواجهة بالبيانات الحقيقية — بدون تكرار toast/idle-timer/device-tracking
       } else {
@@ -1408,6 +1415,7 @@ db.auth.onAuthStateChange(async (event, session) => {
       }
     });
   } else if(event === 'SIGNED_OUT') {
+    _sessionGen++; // ✅ FIX
     isLoggedIn = false; currentUser = null; userProfile = null;
     document.body.classList.remove('logged-in');
     const bL=document.getElementById('btnLogin'); if(bL) bL.style.display='';
@@ -1828,6 +1836,8 @@ async function doLogin() {
     }
 
     currentUser = data.user;
+    _sessionGen++; // ✅ FIX: يلغي أي طلب بروفايل من جلسة سابقة لسه شغال في الخلفية
+    const myLoginGen = _sessionGen;
 
     // ✅ FIX: التحقق من المصادقة الثنائية (2FA) لو مفعّلة على الحساب
     try {
@@ -1885,6 +1895,7 @@ async function doLogin() {
     db.functions.invoke('send-email', { body: { template: 'welcome' } }).catch(e => console.error('welcome email error:', e));
 
     _authHandled = false;
+    if (_sessionGen !== myLoginGen) { return; } // ✅ FIX: لو حصل logout/login تاني في نفس اللحظة، متكملش بهوية قديمة
     if(btn) { btn.textContent = '✅'; btn.disabled = true; }
     await new Promise(r => setTimeout(r, 400));
     closeModal('login');
@@ -2004,6 +2015,8 @@ async function doRegister() {
     }
 
     currentUser = data.user;
+    _sessionGen++; // ✅ FIX: يلغي أي طلب بروفايل من جلسة سابقة لسه شغال في الخلفية
+    const myRegGen = _sessionGen;
     await new Promise(r => setTimeout(r, 50)); // yield للـ UI
 
     // لو email confirmation مطلوب
@@ -2062,6 +2075,7 @@ async function doRegister() {
     db.functions.invoke('send-email', { body: { template: 'welcome' } }).catch(e => console.error('welcome email error:', e));
 
     _authHandled = false;
+    if (_sessionGen !== myRegGen) { return; } // ✅ FIX: لو حصل logout/login تاني في نفس اللحظة، متكملش بهوية قديمة
     if(btn) { btn.textContent = '✅'; btn.disabled = true; }
     await new Promise(r => setTimeout(r, 400));
     closeModal('register');
@@ -2123,8 +2137,15 @@ function closeUserDropdown() {
   if (dd) dd.style.display = 'none';
 }
 
+// ✅ FIX: زرار "ابدأ الآن مجاناً" كان بيفتح فورم تسجيل حساب جديد حتى لو المستخدم مسجّل دخول بالفعل
+function ctaGetStarted() {
+  if (isLoggedIn) { showPage('dashboard', null); }
+  else { openModal('register'); }
+}
+
 async function doLogout() {
   clearTimeout(_idleTimer); // ✅ FIX: وقف عداد الخمول لما اليوزر يخرج
+  _sessionGen++; // ✅ FIX: يلغي أي طلب بروفايل قديم لسه شغال في الخلفية
   _authHandled = true; // نتعامل مع الخروج هنا
   await db.auth.signOut();
   _authHandled = false;
@@ -2161,22 +2182,28 @@ function resetIdleTimer() {
 
 async function fetchProfile(retries = 3, delay = 500) {
   if(!currentUser) { console.warn('fetchProfile: no currentUser'); return; }
+  const myGen = _sessionGen; // ✅ FIX: بصمة الجلسة اللي بدأ فيها الطلب ده
+  const myUid = currentUser.id;
   console.log('fetchProfile: starting for', currentUser.email);
   for(let i = 0; i < retries; i++) {
     try {
-      const res = await withTimeout(db.from('users').select('*').eq('auth_id', currentUser.id).maybeSingle(), 6000);
+      const res = await withTimeout(db.from('users').select('*').eq('auth_id', myUid).maybeSingle(), 6000);
       console.log('fetchProfile attempt', i+1, ':', res.data ? 'FOUND' : 'not found', res.error ? '| error: '+res.error.message : '');
+      if(myGen !== _sessionGen) { console.warn('fetchProfile: تم تجاهل رد متأخر (الجلسة اتغيّرت)'); return; } // ✅ FIX
       if(res && res.data) { userProfile = res.data; return; }
       if(res.error) console.error('fetchProfile error:', res.error);
     } catch(e) { console.error('fetchProfile exception:', e); }
+    if(myGen !== _sessionGen) return; // ✅ FIX
     if(i < retries - 1) await new Promise(r => setTimeout(r, delay));
   }
+  if(myGen !== _sessionGen) return; // ✅ FIX
 
   // محاولة احتياطية واحدة بس بعد ما كل المحاولات المباشرة فشلت
   // (قبل كده كانت بتتنفّذ جوه كل تكرار من اللوب فوق، وده كان بيضاعف وقت التحميل لحد 25-30 ثانية)
   if(currentUser.email) {
     try {
       const { data: linkResult, error: linkErr } = await withTimeout(db.rpc('link_auth_id_to_existing_profile'), 6000);
+      if(myGen !== _sessionGen) return; // ✅ FIX
       if(linkErr) console.error('link_auth_id error:', linkErr);
       else if(linkResult && linkResult.success && linkResult.profile) { userProfile = linkResult.profile; return; }
     } catch(e) { console.error('link_auth_id exception:', e); }
