@@ -342,6 +342,14 @@ body:not(.ltr) .footer-grid{text-align:right;}
       </div>
       <!-- dropdown — fixed عشان مايتقصش جوه أي overflow في الـ nav -->
       <div id="user-dropdown" style="display:none;position:fixed;top:76px;min-width:220px;background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:8px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,0.6);backdrop-filter:blur(12px);">
+        <!-- ✅ FIX: مبدّل اللغة هنا كمان — على الموبايل مبدّل اللغة بتاع الـ nav بيتخفي ومش كل حد
+             بيلاحظ إن فيه هامبرغر منفصل جنبه فيه اللغة. هنا أوضح مكان لمستخدم مسجّل دخول. -->
+        <div style="display:flex;gap:6px;padding:4px 4px 8px;">
+          <button class="lb" onclick="setLang('ar')" style="flex:1;padding:7px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:inherit;">عربي</button>
+          <button class="lb" onclick="setLang('en')" style="flex:1;padding:7px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:inherit;">EN</button>
+          <button class="lb" onclick="setLang('tr')" style="flex:1;padding:7px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:inherit;">TR</button>
+        </div>
+        <div style="height:1px;background:var(--border);margin:0 4px 6px"></div>
         <div onclick="showPage('dashboard',null);closeUserDropdown()" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
           <span style="font-size:15px">📊</span>
           <span style="font-size:13px" data-ar="لوحتي" data-en="My Dashboard" data-tr="Panelim">My Dashboard</span>
@@ -2075,18 +2083,21 @@ function toggleUserDropdown() {
   const isOpen = dd.style.display === 'block';
   if (isOpen) { closeUserDropdown(); return; }
 
-  // ✅ FIX: احسب مكان الـ dropdown ديناميكيًا بناءً على موضع الزرار — يشتغل صح بـ position:fixed
+  // ✅ FIX: كانت بتتحط عند حافة الزرار الشمال (LTR) أو اليمين (RTL) وتطلع برا الشاشة
+  // على الموبايل لو الزرار قريب من الحافة. دلوقتي بتحاذي حافتها مع حافة الزرار المناسبة
+  // وبعدين تتلضم (clamp) جوه حدود الشاشة دايماً، مهما كان اتجاه اللغة أو حجم الشاشة.
   if (btn) {
     const rect = btn.getBoundingClientRect();
     const isLtr = document.body.classList.contains('ltr');
+    const ddWidth = Math.min(220, window.innerWidth - 16); // مايكبرش من عرض الشاشة نفسها
     dd.style.top = (rect.bottom + 8) + 'px';
-    if (isLtr) {
-      dd.style.left = rect.left + 'px';
-      dd.style.right = 'auto';
-    } else {
-      dd.style.right = (window.innerWidth - rect.right) + 'px';
-      dd.style.left = 'auto';
-    }
+    dd.style.minWidth = ddWidth + 'px';
+    let left = isLtr ? rect.left : (rect.right - ddWidth);
+    const margin = 8;
+    if (left < margin) left = margin;
+    if (left + ddWidth > window.innerWidth - margin) left = window.innerWidth - ddWidth - margin;
+    dd.style.left = left + 'px';
+    dd.style.right = 'auto';
   }
 
   dd.style.display = 'block';
