@@ -1654,7 +1654,8 @@ async function cancelInvestment(id, planName){
   const confirmed = confirm(lang==='ar'?`تأكيد إلغاء الاستثمار وإرجاع رأس المال للمستخدم؟`:`Confirm cancel investment and refund capital to user?`);
   if(!confirmed) return;
   const { data, error } = await sdb.rpc('admin_cancel_investment', { p_investment_id: id, p_reason: reason });
-  if(error){ showToast((lang==='ar'?'✗ فشل الإلغاء: ':'✗ Cancel failed: ')+error.message); return; }
+  const result = Array.isArray(data) ? data[0] : data;
+  if(error || !result?.success){ showToast((lang==='ar'?'✗ فشل الإلغاء: ':'✗ Cancel failed: ')+(result?.message||error?.message||'')); return; }
   showToast(lang==='ar'?'✓ تم إلغاء الاستثمار وإرجاع رأس المال':'✓ Investment cancelled and capital refunded');
   renderInvestments();
 }
@@ -2878,8 +2879,9 @@ async function approveDeposit(depositId, userId, amount, email, name) {
 // ── رفض إيداع ──
 async function rejectDeposit(depositId, email, name) {
   const reason = prompt(lang==='ar' ? 'سبب الرفض (اختياري):' : 'Rejection reason (optional):') || '';
-  const { error } = await sdb.rpc('admin_reject_deposit', { p_deposit_id: depositId, p_reason: reason });
-  if (error) { showToast((lang==='ar'?'✗ فشل رفض الإيداع: ':'✗ Failed to reject deposit: ')+error.message); console.error('rejectDeposit RPC error:', error); return; }
+  const { data, error } = await sdb.rpc('admin_reject_deposit', { p_deposit_id: depositId, p_reason: reason });
+  const result = Array.isArray(data) ? data[0] : data;
+  if (error || !result?.success) { showToast((lang==='ar'?'✗ فشل رفض الإيداع: ':'✗ Failed to reject deposit: ')+(result?.message||error?.message||'')); console.error('rejectDeposit RPC error:', error||result); return; }
   await sendEmailNotification(email, name, 0, 'rejected', reason);
   showToast(lang==='ar' ? `✗ تم رفض الإيداع` : `✗ Deposit rejected`);
   await loadRealDeposits();
@@ -3065,7 +3067,8 @@ async function toggleUserBlock(userId, newStatus) {
   const { data, error } = await sdb.rpc('admin_set_account_status', {
     p_user_id: userId, p_status: newStatus, p_reason: reason
   });
-  if(error) { showToast((lang==='ar'?'✗ فشل: ':'✗ Failed: ') + error.message); return; }
+  const result = Array.isArray(data) ? data[0] : data;
+  if(error || !result?.success) { showToast((lang==='ar'?'✗ فشل: ':'✗ Failed: ') + (result?.message||error?.message||'')); return; }
   showToast(newStatus==='blocked'
     ? (lang==='ar'?'✓ تم حظر المستخدم':'✓ User blocked')
     : (lang==='ar'?'✓ تم رفع الحظر':'✓ User unblocked'));
@@ -3115,10 +3118,11 @@ async function confirmBalanceEdit(userId, name) {
     return;
   }
   document.getElementById('balance-modal-bg')?.remove();
-  const { error } = await sdb.rpc('admin_set_user_balance', { p_user_id: userId, p_new_balance: newBal });
-  if (error) {
-    showToast((lang==='ar'?'✗ فشل تحديث الرصيد: ':'✗ Failed to update balance: ')+error.message);
-    console.error('confirmBalanceEdit RPC error:', error);
+  const { data: balRpcData, error } = await sdb.rpc('admin_set_user_balance', { p_user_id: userId, p_new_balance: newBal });
+  const balResult = Array.isArray(balRpcData) ? balRpcData[0] : balRpcData;
+  if (error || !balResult?.success) {
+    showToast((lang==='ar'?'✗ فشل تحديث الرصيد: ':'✗ Failed to update balance: ')+(balResult?.message||error?.message||''));
+    console.error('confirmBalanceEdit RPC error:', error||balResult);
     return;
   }
   await sdb.from('notifications').insert({
@@ -3527,7 +3531,8 @@ async function adminAddProfit(userId, userNameOrEl) {
   if(isNaN(amt) || amt <= 0) { showToast(lang==='ar'?'✗ أدخل مبلغ صحيح أكبر من صفر':'✗ Enter a valid positive amount'); return; }
   const desc = prompt(lang==='ar'?'سبب إضافة الربح (اختياري):':'Profit description (optional):') || 'Manual profit adjustment by admin';
   const { data, error } = await sdb.rpc('admin_manual_profit', { p_user_id: userId, p_amount: amt, p_description: desc });
-  if(error) { showToast('✗ ' + error.message); return; }
+  const result = Array.isArray(data) ? data[0] : data;
+  if(error || !result?.success) { showToast('✗ ' + (result?.message || error?.message || '')); return; }
   showToast(lang==='ar'?`✓ تم إضافة $${amt} لـ ${userName}`:`✓ Added $${amt} to ${userName}`);
   loadRealOverviewStats();
 }
@@ -3707,12 +3712,12 @@ async function reviewAlert(alertId, action){
   const notes = action === 'reviewed'
     ? (prompt(lang==='ar'?'ملاحظة (اختياري):':'Note (optional):') || '')
     : '';
-  const { error } = await sdb.rpc('admin_review_alert', {
+  const { data: alertRpcData, error } = await sdb.rpc('admin_review_alert', {
     p_alert_id: alertId,
     p_notes: notes,
     p_action: action
   });
-  if(error){ showToast('✗ ' + error.message); return; }
+  if(error || alertRpcData !== true){ showToast('✗ ' + (error?.message || (lang==='ar'?'فشلت العملية':'Action failed'))); return; }
   showToast(action === 'reviewed'
     ? (lang==='ar'?'✓ تم تعليم التنبيه كمراجَع':'✓ Alert marked as reviewed')
     : (lang==='ar'?'✓ تم إعادة فتح التنبيه':'✓ Alert reopened'));
@@ -3726,12 +3731,14 @@ async function blockUserFromAlert(userId, alertId){
   const confirmed = confirm(lang==='ar'?'حظر هذا المستخدم؟':'Block this user?');
   if(!confirmed) return;
   const reason = prompt(lang==='ar'?'سبب الحظر:':'Block reason:') || 'Flagged by security alert';
-  const { error: blockErr } = await sdb.rpc('admin_set_account_status', {
+  const { data: blockData, error: blockErr } = await sdb.rpc('admin_set_account_status', {
     p_user_id: userId, p_status: 'blocked', p_reason: reason
   });
-  if(blockErr){ showToast('✗ ' + blockErr.message); return; }
+  const blockResult = Array.isArray(blockData) ? blockData[0] : blockData;
+  if(blockErr || !blockResult?.success){ showToast('✗ ' + (blockResult?.message||blockErr?.message||'')); return; }
   // تعليم التنبيه كمراجَع أيضاً
-  await sdb.rpc('admin_review_alert', { p_alert_id: alertId, p_notes: 'User blocked: ' + reason, p_action: 'blocked' });
+  const { data: reviewData } = await sdb.rpc('admin_review_alert', { p_alert_id: alertId, p_notes: 'User blocked: ' + reason, p_action: 'blocked' });
+  if(reviewData !== true) console.warn('admin_review_alert did not confirm success after blocking user');
   showToast(lang==='ar'?'✓ تم حظر المستخدم وتعليم التنبيه':'✓ User blocked and alert reviewed');
   loadSecurityAlerts();
   loadSecurityStats();
