@@ -72,6 +72,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .nav-links a:hover,.nav-links a.active{color:var(--gold);background:var(--gold-dim);}
 .nav-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .lang-sw{display:flex;gap:3px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:3px;}
+/* ✅ FIX: مبدّل اللغة ده بقى مكرر لما تكون مسجّل دخول (موجود جوه منيو الحساب دلوقتي)،
+   فبنخفيه بس في الحالة دي. بيفضل ظاهر للزوار (مسجلينش) لأنهم مالهمش نقطة وصول تانية على الديسكتوب. */
+body.logged-in .lang-sw{display:none;}
 .lb{padding:4px 10px;border-radius:5px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:transparent;color:var(--muted);font-family:var(--en);}
 .lb.on{background:var(--gold);color:#000;}
 .btn-nav{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700;transition:.2s;font-family:inherit;}
@@ -718,7 +721,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
             <div class="panel-head" id="kyc-h" data-ar="التحقق من الهوية KYC" data-en="KYC Verification" data-tr="KYC Doğrulama">التحقق من الهوية KYC</div>
             <div class="kyc-step"><div class="step-num step-done">✓</div><div><h4 style="font-size:14px;font-weight:600;margin-bottom:3px" id="ks1h" data-ar="التسجيل" data-en="Registration" data-tr="Kayıt">التسجيل</h4><p style="font-size:12px;color:var(--muted)" id="ks1p" data-ar="تم التسجيل بنجاح" data-en="Successfully registered" data-tr="Başarıyla kayıt olundu">تم التسجيل بنجاح</p></div></div>
             <div class="kyc-step"><div class="step-num" id="kyc-step2-num">2</div><div><h4 style="font-size:14px;font-weight:600;margin-bottom:3px" id="ks2h" data-ar="رفع الهوية" data-en="ID Upload" data-tr="Kimlik Yükleme">رفع الهوية</h4><p style="font-size:12px;color:var(--muted)" id="ks2p" data-ar="ارفع جواز سفرك أو بطاقة الهوية" data-en="Upload your passport or ID" data-tr="Pasaport veya kimliğinizi yükleyin">ارفع جواز سفرك أو بطاقة الهوية</p></div></div>
-            <div class="kyc-step"><div class="step-num">3</div><div><h4 style="font-size:14px;font-weight:600;margin-bottom:3px" id="ks3h" data-ar="مراجعة الإدارة" data-en="Admin Review" data-tr="Yönetici İncelemesi">مراجعة الإدارة</h4><p style="font-size:12px;color:var(--muted)" id="ks3p" data-ar="تتم المراجعة خلال 24 ساعة" data-en="Review within 24 hours" data-tr="24 saat içinde inceleme">تتم المراجعة خلال 24 ساعة</p></div></div>
+            <div class="kyc-step"><div class="step-num" id="kyc-step3-num">3</div><div><h4 style="font-size:14px;font-weight:600;margin-bottom:3px" id="ks3h" data-ar="مراجعة الإدارة" data-en="Admin Review" data-tr="Yönetici İncelemesi">مراجعة الإدارة</h4><p style="font-size:12px;color:var(--muted)" id="ks3p" data-ar="تتم المراجعة خلال 24 ساعة" data-en="Review within 24 hours" data-tr="24 saat içinde inceleme">تتم المراجعة خلال 24 ساعة</p></div></div>
             <div id="kyc-status-box" style="margin-top:8px"></div>
             <button class="btn-primary" style="margin-top:20px" id="kyc-btn" data-ar="رفع مستندات KYC" data-en="Upload KYC Documents" data-tr="KYC Belgeleri Yükle" onclick="openKYCModal()">رفع مستندات KYC</button>
           </div>
@@ -1386,6 +1389,18 @@ const PROTECTED = ['dashboard','deposit','referral'];
 let authReady = false; // false لحد ما نتأكد فعليًا فيه جلسة محفوظة ولا لأ (بيحل مشكلة الخروج التلقائي لو ضغط المستخدم على صفحة محمية بسرعة قبل ما نتأكد)
 db.auth.onAuthStateChange(async (event, session) => {
   if(_authHandled) return; // doLogin / doRegister شغّالين
+
+  // ✅ FIX: حماية شاملة ضد تزامن الجلسات بين التابات (multi-tab session sync).
+  // لو المتصفح فتح تاني بحساب تاني وبعدين قفل، Supabase ممكن يزامن الـ localStorage
+  // بتاعت الجلسة بين التابات في الخلفية، وده كان بيسبب رجوع مفاجئ لحساب قديم من غير
+  // أي فعل من المستخدم. أي حدث بجلسة هويتها مختلفة عن اللي ظاهر دلوقتي = حالة غير متسقة،
+  // فبدل ما نحاول نصلّحها جزئيًا (وممكن نسيب حاجة قديمة فاضلة)، نعمل reload كامل نظيف.
+  if(isLoggedIn && currentUser && session && session.user && session.user.id !== currentUser.id) {
+    console.warn('Auth session identity mismatch detected — reloading for a clean state');
+    try { localStorage.removeItem('crysanto_last_user'); } catch(e) {}
+    location.reload();
+    return;
+  }
 
   // INITIAL_SESSION = عند تحميل الصفحة لو في جلسة محفوظة
   // SIGNED_IN = بعد login جديد (عبر onAuthStateChange مش doLogin)
@@ -2705,6 +2720,7 @@ function renderKYCStatus() {
   const status=userProfile.kyc_status||'pending';
   if(status==='verified'){
     const s2=document.getElementById('kyc-step2-num');if(s2){s2.textContent='✓';s2.className='step-num step-done';}
+    const s3=document.getElementById('kyc-step3-num');if(s3){s3.textContent='✓';s3.className='step-num step-done';} // ✅ FIX: خطوة 3 كانت بتفضل واقفة على "3" حتى بعد الموافقة
     if(box)box.innerHTML='<div style="background:rgba(34,211,160,0.1);border:1px solid var(--green);border-radius:10px;padding:12px 16px;color:var(--green);font-size:13px;font-weight:600;margin-top:12px">✅ '+(lang==='ar'?'تم التحقق من هويتك بنجاح':lang==='tr'?'Kimliğiniz başarıyla doğrulandı':'Identity verified successfully')+'</div>';
     if(btn)btn.style.display='none';
   } else if(status==='rejected'){
