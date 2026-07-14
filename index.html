@@ -260,6 +260,11 @@ body:not(.ltr) .footer-grid{text-align:right;}
   /* الـ nav: مساحة ضيقة، فبنخفي مبدّل اللغة من الشريط العلوي (موجود جوه المنيو بدل منه) ونصغّر بطاقة اليوزر */
   .nav-right{gap:6px;}
   .nav-right .lang-sw{display:none;}
+  /* ✅ FIX: الزوار (لسه معملوش حساب) مالهمش نقطة وصول تانية للغة غير المنيو المخبّية،
+     فبنرجّع المبدّل ليهم بس على الموبايل بشكل مصغّر. المستخدم المسجّل دخول لسه عنده
+     البديل جوه منيو الحساب، فبيفضل مخفي عنده هنا لتوفير المساحة. */
+  body:not(.logged-in) .nav-right .lang-sw{display:flex;gap:2px;padding:2px;}
+  body:not(.logged-in) .nav-right .lang-sw .lb{padding:5px 6px;font-size:10px;}
   #user-menu{gap:4px!important;}
   #user-menu > div{padding:5px 8px!important;}
   #user-name-nav{display:none;}
@@ -1892,7 +1897,7 @@ async function doLogin() {
       const refCode  = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
       const { data: newP, error: insErr } = await withTimeout(db.from('users').insert({
         auth_id: currentUser.id, name: userName, email,
-        ref_code: refCode, balance: 0, status: 'active', kyc_status: 'none'
+        ref_code: refCode, balance: 0, status: 'active', kyc_status: 'none', preferred_lang: lang
       }).select().single());
 
       if(insErr) {
@@ -1958,7 +1963,7 @@ async function verifyMfaAndContinueLogin() {
       const refCode  = 'CRY' + Math.random().toString(36).slice(2,7).toUpperCase();
       const { data: newP, error: insErr } = await withTimeout(db.from('users').insert({
         auth_id: currentUser.id, name: userName, email: currentUser.email,
-        ref_code: refCode, balance: 0, status: 'active', kyc_status: 'none'
+        ref_code: refCode, balance: 0, status: 'active', kyc_status: 'none', preferred_lang: lang
       }).select().single());
       if (insErr) { console.error('mfa/profile insert error:', insErr); showToast(genericErrMsg()[lang]||genericErrMsg().en,'err'); return; }
       userProfile = newP;
@@ -2072,7 +2077,7 @@ async function doRegister() {
         auth_id: currentUser.id,
         name, email, ref_code: refCode,
         referred_by: ref || null,
-        balance: 0, status: 'active', kyc_status: 'none'
+        balance: 0, status: 'active', kyc_status: 'none', preferred_lang: lang
       }).select().single());
 
       if(insErr) {
@@ -3224,6 +3229,15 @@ async function goToDeposit(rate) {
 function setLang(l) {
   lang = l;
   localStorage.setItem('crysanto_lang', l);
+
+  // ✅ FIX: نخزّن اللغة في بروفايل المستخدم (لو مسجّل دخول) عشان إيميلات الأدمن
+  // (موافقة/رفض الإيداع والسحب وKYC) تتبعت بلغته الحقيقية مش بلغة لوحة الأدمن
+  if (isLoggedIn && userProfile) {
+    db.from('users').update({ preferred_lang: l }).eq('id', userProfile.id).then(({error}) => {
+      if(error) console.error('preferred_lang update error:', error);
+    });
+    userProfile.preferred_lang = l;
+  }
 
   // تحديث أزرار اللغة في كل الأماكن (navbar + mobile menu)
   document.querySelectorAll('.lb').forEach(b => b.classList.remove('on'));
