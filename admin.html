@@ -1588,7 +1588,7 @@ async function renderInvestments(){
   showTableSkeleton('inv-table-wrap', 8);
   const { data, error } = await sdb
     .from('investments')
-    .select('*, users(name, email)')
+    .select('*, users(name, email, preferred_lang)')
     .order('created_at', { ascending: false });
   if (error) {
     wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل الاستثمارات':'Error loading investments'}: ${error.message}</div>`;
@@ -1784,14 +1784,17 @@ async function rejectKyc(userId){
 // لو فشل الإيميل، قرار الـ KYC نفسه يفضل متعمل بالفعل (الدالة دي async منفصلة ومحوطة بـ try/catch).
 async function sendKycEmailNotification(userId, decision) {
   try {
-    const { data: u, error } = await sdb.from('users').select('email,name').eq('id', userId).single();
+    const { data: u, error } = await sdb.from('users').select('email,name,preferred_lang').eq('id', userId).single();
     if (error || !u?.email) return;
-    const subject = decision === 'verified'
-      ? (lang==='ar' ? '✅ تم توثيق هويتك بنجاح — Crysanto' : '✅ Your identity has been verified — Crysanto')
-      : (lang==='ar' ? '❌ تم رفض طلب توثيق الهوية — Crysanto' : '❌ Your KYC request was rejected — Crysanto');
-    const bodyHtml = decision === 'verified'
-      ? `<div style="font-family:sans-serif"><h2>${lang==='ar'?'مرحبًا':'Hi'} ${escapeHtml(u.name||'')}،</h2><p>${lang==='ar'?'تم التحقق من هويتك بنجاح في Crysanto. حسابك الآن موثّق بالكامل.':'Your identity has been successfully verified on Crysanto. Your account is now fully verified.'}</p></div>`
-      : `<div style="font-family:sans-serif"><h2>${lang==='ar'?'مرحبًا':'Hi'} ${escapeHtml(u.name||'')}،</h2><p>${lang==='ar'?'للأسف تم رفض مستندات التحقق من الهوية. برجاء إعادة رفع المستندات بجودة أوضح والمحاولة مرة أخرى.':'Unfortunately your identity verification documents were rejected. Please re-upload clearer documents and try again.'}</p></div>`;
+    const L = (u.preferred_lang === 'en' || u.preferred_lang === 'tr') ? u.preferred_lang : 'ar'; // ✅ FIX: لغة العميل مش لغة لوحة الأدمن
+    const n = escapeHtml(u.name||'');
+    const copy = {
+      ar: { verifiedSubject: '✅ تم توثيق هويتك بنجاح — Crysanto', rejectedSubject: '❌ تم رفض طلب توثيق الهوية — Crysanto', hi: 'مرحبًا', verifiedBody: 'تم التحقق من هويتك بنجاح في Crysanto. حسابك الآن موثّق بالكامل.', rejectedBody: 'للأسف تم رفض مستندات التحقق من الهوية. برجاء إعادة رفع المستندات بجودة أوضح والمحاولة مرة أخرى.' },
+      en: { verifiedSubject: '✅ Your identity has been verified — Crysanto', rejectedSubject: '❌ Your KYC request was rejected — Crysanto', hi: 'Hi', verifiedBody: 'Your identity has been successfully verified on Crysanto. Your account is now fully verified.', rejectedBody: 'Unfortunately your identity verification documents were rejected. Please re-upload clearer documents and try again.' },
+      tr: { verifiedSubject: '✅ Kimliğiniz doğrulandı — Crysanto', rejectedSubject: '❌ KYC talebiniz reddedildi — Crysanto', hi: 'Merhaba', verifiedBody: 'Kimliğiniz Crysanto üzerinde başarıyla doğrulandı. Hesabınız artık tamamen doğrulanmış durumda.', rejectedBody: 'Maalesef kimlik doğrulama belgeleriniz reddedildi. Lütfen daha net belgeler yükleyip tekrar deneyin.' },
+    }[L];
+    const subject = decision === 'verified' ? copy.verifiedSubject : copy.rejectedSubject;
+    const bodyHtml = `<div style="font-family:sans-serif"><h2>${copy.hi} ${n}،</h2><p>${decision === 'verified' ? copy.verifiedBody : copy.rejectedBody}</p></div>`;
     const { error: fnErr } = await sdb.functions.invoke('send-email', { body: { to: u.email, subject, html: bodyHtml } });
     if (fnErr) console.error('send-email function error (kyc):', fnErr);
   } catch (e) {
@@ -2845,8 +2848,8 @@ function renderRealDeposits(data) {
         <td>
           ${d.status === 'pending' ? `
           <div style="display:flex;gap:6px">
-            <button class="act-btn green" onclick="approveDeposit('${d.id}','${d.user_id}',${d.amount},'${escapeJsAttr(d.users?.email||'')}','${escapeJsAttr(d.users?.name||'')}')">${t('approve')}</button>
-            <button class="act-btn red" onclick="rejectDeposit('${d.id}','${escapeJsAttr(d.users?.email||'')}','${escapeJsAttr(d.users?.name||'')}')">${t('reject')}</button>
+            <button class="act-btn green" onclick="approveDeposit('${d.id}','${d.user_id}',${d.amount},'${escapeJsAttr(d.users?.email||'')}','${escapeJsAttr(d.users?.name||'')}','${escapeJsAttr(d.users?.preferred_lang||'ar')}')">${t('approve')}</button>
+            <button class="act-btn red" onclick="rejectDeposit('${d.id}','${escapeJsAttr(d.users?.email||'')}','${escapeJsAttr(d.users?.name||'')}','${escapeJsAttr(d.users?.preferred_lang||'ar')}')">${t('reject')}</button>
           </div>` : `<span style="color:var(--muted);font-size:12px">—</span>`}
         </td>
       </tr>`).join('')}
@@ -2858,7 +2861,7 @@ function renderRealDeposits(data) {
 //   - بتتأكد إن الكولر أدمن فعلاً (مش بس بتثق في إننا فاتحين صفحة الأدمن)
 //   - كل الخطوات (تحديث الإيداع + الرصيد + الاستثمار + عمولة الإحالة) بتتم في transaction واحدة atomic
 //   - مفيش race condition ممكن يحصل لو ضغط الأدمن "موافقة" مرتين بسرعة
-async function approveDeposit(depositId, userId, amount, email, name) {
+async function approveDeposit(depositId, userId, amount, email, name, userLang) {
   const confirmed = confirm(lang==='ar' ? `موافقة على إيداع $${amount} لـ ${name}؟` : `Approve $${amount} deposit for ${name}?`);
   if (!confirmed) return;
 
@@ -2871,36 +2874,55 @@ async function approveDeposit(depositId, userId, amount, email, name) {
     return;
   }
 
-  await sendEmailNotification(email, name, amount, 'approved');
+  await sendEmailNotification(email, name, amount, 'approved', '', userLang); // ✅ FIX: بلغة العميل مش لغة لوحة الأدمن
   showToast(lang==='ar' ? `✓ تم قبول إيداع $${amount} وإضافته لحساب ${name}` : `✓ $${amount} deposit approved for ${name}`);
   await loadRealDeposits();
 }
 
 // ── رفض إيداع ──
-async function rejectDeposit(depositId, email, name) {
+async function rejectDeposit(depositId, email, name, userLang) {
   const reason = prompt(lang==='ar' ? 'سبب الرفض (اختياري):' : 'Rejection reason (optional):') || '';
   const { data, error } = await sdb.rpc('admin_reject_deposit', { p_deposit_id: depositId, p_reason: reason });
   const result = Array.isArray(data) ? data[0] : data;
   if (error || !result?.success) { showToast((lang==='ar'?'✗ فشل رفض الإيداع: ':'✗ Failed to reject deposit: ')+(result?.message||error?.message||'')); console.error('rejectDeposit RPC error:', error||result); return; }
-  await sendEmailNotification(email, name, 0, 'rejected', reason);
+  await sendEmailNotification(email, name, 0, 'rejected', reason, userLang); // ✅ FIX: بلغة العميل مش لغة لوحة الأدمن
   showToast(lang==='ar' ? `✗ تم رفض الإيداع` : `✗ Deposit rejected`);
   await loadRealDeposits();
 }
 
 // ── إرسال إيميل حقيقي عبر Supabase Edge Function (send-email + Resend) ──
 // لو الإيميل فشل (مثلاً RESEND_API_KEY لسه مش مضاف) العملية الأساسية (قبول/رفض) متعملة بالفعل وما تفشلش بسبب الإيميل
-async function sendEmailNotification(email, name, amount, status, reason='') {
+// ✅ FIX: بتاخد لغة العميل نفسه (userLang) مش لغة لوحة تحكم الأدمن — كانت الرسايل بتتبعت
+// دايماً بلغة الأدمن (وكان الـ body أصلاً عربي ثابت في كل الأحوال حتى لو subject كان بالإنجليزي)
+async function sendEmailNotification(email, name, amount, status, reason='', userLang='ar') {
   if (!email) return;
-  const subjects = {
-    approved: lang==='ar' ? `✅ تم قبول طلبك بنجاح — Crysanto` : `✅ Your request was approved — Crysanto`,
-    rejected: lang==='ar' ? `❌ تم رفض طلبك — Crysanto` : `❌ Your request was rejected — Crysanto`,
-  };
-  const bodyHtml = status === 'approved'
-    ? `<div style="font-family:sans-serif"><h2>مرحبًا ${escapeHtml(name)}،</h2><p>تم قبول طلبك بمبلغ <b>$${amount}</b> وإضافته/تنفيذه على حسابك في Crysanto.</p></div>`
-    : `<div style="font-family:sans-serif"><h2>مرحبًا ${escapeHtml(name)}،</h2><p>تم رفض طلبك${reason ? ' — السبب: '+escapeHtml(reason) : ''}.</p></div>`;
+  const L = (userLang === 'en' || userLang === 'tr') ? userLang : 'ar';
+  const n = escapeHtml(name);
+  const copy = {
+    ar: {
+      approvedSubject: '✅ تم قبول طلبك بنجاح — Crysanto', rejectedSubject: '❌ تم رفض طلبك — Crysanto',
+      hi: `مرحبًا ${n}،`,
+      approvedBody: `تم قبول طلبك بمبلغ <b>$${amount}</b> وإضافته/تنفيذه على حسابك في Crysanto.`,
+      rejectedBody: `تم رفض طلبك${reason ? ' — السبب: '+escapeHtml(reason) : ''}.`,
+    },
+    en: {
+      approvedSubject: '✅ Your request was approved — Crysanto', rejectedSubject: '❌ Your request was rejected — Crysanto',
+      hi: `Hi ${n},`,
+      approvedBody: `Your request of <b>$${amount}</b> has been approved and applied to your Crysanto account.`,
+      rejectedBody: `Your request was rejected${reason ? ' — reason: '+escapeHtml(reason) : ''}.`,
+    },
+    tr: {
+      approvedSubject: '✅ Talebiniz onaylandı — Crysanto', rejectedSubject: '❌ Talebiniz reddedildi — Crysanto',
+      hi: `Merhaba ${n},`,
+      approvedBody: `<b>$${amount}</b> tutarındaki talebiniz onaylandı ve Crysanto hesabınıza uygulandı.`,
+      rejectedBody: `Talebiniz reddedildi${reason ? ' — sebep: '+escapeHtml(reason) : ''}.`,
+    },
+  }[L];
+  const subject = status === 'approved' ? copy.approvedSubject : copy.rejectedSubject;
+  const bodyHtml = `<div style="font-family:sans-serif"><h2>${copy.hi}</h2><p>${status === 'approved' ? copy.approvedBody : copy.rejectedBody}</p></div>`;
   try {
     const { error } = await sdb.functions.invoke('send-email', {
-      body: { to: email, subject: subjects[status] || subjects.approved, html: bodyHtml }
+      body: { to: email, subject, html: bodyHtml }
     });
     if (error) console.error('send-email function error:', error);
   } catch (e) {
@@ -2913,7 +2935,7 @@ async function loadRealWithdrawals() {
   showTableSkeleton('wd-table-wrap', 8);
   const { data, error } = await sdb
     .from('withdrawals')
-    .select('*, users(name, email)')
+    .select('*, users(name, email, preferred_lang)')
     .order('created_at', { ascending: false });
   if (error) {
     console.error('loadRealWithdrawals error:', error);
@@ -2960,20 +2982,18 @@ function renderRealWithdrawals(data) {
         <td>
           ${w.status === 'pending' ? `
           <div style="display:flex;gap:6px">
-            <button class="act-btn green" onclick="approveWithdrawal('${w.id}','${w.user_id}',${w.amount},'${escapeJsAttr(w.users?.name||'')}','${escapeJsAttr(w.users?.email||'')}')">${t('approve')}</button>
-            <button class="act-btn red" onclick="rejectWithdrawal('${w.id}','${w.user_id}',${w.amount},'${escapeJsAttr(w.users?.name||'')}','${escapeJsAttr(w.users?.email||'')}')">${t('reject')}</button>
+            <button class="act-btn green" onclick="approveWithdrawal('${w.id}','${w.user_id}',${w.amount},'${escapeJsAttr(w.users?.name||'')}','${escapeJsAttr(w.users?.email||'')}','${escapeJsAttr(w.users?.preferred_lang||'ar')}')">${t('approve')}</button>
+            <button class="act-btn red" onclick="rejectWithdrawal('${w.id}','${w.user_id}',${w.amount},'${escapeJsAttr(w.users?.name||'')}','${escapeJsAttr(w.users?.email||'')}','${escapeJsAttr(w.users?.preferred_lang||'ar')}')">${t('reject')}</button>
           </div>` : `<span style="color:var(--muted);font-size:12px">—</span>`}
         </td>
       </tr>`).join('')}
     </tbody></table>`;
 }
 
-async function approveWithdrawal(wdId, userId, amount, name, email) {
+async function approveWithdrawal(wdId, userId, amount, name, email, userLang) {
   const confirmed = confirm(lang==='ar' ? `موافقة على سحب $${amount} لـ ${name}؟` : `Approve $${amount} withdrawal for ${name}?`);
   if (!confirmed) return;
   const { data, error } = await sdb.rpc('admin_approve_withdrawal', { p_withdrawal_id: wdId });
-  // ✅ FIX: الـ RPC بترجع {success,message} حتى لو مفيش error نقل (SQL) — كان الكود القديم
-  // بيتجاهل ده ويقول "تم القبول" حتى لو الدالة رجعت success=false فعلياً (مثلاً "already processed").
   const result = Array.isArray(data) ? data[0] : data;
   if (error || !result?.success) {
     showToast((lang==='ar'?'✗ فشل قبول السحب: ':'✗ Failed to approve withdrawal: ')+(result?.message||error?.message||''));
@@ -2981,12 +3001,12 @@ async function approveWithdrawal(wdId, userId, amount, name, email) {
     await loadRealWithdrawals();
     return;
   }
-  await sendEmailNotification(email, name, amount, 'approved');
+  await sendEmailNotification(email, name, amount, 'approved', '', userLang); // ✅ FIX: بلغة العميل مش لغة لوحة الأدمن
   showToast(lang==='ar'?`✓ تم قبول سحب $${amount} لـ ${name}`:`✓ $${amount} withdrawal approved for ${name}`);
   await loadRealWithdrawals();
 }
 
-async function rejectWithdrawal(wdId, userId, amount, name, email) {
+async function rejectWithdrawal(wdId, userId, amount, name, email, userLang) {
   const { data, error } = await sdb.rpc('admin_reject_withdrawal', { p_withdrawal_id: wdId, p_reason: '' });
   const result = Array.isArray(data) ? data[0] : data;
   if (error || !result?.success) {
@@ -2995,7 +3015,7 @@ async function rejectWithdrawal(wdId, userId, amount, name, email) {
     await loadRealWithdrawals();
     return;
   }
-  await sendEmailNotification(email, name, amount, 'rejected');
+  await sendEmailNotification(email, name, amount, 'rejected', '', userLang); // ✅ FIX: بلغة العميل مش لغة لوحة الأدمن
   showToast(lang==='ar'?`✗ تم رفض السحب`:`✗ Withdrawal rejected`);
   await loadRealWithdrawals();
 }
