@@ -274,10 +274,25 @@ body:not(.ltr) .footer-grid{text-align:right;}
 
 @media(max-width:480px){
   .logo span{font-size:18px;}
-  nav{height:60px;}
+  nav{height:60px;padding:0 8px;}
   .page{padding-top:60px;}
   .hero{padding:40px 16px;}
   .modal{padding:24px 20px;}
+  /* ✅ FIX: على شاشات الموبايل الضيقة، اللوجو + مبدّل اللغة + Sign In + Register كانوا
+     بيطلعوا برا حدود الشاشة (زرار Register كان بيتقطع). بنقلل المسافات والـ padding
+     عشان الكل يتلم في سطر واحد من غير قص. */
+  nav{gap:4px;}
+  .logo{gap:6px;}
+  .logo svg{width:28px;height:28px;flex-shrink:0;}
+  .logo span{letter-spacing:0.5px;}
+  .nav-right{gap:4px;}
+  body:not(.logged-in) .nav-right .lang-sw{gap:1px;padding:2px;}
+  body:not(.logged-in) .nav-right .lang-sw .lb{padding:4px 5px;font-size:9px;}
+  .btn-nav{padding:7px 10px!important;font-size:11px!important;}
+}
+@media(max-width:360px){
+  /* شاشات ضيقة جداً: نشيل نص "Crysanto" ونسيب الأيقونة بس عشان نضمن مفيش قص خالص */
+  .logo span{display:none;}
 }
 
 /* ── MOBILE MENU ── */
