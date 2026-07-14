@@ -918,7 +918,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
     <div class="section-head"><div class="gold-line"></div><h2 id="ct-h" data-ar="تواصل معنا" data-en="Contact Us" data-tr="Bize Ulaşın">Contact Us</h2><p id="ct-sub" data-ar="نحن هنا للمساعدة في أي وقت" data-en="We are here to help anytime" data-tr="Her zaman yardıma hazırız">We are here to help anytime</p></div>
     <div class="contact-grid">
       <div>
-        <div class="ci-item"><div class="ci-icon">📧</div><div><h5 style="font-size:13px;font-weight:700;margin-bottom:3px" id="cti1" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">Email</h5><p style="font-size:12px;color:var(--muted)" id="contact-email-display">support@crysanto.io</p></div></div>
+        <div class="ci-item"><div class="ci-icon">📧</div><div><h5 style="font-size:13px;font-weight:700;margin-bottom:3px" id="cti1" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">Email</h5><p style="font-size:12px;color:var(--muted)" id="contact-email-display">support@crysanto.com</p></div></div>
         <div class="ci-item"><div class="ci-icon">💬</div><div><h5 style="font-size:13px;font-weight:700;margin-bottom:3px">Telegram</h5><p style="font-size:12px;color:var(--muted)">@CrysantoSupport</p></div></div>
         <div class="ci-item"><div class="ci-icon">🌐</div><div><h5 style="font-size:13px;font-weight:700;margin-bottom:3px" id="live-chat-lbl" data-ar="دعم مباشر" data-en="Live Chat" data-tr="Canlı Destek">Live Chat</h5><p style="font-size:12px;color:var(--muted)" id="available-txt" data-ar="متاح 24/7" data-en="Available 24/7" data-tr="7/24 Mevcut">Available 24/7</p></div></div>
         <div class="ci-item"><div class="ci-icon">🏢</div><div><h5 style="font-size:13px;font-weight:700;margin-bottom:3px" id="cti4" data-ar="المقر الرئيسي" data-en="Headquarters" data-tr="Genel Merkez">Headquarters</h5><p style="font-size:12px;color:var(--muted)">Dubai, UAE</p></div></div>
@@ -983,7 +983,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
     <div>
       <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text)" id="footer-support" data-ar="الدعم" data-en="Support" data-tr="Destek">Support</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <span style="font-size:12px;color:var(--muted)" id="footer-email-display">support@crysanto.io</span>
+        <span style="font-size:12px;color:var(--muted)" id="footer-email-display">support@crysanto.com</span>
         <span style="font-size:12px;color:var(--muted)">@CrysantoSupport</span>
         <span style="font-size:12px;color:var(--green);font-weight:600" id="footer-online" data-ar="● متصل الآن" data-en="● Online Now" data-tr="● Şu An Çevrimiçi">● Online Now</span>
       </div>
@@ -1559,7 +1559,7 @@ async function fetchLivePrices() {
 // ── إعدادات الموقع (حقيقية من جدول settings — نفس المصدر اللي لوحة الأدمن بتتحكم فيه) ──
 // قيم افتراضية (fallback) لو فشل التحميل، عشان الموقع يفضل شغال عادي
 const siteSettings = {
-  site_name: 'Crysanto', support_email: 'support@crysanto.io',
+  site_name: 'Crysanto', support_email: 'support@crysanto.com',
   min_deposit: 100, min_withdrawal: 50, max_withdrawal: 50000, referral_rate: 5,
   maintenance_mode: false, registration_open: true,
 };
@@ -1907,7 +1907,7 @@ async function doLogin() {
 
     // ✅ FIX: إيميل ترحيب حقيقي عند إنشاء بروفايل جديد (تسجيل مباشر أو أول دخول عبر OAuth)
     // — قالب ثابت آمن، السيرفر بيحدد إيميل المستخدم من جلسته مش من المتصفح، ومابيبلوكش لو فشل.
-    db.functions.invoke('send-email', { body: { template: 'welcome' } }).catch(e => console.error('welcome email error:', e));
+    db.functions.invoke('send-email', { body: { template: 'welcome', lang } }).catch(e => console.error('welcome email error:', e));
 
     _authHandled = false;
     if (_sessionGen !== myLoginGen) { return; } // ✅ FIX: لو حصل logout/login تاني في نفس اللحظة، متكملش بهوية قديمة
@@ -1966,7 +1966,7 @@ async function verifyMfaAndContinueLogin() {
 
     // ✅ FIX: إيميل ترحيب حقيقي عند إنشاء بروفايل جديد (تسجيل مباشر أو أول دخول عبر OAuth)
     // — قالب ثابت آمن، السيرفر بيحدد إيميل المستخدم من جلسته مش من المتصفح، ومابيبلوكش لو فشل.
-    db.functions.invoke('send-email', { body: { template: 'welcome' } }).catch(e => console.error('welcome email error:', e));
+    db.functions.invoke('send-email', { body: { template: 'welcome', lang } }).catch(e => console.error('welcome email error:', e));
     afterLogin();
   } catch (e) {
     console.error('verifyMfaAndContinueLogin exception:', e);
@@ -2087,7 +2087,7 @@ async function doRegister() {
 
     // ✅ FIX: إيميل ترحيب حقيقي عند إنشاء بروفايل جديد (تسجيل مباشر أو أول دخول عبر OAuth)
     // — قالب ثابت آمن، السيرفر بيحدد إيميل المستخدم من جلسته مش من المتصفح، ومابيبلوكش لو فشل.
-    db.functions.invoke('send-email', { body: { template: 'welcome' } }).catch(e => console.error('welcome email error:', e));
+    db.functions.invoke('send-email', { body: { template: 'welcome', lang } }).catch(e => console.error('welcome email error:', e));
 
     _authHandled = false;
     if (_sessionGen !== myRegGen) { return; } // ✅ FIX: لو حصل logout/login تاني في نفس اللحظة، متكملش بهوية قديمة
@@ -2726,6 +2726,7 @@ function renderKYCStatus() {
   } else if(status==='rejected'){
     if(box)box.innerHTML='<div style="background:rgba(255,77,106,0.1);border:1px solid var(--red);border-radius:10px;padding:12px 16px;color:var(--red);font-size:13px;font-weight:600;margin-top:12px">❌ '+(lang==='ar'?'تم رفض طلبك، يرجى إعادة الرفع':lang==='tr'?'Talebiniz reddedildi, lütfen yeniden yükleyin':'Request rejected, please re-upload')+'</div>';
   } else if(userProfile.kyc_data){
+    const s2=document.getElementById('kyc-step2-num');if(s2){s2.textContent='✓';s2.className='step-num step-done';} // ✅ FIX: الرفع تم فعلاً حتى لو لسه قيد المراجعة
     if(box)box.innerHTML='<div style="background:rgba(249,115,22,0.1);border:1px solid var(--orange);border-radius:10px;padding:12px 16px;color:var(--orange);font-size:13px;margin-top:12px">⏳ '+(lang==='ar'?'طلبك قيد المراجعة':lang==='tr'?'Talebiniz inceleniyor':'Your request is under review')+'</div>';
     if(btn)btn.style.display='none';
   }
@@ -2799,7 +2800,7 @@ async function submitDeposit() {
 
     await db.from('deposits').insert({user_id:userProfile.id,amount,coin:wallets[coinKey]?.label||'USDT',network:document.getElementById('net-name').textContent,tx_hash:hash,status:'pending',plan_id:planId});
     // ✅ FIX: إيميل تأكيد حقيقي لاستلام طلب الإيداع (قالب ثابت آمن، مش بلوك لو فشل)
-    db.functions.invoke('send-email', { body: { template: 'deposit_received', params: { amount } } }).catch(e => console.error('deposit email error:', e));
+    db.functions.invoke('send-email', { body: { template: 'deposit_received', params: { amount }, lang } }).catch(e => console.error('deposit email error:', e));
     await db.from('notifications').insert({
       user_id:userProfile.id,
       title:'📥 '+(lang==='ar'?'تم استلام طلب إيداعك':lang==='tr'?'Yatırım talebi alındı':'Deposit request received'),
