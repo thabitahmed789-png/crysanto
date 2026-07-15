@@ -1786,7 +1786,7 @@ async function sendKycEmailNotification(userId, decision) {
   try {
     const { data: u, error } = await sdb.from('users').select('email,name,preferred_lang').eq('id', userId).single();
     if (error || !u?.email) return;
-    const L = (u.preferred_lang === 'en' || u.preferred_lang === 'tr') ? u.preferred_lang : 'ar'; // ✅ FIX: لغة العميل مش لغة لوحة الأدمن
+    const L = 'en'; // ✅ FIX: كل الرسايل بقت إنجليزي بس دايماً بناءً على طلب المستخدم
     const n = escapeHtml(u.name||'');
     const copy = {
       ar: { verifiedSubject: '✅ تم توثيق هويتك بنجاح — Crysanto', rejectedSubject: '❌ تم رفض طلب توثيق الهوية — Crysanto', hi: 'مرحبًا', verifiedBody: 'تم التحقق من هويتك بنجاح في Crysanto. حسابك الآن موثّق بالكامل.', rejectedBody: 'للأسف تم رفض مستندات التحقق من الهوية. برجاء إعادة رفع المستندات بجودة أوضح والمحاولة مرة أخرى.' },
@@ -2896,7 +2896,7 @@ async function rejectDeposit(depositId, email, name, userLang) {
 // دايماً بلغة الأدمن (وكان الـ body أصلاً عربي ثابت في كل الأحوال حتى لو subject كان بالإنجليزي)
 async function sendEmailNotification(email, name, amount, status, reason='', userLang='ar') {
   if (!email) return;
-  const L = (userLang === 'en' || userLang === 'tr') ? userLang : 'ar';
+  const L = 'en'; // ✅ FIX: كل الرسايل بقت إنجليزي بس دايماً بناءً على طلب المستخدم
   const n = escapeHtml(name);
   const copy = {
     ar: {
