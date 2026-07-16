@@ -698,6 +698,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <div class="sidebar-item" onclick="switchDash(this,'d-invest')" data-ar="💹 استثماراتي" data-en="💹 My Investments" data-tr="💹 Yatırımlarım">💹 استثماراتي</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-profits-log')" data-ar="💰 الأرباح اليومية" data-en="💰 Daily Profits" data-tr="💰 Günlük Karlar">💰 الأرباح اليومية</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-account')" data-ar="👤 حسابي" data-en="👤 My Account" data-tr="👤 Hesabım">👤 حسابي</div>
+        <div class="sidebar-item" onclick="switchDash(this,'d-support')" data-ar="🎫 الدعم الفني" data-en="🎫 Support" data-tr="🎫 Destek">🎫 الدعم الفني</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-security')" data-ar="🔒 الأمان" data-en="🔒 Security" data-tr="🔒 Güvenlik">🔒 الأمان</div>
       </div>
       <div class="dash-main">
@@ -766,6 +767,43 @@ body:not(.ltr) .footer-grid{text-align:right;}
             </div>
             <div id="acc-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px"></div>
             <button class="btn-primary" id="acc-save-btn" onclick="saveMyAccountInfo()" data-ar="💾 حفظ التعديلات" data-en="💾 Save Changes" data-tr="💾 Değişiklikleri Kaydet">💾 حفظ التعديلات</button>
+          </div>
+        </div>
+        <div id="d-support" style="display:none">
+          <div id="sup-list-view">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <h3 style="font-size:16px;font-weight:800" data-ar="تذاكر الدعم الفني" data-en="Support Tickets" data-tr="Destek Talepleri">تذاكر الدعم الفني</h3>
+              <button class="btn-primary" style="width:auto;padding:8px 16px;font-size:13px" onclick="openNewTicketModal()" data-ar="+ تذكرة جديدة" data-en="+ New Ticket" data-tr="+ Yeni Talep">+ تذكرة جديدة</button>
+            </div>
+            <div id="sup-tickets-list" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+          <div id="sup-thread-view" style="display:none">
+            <button onclick="closeTicketThread()" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;margin-bottom:10px">← <span data-ar="رجوع للتذاكر" data-en="Back to tickets" data-tr="Taleplere dön">رجوع للتذاكر</span></button>
+            <div class="panel" style="max-width:520px">
+              <div class="panel-head" id="sup-thread-subject">—</div>
+              <div id="sup-thread-messages" style="display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow-y:auto;margin-bottom:14px"></div>
+              <div id="sup-thread-closed-note" style="display:none;color:var(--muted);font-size:12px;margin-bottom:8px" data-ar="هذه التذكرة مغلقة" data-en="This ticket is closed" data-tr="Bu talep kapatıldı">هذه التذكرة مغلقة</div>
+              <div id="sup-thread-reply-box" style="display:flex;gap:8px">
+                <textarea id="sup-reply-text" rows="2" style="flex:1;background:var(--dark2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font-family:inherit" placeholder="اكتب ردك..."></textarea>
+                <button class="btn-primary" style="width:auto;padding:8px 16px" onclick="sendTicketReply()">➤</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="modal-new-ticket" class="modal-overlay">
+          <div class="modal" style="max-width:420px">
+            <button class="modal-close" onclick="closeModal('new-ticket')">✕</button>
+            <h3 style="font-size:16px;font-weight:800;margin-bottom:16px" data-ar="تذكرة دعم جديدة" data-en="New Support Ticket" data-tr="Yeni Destek Talebi">تذكرة دعم جديدة</h3>
+            <div class="form-group">
+              <label data-ar="الموضوع" data-en="Subject" data-tr="Konu">الموضوع</label>
+              <input type="text" id="nt-subject" maxlength="150">
+            </div>
+            <div class="form-group">
+              <label data-ar="الرسالة" data-en="Message" data-tr="Mesaj">الرسالة</label>
+              <textarea id="nt-message" rows="4" style="width:100%;background:var(--dark2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font-family:inherit"></textarea>
+            </div>
+            <div id="nt-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px"></div>
+            <button class="btn-primary" id="nt-submit-btn" onclick="submitNewTicket()" data-ar="إرسال" data-en="Submit" data-tr="Gönder">إرسال</button>
           </div>
         </div>
         <div id="d-security" style="display:none">
@@ -1821,7 +1859,7 @@ document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click
 function switchDash(el, id) {
   document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
   el.classList.add('active');
-  ['d-overview','d-wallet','d-history','d-kyc','d-notif','d-invest','d-security','d-profits-log','d-account'].forEach(d=>{const e=document.getElementById(d);if(e)e.style.display='none';});
+  ['d-overview','d-wallet','d-history','d-kyc','d-notif','d-invest','d-security','d-profits-log','d-account','d-support'].forEach(d=>{const e=document.getElementById(d);if(e)e.style.display='none';});
   const p=document.getElementById(id); if(p) p.style.display='block';
   if(id==='d-history') loadTransactions();
   if(id==='d-notif') loadNotifications();
@@ -1831,6 +1869,7 @@ function switchDash(el, id) {
   if(id==='d-security') render2FAStatus();
   if(id==='d-profits-log') loadMyDailyProfits();
   if(id==='d-account') renderMyAccountInfo();
+  if(id==='d-support'){ document.getElementById('sup-thread-view').style.display='none'; document.getElementById('sup-list-view').style.display='block'; renderSupportTickets(); }
 }
 
 function switchDW(el, id) {
@@ -2924,6 +2963,112 @@ function setCoin(el, coin) {
 function copyDepAddr() {
   navigator.clipboard.writeText(document.getElementById('dep-addr').textContent).catch(()=>{});
   showToast(lang==='ar'?'✓ تم نسخ العنوان':lang==='tr'?'✓ Kopyalandı':'✓ Copied');
+}
+
+// ══ نظام تذاكر الدعم الفني ══
+let _activeTicketId = null;
+
+async function renderSupportTickets(){
+  const list = document.getElementById('sup-tickets-list');
+  if(!list || !userProfile?.id) return;
+  list.innerHTML = '<p style="color:var(--muted);font-size:13px">...جاري التحميل</p>';
+  const { data, error } = await db.from('support_tickets')
+    .select('id,subject,status,priority,updated_at')
+    .eq('user_id', userProfile.id)
+    .order('updated_at', { ascending: false });
+  if(error){ console.error('renderSupportTickets error:', error); list.innerHTML = '<p style="color:var(--red);font-size:13px">تعذر تحميل التذاكر</p>'; return; }
+  if(!data || !data.length){ list.innerHTML = '<p style="color:var(--muted);font-size:13px">لا توجد تذاكر بعد</p>'; return; }
+  const statusLabel = {open:'مفتوحة', answered:'تم الرد', closed:'مغلقة'};
+  const statusColor = {open:'var(--gold)', answered:'var(--green)', closed:'var(--muted)'};
+  list.innerHTML = data.map(t => `
+    <div onclick="openTicketThread('${t.id}')" style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:14px;font-weight:700">${escapeHtmlSafe(t.subject)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${new Date(t.updated_at).toLocaleString(lang==='ar'?'ar-EG':lang==='tr'?'tr-TR':'en-US')}</div>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:${statusColor[t.status]||'var(--muted)'}">${statusLabel[t.status]||t.status}</span>
+    </div>`).join('');
+}
+
+function escapeHtmlSafe(s){
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function openNewTicketModal(){
+  document.getElementById('nt-subject').value = '';
+  document.getElementById('nt-message').value = '';
+  document.getElementById('nt-err').style.display = 'none';
+  document.getElementById('modal-new-ticket').classList.add('open');
+}
+
+async function submitNewTicket(){
+  const errEl = document.getElementById('nt-err');
+  errEl.style.display = 'none';
+  const subject = (document.getElementById('nt-subject').value||'').trim();
+  const message = (document.getElementById('nt-message').value||'').trim();
+  if(!subject || subject.length < 3){ errEl.textContent='اكتب عنوان واضح للمشكلة'; errEl.style.display='block'; return; }
+  if(!message || message.length < 5){ errEl.textContent='اكتب تفاصيل أكتر عن المشكلة'; errEl.style.display='block'; return; }
+  const btn = document.getElementById('nt-submit-btn');
+  btn.disabled = true;
+  try {
+    const { data: ticket, error: tErr } = await db.from('support_tickets')
+      .insert({ user_id: userProfile.id, subject }).select().single();
+    if(tErr){ console.error('submitNewTicket ticket error:', tErr); errEl.textContent = tErr.message?.includes('5 تذاكر') ? tErr.message : 'حدث خطأ، حاول لاحقاً'; errEl.style.display='block'; return; }
+    const { error: mErr } = await db.from('support_messages')
+      .insert({ ticket_id: ticket.id, sender_role: 'user', sender_id: currentUser.id, message });
+    if(mErr){ console.error('submitNewTicket message error:', mErr); }
+    closeModal('new-ticket');
+    showToast(lang==='ar'?'✓ تم إرسال التذكرة':'✓ Ticket submitted');
+    renderSupportTickets();
+  } finally { btn.disabled = false; }
+}
+
+async function openTicketThread(ticketId){
+  _activeTicketId = ticketId;
+  document.getElementById('sup-list-view').style.display = 'none';
+  document.getElementById('sup-thread-view').style.display = 'block';
+  await loadTicketThread();
+}
+
+function closeTicketThread(){
+  _activeTicketId = null;
+  document.getElementById('sup-thread-view').style.display = 'none';
+  document.getElementById('sup-list-view').style.display = 'block';
+  renderSupportTickets();
+}
+
+async function loadTicketThread(){
+  if(!_activeTicketId) return;
+  const { data: ticket } = await db.from('support_tickets').select('subject,status').eq('id', _activeTicketId).single();
+  const { data: messages, error } = await db.from('support_messages')
+    .select('sender_role,message,created_at')
+    .eq('ticket_id', _activeTicketId)
+    .order('created_at', { ascending: true });
+  document.getElementById('sup-thread-subject').textContent = ticket?.subject || '—';
+  const box = document.getElementById('sup-thread-messages');
+  if(error){ box.innerHTML = '<p style="color:var(--red);font-size:13px">تعذر تحميل المحادثة</p>'; return; }
+  box.innerHTML = (messages||[]).map(m => `
+    <div style="align-self:${m.sender_role==='user'?'flex-end':'flex-start'};max-width:80%;background:${m.sender_role==='user'?'var(--gold)':'var(--dark2)'};color:${m.sender_role==='user'?'#000':'var(--text)'};border-radius:10px;padding:8px 12px;font-size:13px">
+      ${escapeHtmlSafe(m.message)}
+      <div style="font-size:10px;opacity:.7;margin-top:4px">${new Date(m.created_at).toLocaleString(lang==='ar'?'ar-EG':lang==='tr'?'tr-TR':'en-US')}</div>
+    </div>`).join('');
+  box.scrollTop = box.scrollHeight;
+  const isClosed = ticket?.status === 'closed';
+  document.getElementById('sup-thread-reply-box').style.display = isClosed ? 'none' : 'flex';
+  document.getElementById('sup-thread-closed-note').style.display = isClosed ? 'block' : 'none';
+}
+
+async function sendTicketReply(){
+  const ta = document.getElementById('sup-reply-text');
+  const msg = (ta.value||'').trim();
+  if(!msg || !_activeTicketId) return;
+  const { error } = await db.from('support_messages')
+    .insert({ ticket_id: _activeTicketId, sender_role: 'user', sender_id: currentUser.id, message: msg });
+  if(error){ console.error('sendTicketReply error:', error); showToast(lang==='ar'?'تعذر إرسال الرد':'Could not send reply'); return; }
+  ta.value = '';
+  loadTicketThread();
 }
 
 // ── بيانات الحساب: عرض الاسم والإيميل + تعديل الاسم ──
