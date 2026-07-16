@@ -71,6 +71,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .nav-links a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;padding:6px 12px;border-radius:6px;transition:.2s;cursor:pointer;}
 .nav-links a:hover,.nav-links a.active{color:var(--gold);background:var(--gold-dim);}
 .nav-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.mobile-menu{display:none;} /* ✅ FIX: قاعدة أساسية تخفيها في كل الأحجام؛ الشاشات الضيقة بتفعّل .open عبر media query تحت */
 .lang-sw{display:flex;gap:3px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:3px;}
 /* ✅ FIX: مبدّل اللغة ده بقى مكرر لما تكون مسجّل دخول (موجود جوه منيو الحساب دلوقتي)،
    فبنخفيه بس في الحالة دي. بيفضل ظاهر للزوار (مسجلينش) لأنهم مالهمش نقطة وصول تانية على الديسكتوب. */
@@ -2971,14 +2972,18 @@ let _activeTicketId = null;
 async function renderSupportTickets(){
   const list = document.getElementById('sup-tickets-list');
   if(!list || !userProfile?.id) return;
-  list.innerHTML = '<p style="color:var(--muted);font-size:13px">...جاري التحميل</p>';
+  list.innerHTML = '<p style="color:var(--muted);font-size:13px">'+({ar:'...جاري التحميل',en:'Loading...',tr:'Yükleniyor...'}[lang]||'Loading...')+'</p>';
   const { data, error } = await db.from('support_tickets')
     .select('id,subject,status,priority,updated_at')
     .eq('user_id', userProfile.id)
     .order('updated_at', { ascending: false });
-  if(error){ console.error('renderSupportTickets error:', error); list.innerHTML = '<p style="color:var(--red);font-size:13px">تعذر تحميل التذاكر</p>'; return; }
-  if(!data || !data.length){ list.innerHTML = '<p style="color:var(--muted);font-size:13px">لا توجد تذاكر بعد</p>'; return; }
-  const statusLabel = {open:'مفتوحة', answered:'تم الرد', closed:'مغلقة'};
+  if(error){ console.error('renderSupportTickets error:', error); list.innerHTML = '<p style="color:var(--red);font-size:13px">'+({ar:'تعذر تحميل التذاكر',en:'Could not load tickets',tr:'Talepler yüklenemedi'}[lang]||'Could not load tickets')+'</p>'; return; }
+  if(!data || !data.length){ list.innerHTML = '<p style="color:var(--muted);font-size:13px">'+({ar:'لا توجد تذاكر بعد',en:'No tickets yet',tr:'Henüz talep yok'}[lang]||'No tickets yet')+'</p>'; return; }
+  const statusLabel = {
+    open:{ar:'مفتوحة',en:'Open',tr:'Açık'}[lang]||'Open',
+    answered:{ar:'تم الرد',en:'Answered',tr:'Yanıtlandı'}[lang]||'Answered',
+    closed:{ar:'مغلقة',en:'Closed',tr:'Kapalı'}[lang]||'Closed'
+  };
   const statusColor = {open:'var(--gold)', answered:'var(--green)', closed:'var(--muted)'};
   list.innerHTML = data.map(t => `
     <div onclick="openTicketThread('${t.id}')" style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
@@ -3008,14 +3013,19 @@ async function submitNewTicket(){
   errEl.style.display = 'none';
   const subject = (document.getElementById('nt-subject').value||'').trim();
   const message = (document.getElementById('nt-message').value||'').trim();
-  if(!subject || subject.length < 3){ errEl.textContent='اكتب عنوان واضح للمشكلة'; errEl.style.display='block'; return; }
-  if(!message || message.length < 5){ errEl.textContent='اكتب تفاصيل أكتر عن المشكلة'; errEl.style.display='block'; return; }
+  if(!subject || subject.length < 3){ errEl.textContent = {ar:'اكتب عنوان واضح للمشكلة',en:'Please write a clear subject',tr:'Lütfen net bir konu yazın'}[lang]||'Please write a clear subject'; errEl.style.display='block'; return; }
+  if(!message || message.length < 5){ errEl.textContent = {ar:'اكتب تفاصيل أكتر عن المشكلة',en:'Please add more details',tr:'Lütfen daha fazla ayrıntı ekleyin'}[lang]||'Please add more details'; errEl.style.display='block'; return; }
   const btn = document.getElementById('nt-submit-btn');
   btn.disabled = true;
   try {
     const { data: ticket, error: tErr } = await db.from('support_tickets')
       .insert({ user_id: userProfile.id, subject }).select().single();
-    if(tErr){ console.error('submitNewTicket ticket error:', tErr); errEl.textContent = tErr.message?.includes('5 تذاكر') ? tErr.message : 'حدث خطأ، حاول لاحقاً'; errEl.style.display='block'; return; }
+    if(tErr){
+      console.error('submitNewTicket ticket error:', tErr);
+      const genericMsg = {ar:'حدث خطأ، حاول لاحقاً',en:'Something went wrong, try again later',tr:'Bir hata oluştu, daha sonra tekrar deneyin'}[lang]||'Something went wrong';
+      errEl.textContent = tErr.message?.includes('5 تذاكر') ? ({ar:'لديك 5 تذاكر مفتوحة بالفعل، أغلق واحدة قبل فتح تذكرة جديدة',en:'You already have 5 open tickets, please close one before opening a new one',tr:'Zaten 5 açık talebiniz var, yenisini açmadan önce birini kapatın'}[lang]||genericMsg) : genericMsg;
+      errEl.style.display='block'; return;
+    }
     const { error: mErr } = await db.from('support_messages')
       .insert({ ticket_id: ticket.id, sender_role: 'user', sender_id: currentUser.id, message });
     if(mErr){ console.error('submitNewTicket message error:', mErr); }
@@ -3025,15 +3035,29 @@ async function submitNewTicket(){
   } finally { btn.disabled = false; }
 }
 
+let _ticketRealtimeChannel = null;
+
 async function openTicketThread(ticketId){
   _activeTicketId = ticketId;
   document.getElementById('sup-list-view').style.display = 'none';
   document.getElementById('sup-thread-view').style.display = 'block';
   await loadTicketThread();
+
+  // ✅ تحديث حي: أي رسالة جديدة (رد الأدمن أو من جهاز تاني) تظهر فورًا من غير ما يعمل رفرش
+  if(_ticketRealtimeChannel) db.removeChannel(_ticketRealtimeChannel);
+  _ticketRealtimeChannel = db.channel('ticket-'+ticketId)
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'support_messages', filter:'ticket_id=eq.'+ticketId}, () => {
+      loadTicketThread();
+    })
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'support_tickets', filter:'id=eq.'+ticketId}, () => {
+      loadTicketThread();
+    })
+    .subscribe();
 }
 
 function closeTicketThread(){
   _activeTicketId = null;
+  if(_ticketRealtimeChannel){ db.removeChannel(_ticketRealtimeChannel); _ticketRealtimeChannel = null; }
   document.getElementById('sup-thread-view').style.display = 'none';
   document.getElementById('sup-list-view').style.display = 'block';
   renderSupportTickets();
@@ -3048,7 +3072,7 @@ async function loadTicketThread(){
     .order('created_at', { ascending: true });
   document.getElementById('sup-thread-subject').textContent = ticket?.subject || '—';
   const box = document.getElementById('sup-thread-messages');
-  if(error){ box.innerHTML = '<p style="color:var(--red);font-size:13px">تعذر تحميل المحادثة</p>'; return; }
+  if(error){ box.innerHTML = '<p style="color:var(--red);font-size:13px">'+({ar:'تعذر تحميل المحادثة',en:'Could not load the conversation',tr:'Konuşma yüklenemedi'}[lang]||'Could not load the conversation')+'</p>'; return; }
   box.innerHTML = (messages||[]).map(m => `
     <div style="align-self:${m.sender_role==='user'?'flex-end':'flex-start'};max-width:80%;background:${m.sender_role==='user'?'var(--gold)':'var(--dark2)'};color:${m.sender_role==='user'?'#000':'var(--text)'};border-radius:10px;padding:8px 12px;font-size:13px">
       ${escapeHtmlSafe(m.message)}
@@ -3066,7 +3090,7 @@ async function sendTicketReply(){
   if(!msg || !_activeTicketId) return;
   const { error } = await db.from('support_messages')
     .insert({ ticket_id: _activeTicketId, sender_role: 'user', sender_id: currentUser.id, message: msg });
-  if(error){ console.error('sendTicketReply error:', error); showToast(lang==='ar'?'تعذر إرسال الرد':'Could not send reply'); return; }
+  if(error){ console.error('sendTicketReply error:', error); showToast({ar:'تعذر إرسال الرد',en:'Could not send reply',tr:'Yanıt gönderilemedi'}[lang]||'Could not send reply'); return; }
   ta.value = '';
   loadTicketThread();
 }
