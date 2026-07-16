@@ -440,6 +440,10 @@ body.ltr .toast{left:auto;right:24px;}
     <div class="sb-item" onclick="switchSection('s-daily-profits')" id="sb-daily-profits">
       <span class="sb-icon">💸</span><span class="sb-lbl" data-ar="الأرباح اليومية" data-en="Daily Profits" data-tr="Günlük Karlar">الأرباح اليومية</span>
     </div>
+    <div class="sb-item" onclick="switchSection('s-support')" id="sb-support">
+      <span class="sb-icon">🎫</span><span class="sb-lbl" data-ar="تذاكر الدعم" data-en="Support Tickets" data-tr="Destek Talepleri">تذاكر الدعم</span>
+      <span class="sb-badge" id="support-badge" style="background:var(--red);display:none">0</span>
+    </div>
   </div>
 
   <!-- MAIN -->
@@ -887,6 +891,51 @@ body.ltr .toast{left:auto;right:24px;}
         </div>
         <div class="tbl-wrap" id="daily-profits-wrap">
           <div style="color:var(--muted);text-align:center;padding:40px">جاري التحميل...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SUPPORT TICKETS ══ -->
+    <div id="s-support" class="section-wrap" style="display:none">
+      <div class="section-title">تذاكر الدعم الفني</div>
+      <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
+        <div class="panel" style="padding:0;overflow:hidden">
+          <div class="panel-head" style="padding:14px">
+            <span>التذاكر</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select id="sup-status-filter" onchange="loadSupportTickets()" style="background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px">
+                <option value="all">الكل</option>
+                <option value="open">مفتوحة</option>
+                <option value="answered">تم الرد</option>
+                <option value="closed">مغلقة</option>
+              </select>
+              <button class="act-btn" onclick="loadSupportTickets()" style="font-size:12px">🔄</button>
+            </div>
+          </div>
+          <div id="sup-admin-list" style="max-height:70vh;overflow-y:auto">
+            <div style="color:var(--muted);text-align:center;padding:40px">جاري التحميل...</div>
+          </div>
+        </div>
+        <div class="panel" id="sup-admin-thread-panel" style="min-height:400px">
+          <div id="sup-admin-empty" style="color:var(--muted);text-align:center;padding:60px">اختر تذكرة من القائمة لعرض المحادثة</div>
+          <div id="sup-admin-thread" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div>
+                <div id="sup-admin-subject" style="font-size:15px;font-weight:800"></div>
+                <div id="sup-admin-user" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
+              </div>
+              <select id="sup-admin-status-select" onchange="updateTicketStatus()" style="background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px">
+                <option value="open">مفتوحة</option>
+                <option value="answered">تم الرد</option>
+                <option value="closed">مغلقة</option>
+              </select>
+            </div>
+            <div id="sup-admin-messages" style="display:flex;flex-direction:column;gap:10px;max-height:45vh;overflow-y:auto;margin-bottom:14px;padding:4px"></div>
+            <div style="display:flex;gap:8px">
+              <textarea id="sup-admin-reply" rows="2" style="flex:1;background:var(--dark);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:8px;font-family:inherit" placeholder="اكتب ردك للعميل..."></textarea>
+              <button class="act-btn-primary" onclick="sendAdminTicketReply()">➤ إرسال</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1393,6 +1442,7 @@ function renderCurrentSection(){
   if(currentSection==='s-overview') { renderOverview(); loadRealOverviewStats(); return; }
   if(currentSection==='s-contact') { renderContactMessages(); return; }
   if(currentSection==='s-security') { loadSecurityAlerts(); loadSecurityStats(); return; }
+  if(currentSection==='s-support') { loadSupportTickets(); return; }
   if(currentSection==='s-daily-profits') { loadDailyProfitStats(); loadDailyProfits(); return; }
   if(currentSection==='s-analytics') { loadAnalytics(); return; }
   const renders = {
@@ -3633,6 +3683,119 @@ function filterSecurityAlerts(el, f){
   document.querySelectorAll('#s-security .ft').forEach(b => b.classList.remove('on'));
   if(el) el.classList.add('on');
   renderSecurityAlerts(_securityAlerts);
+}
+
+// ══ نظام تذاكر الدعم — الأدمن ══
+let _adminActiveTicketId = null;
+
+async function loadSupportTickets(){
+  const wrap = document.getElementById('sup-admin-list');
+  if(!wrap) return;
+  wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px">⏳ جاري التحميل...</div>`;
+  try {
+    const filter = document.getElementById('sup-status-filter')?.value || 'all';
+    let q = sdb.from('support_tickets').select('id,subject,status,updated_at,user_id,users(name,email)').order('updated_at', { ascending:false });
+    if(filter !== 'all') q = q.eq('status', filter);
+    const { data, error } = await q;
+    if(error) throw error;
+    if(!data || !data.length){ wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px">لا توجد تذاكر</div>`; return; }
+    const statusColor = {open:'var(--gold)', answered:'var(--green)', closed:'var(--muted)'};
+    const statusLbl = {open:'مفتوحة', answered:'تم الرد', closed:'مغلقة'};
+    wrap.innerHTML = data.map(t => `
+      <div onclick="openAdminTicketThread('${t.id}')" style="padding:14px;border-bottom:1px solid var(--border2);cursor:pointer;${_adminActiveTicketId===t.id?'background:var(--dark)':''}">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div style="font-size:13px;font-weight:700">${escapeHtml(t.subject)}</div>
+          <span style="font-size:10px;font-weight:700;color:${statusColor[t.status]||'var(--muted)'};white-space:nowrap;margin-right:8px">${statusLbl[t.status]||t.status}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">${escapeHtml(t.users?.name || t.users?.email || '—')}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${new Date(t.updated_at).toLocaleString('ar-EG')}</div>
+      </div>`).join('');
+
+    const openCount = data.filter(t=>t.status==='open').length;
+    const badge = document.getElementById('support-badge');
+    if(badge){ badge.style.display = openCount>0?'inline-block':'none'; badge.textContent = openCount; }
+  } catch(e){
+    wrap.innerHTML = `<div style="color:var(--red);padding:24px">✗ ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function openAdminTicketThread(ticketId){
+  _adminActiveTicketId = ticketId;
+  document.getElementById('sup-admin-empty').style.display = 'none';
+  document.getElementById('sup-admin-thread').style.display = 'block';
+  await loadAdminTicketThread();
+  loadSupportTickets(); // لتحديث التظليل في القائمة
+}
+
+async function loadAdminTicketThread(){
+  if(!_adminActiveTicketId) return;
+  try {
+    const { data: ticket, error: tErr } = await sdb.from('support_tickets')
+      .select('subject,status,users(name,email)').eq('id', _adminActiveTicketId).single();
+    if(tErr) throw tErr;
+    document.getElementById('sup-admin-subject').textContent = ticket.subject;
+    document.getElementById('sup-admin-user').textContent = ticket.users?.name ? `${ticket.users.name} — ${ticket.users.email}` : (ticket.users?.email || '—');
+    document.getElementById('sup-admin-status-select').value = ticket.status;
+
+    const { data: messages, error: mErr } = await sdb.from('support_messages')
+      .select('sender_role,message,created_at').eq('ticket_id', _adminActiveTicketId)
+      .order('created_at', { ascending:true });
+    if(mErr) throw mErr;
+    const box = document.getElementById('sup-admin-messages');
+    box.innerHTML = (messages||[]).map(m => `
+      <div style="align-self:${m.sender_role==='admin'?'flex-end':'flex-start'};max-width:80%;background:${m.sender_role==='admin'?'var(--gold)':'var(--dark)'};color:${m.sender_role==='admin'?'#000':'var(--text)'};border-radius:10px;padding:8px 12px;font-size:13px">
+        ${escapeHtml(m.message)}
+        <div style="font-size:10px;opacity:.7;margin-top:4px">${new Date(m.created_at).toLocaleString('ar-EG')}</div>
+      </div>`).join('');
+    box.scrollTop = box.scrollHeight;
+  } catch(e){
+    showToast('✗ ' + e.message, 'error');
+  }
+}
+
+async function sendAdminTicketReply(){
+  const ta = document.getElementById('sup-admin-reply');
+  const msg = (ta.value||'').trim();
+  if(!msg || !_adminActiveTicketId) return;
+  try {
+    const { data: { user } } = await sdb.auth.getUser();
+    const { error } = await sdb.from('support_messages')
+      .insert({ ticket_id: _adminActiveTicketId, sender_role:'admin', sender_id: user.id, message: msg });
+    if(error) throw error;
+    ta.value = '';
+    await loadAdminTicketThread();
+    sendTicketReplyEmailNotification(_adminActiveTicketId, msg); // ✅ إيميل حقيقي للعميل عند رد الأدمن
+  } catch(e){
+    showToast('✗ ' + e.message, 'error');
+  }
+}
+
+// ── إيميل للعميل لما الأدمن يرد على تذكرة الدعم بتاعته ──
+async function sendTicketReplyEmailNotification(ticketId, replyMsg){
+  try {
+    const { data: t, error } = await sdb.from('support_tickets')
+      .select('subject, users(email,name)').eq('id', ticketId).single();
+    if(error || !t?.users?.email) return;
+    const n = escapeHtml(t.users.name || '');
+    const subject = `📩 New reply on your support ticket — Crysanto`;
+    const bodyHtml = `<div style="font-family:sans-serif"><h2>Hi ${n},</h2><p>You have a new reply on your ticket "<b>${escapeHtml(t.subject)}</b>":</p><p style="background:#f5f5f5;padding:12px;border-radius:8px">${escapeHtml(replyMsg)}</p><p>Log in to Crysanto to reply.</p></div>`;
+    await sdb.functions.invoke('send-email', { body: { to: t.users.email, subject, html: bodyHtml } });
+  } catch(e){
+    console.error('sendTicketReplyEmailNotification error:', e);
+  }
+}
+
+async function updateTicketStatus(){
+  if(!_adminActiveTicketId) return;
+  const newStatus = document.getElementById('sup-admin-status-select').value;
+  try {
+    const { error } = await sdb.from('support_tickets').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', _adminActiveTicketId);
+    if(error) throw error;
+    showToast('✓ تم تحديث حالة التذكرة');
+    loadSupportTickets();
+  } catch(e){
+    showToast('✗ ' + e.message, 'error');
+  }
 }
 
 async function loadSecurityAlerts(){
