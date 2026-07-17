@@ -888,7 +888,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
       <div class="panel" style="margin-top:14px">
         <div class="panel-head" id="dep-confirm-h" data-ar="تأكيد الإيداع" data-en="Confirm Deposit" data-tr="Yatırımı Onayla">تأكيد الإيداع</div>
         <div class="form-group"><label id="dep-hash-l" data-ar="رقم التحويل (TX Hash)" data-en="Transaction Hash" data-tr="İşlem Kodu">رقم التحويل (TX Hash)</label><input type="text" id="dep-hash" placeholder="0x... or T..."></div>
-        <div class="form-group"><label id="dep-amt-l" data-ar="المبلغ ($)" data-en="Amount ($)" data-tr="Miktar ($)">المبلغ ($)</label><input type="number" id="dep-amount" placeholder="100" min="100"></div>
+        <div class="form-group"><label id="dep-amt-l" data-ar="المبلغ ($)" data-en="Amount ($)" data-tr="Miktar ($)">المبلغ ($)</label><input type="number" id="dep-amount" placeholder="100"></div>
         <button class="btn-primary" style="width:100%" onclick="submitDeposit()" id="dep-submit-btn" data-ar="إرسال طلب الإيداع" data-en="Submit Deposit Request" data-tr="Yatırım Talebi Gönder">إرسال طلب الإيداع</button>
         <div style="font-size:11px;color:var(--muted);margin-top:10px;text-align:center" id="dep-note" data-ar="سيتم مراجعة الإيداع وإضافته لحسابك خلال 5-30 دقيقة" data-en="Deposit will be reviewed within 5-30 minutes" data-tr="Yatırım 5-30 dakika içinde incelenecektir">سيتم مراجعة الإيداع وإضافته لحسابك خلال 5-30 دقيقة</div>
       </div>
@@ -906,7 +906,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
           </select>
         </div>
         <div class="form-group"><label id="wdl2" data-ar="عنوان محفظتك" data-en="Your Wallet Address" data-tr="Cüzdan Adresiniz">عنوان محفظتك</label><input type="text" id="wd-addr" placeholder="T... or 0x..."></div>
-        <div class="form-group"><label id="wdl3" data-ar="المبلغ ($)" data-en="Amount ($)" data-tr="Miktar ($)">المبلغ ($)</label><input type="number" id="wd-amount" placeholder="50" min="50">
+        <div class="form-group"><label id="wdl3" data-ar="المبلغ ($)" data-en="Amount ($)" data-tr="Miktar ($)">المبلغ ($)</label><input type="number" id="wd-amount" placeholder="50">
           <div style="font-size:11px;color:var(--muted);margin-top:5px" id="wd-min-note" data-ar="الحد الأدنى $50" data-en="Minimum $50" data-tr="Minimum $50">الحد الأدنى $50</div>
         </div>
         <button class="btn-primary" style="width:100%" onclick="submitWithdrawal()" id="wd-submit-btn" data-ar="تأكيد طلب السحب" data-en="Confirm Withdrawal" data-tr="Çekimi Onayla">تأكيد طلب السحب</button>
@@ -2940,6 +2940,7 @@ async function submitWithdrawal() {
       return;
     }
     userProfile.balance -= amount; // الرصيد اتخصم فعلياً في الـ RPC، نعكسها محلياً فوراً
+    db.functions.invoke('send-email', { body: { template: 'withdrawal_received', params: { amount }, lang } }).catch(e => console.error('withdrawal email error:', e));
     showToast(lang==='ar'?'✓ تم إرسال طلب السحب':lang==='tr'?'✓ Çekim talebi gönderildi':'✓ Withdrawal request sent');
     document.getElementById('wd-addr').value='';
     document.getElementById('wd-amount').value='';
