@@ -2918,9 +2918,11 @@ async function approveDeposit(depositId, userId, amount, email, name, userLang) 
   showToast(lang==='ar'?'جارٍ المعالجة...':'Processing...');
 
   const { data, error } = await sdb.rpc('admin_approve_deposit', { p_deposit_id: depositId });
-  if (error) {
-    showToast((lang==='ar'?'✗ فشل قبول الإيداع: ':'✗ Failed to approve deposit: ')+error.message);
-    console.error('approveDeposit RPC error:', error);
+  const result = Array.isArray(data) ? data[0] : data;
+  if (error || !result?.success) {
+    showToast((lang==='ar'?'✗ فشل قبول الإيداع: ':'✗ Failed to approve deposit: ')+(result?.message||error?.message||''));
+    console.error('approveDeposit RPC error:', error||result);
+    await loadRealDeposits();
     return;
   }
 
