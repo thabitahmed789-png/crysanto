@@ -857,6 +857,42 @@ body:not(.ltr) .footer-grid{text-align:right;}
       <button class="dw-tab" onclick="switchDW(this,'dw-wd')" id="dwt2" data-ar="سحب" data-en="Withdraw" data-tr="Çekim">سحب</button>
     </div>
     <div id="dw-dep" class="dw-panel">
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="dw-tab active" style="flex:1" onclick="switchDepMode(this,'auto')" id="dep-mode-auto-btn" data-ar="⚡ إيداع تلقائي (سريع)" data-en="⚡ Automatic Deposit (Fast)" data-tr="⚡ Otomatik Yatırım (Hızlı)">⚡ إيداع تلقائي (سريع)</button>
+        <button class="dw-tab" style="flex:1" onclick="switchDepMode(this,'manual')" id="dep-mode-manual-btn" data-ar="✍️ إيداع يدوي" data-en="✍️ Manual Deposit" data-tr="✍️ Manuel Yatırım">✍️ إيداع يدوي</button>
+      </div>
+
+      <!-- ══ الإيداع التلقائي عبر NOWPayments ══ -->
+      <div id="dep-auto-section">
+        <div class="panel" style="margin-bottom:14px">
+          <div id="dep-auto-form">
+            <div class="form-group">
+              <label data-ar="العملة والشبكة" data-en="Currency & Network" data-tr="Para Birimi ve Ağ">العملة والشبكة</label>
+              <select id="dep-auto-currency" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;font-family:inherit;cursor:pointer">
+                <option value="usdttrc20">USDT — TRC-20</option>
+                <option value="usdtbsc">USDT — BEP-20</option>
+                <option value="usdterc20">USDT — ERC-20</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label data-ar="المبلغ ($)" data-en="Amount ($)" data-tr="Miktar ($)">المبلغ ($)</label>
+              <input type="number" id="dep-auto-amount" placeholder="100">
+            </div>
+            <div id="dep-auto-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px"></div>
+            <button class="btn-primary" style="width:100%" id="dep-auto-submit-btn" onclick="createAutoDeposit()" data-ar="🔗 توليد عنوان الإيداع" data-en="🔗 Generate Deposit Address" data-tr="🔗 Yatırım Adresi Oluştur">🔗 توليد عنوان الإيداع</button>
+          </div>
+          <div id="dep-auto-result" style="display:none;text-align:center">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px" data-ar="أرسل المبلغ بالظبط للعنوان ده:" data-en="Send the exact amount to this address:" data-tr="Tam tutarı bu adrese gönderin:">أرسل المبلغ بالظبط للعنوان ده:</div>
+            <div class="wallet-addr" id="dep-auto-address" style="padding:10px;background:var(--dark3);border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:12px;word-break:break-all" onclick="copyAutoDepAddr()">—</div>
+            <button class="copy-btn" onclick="copyAutoDepAddr()" style="margin-top:10px" data-ar="📋 نسخ العنوان" data-en="📋 Copy Address" data-tr="📋 Adresi Kopyala">📋 نسخ العنوان</button>
+            <div id="dep-auto-status" style="margin-top:16px;padding:12px;background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;font-size:13px;font-weight:700;color:var(--gold)">⏳ في انتظار التحويل...</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:10px" data-ar="هيتقفل تلقائي في رصيدك فور تأكيد التحويل على البلوكتشين، من غير ما تعمل حاجة تانية." data-en="Your balance updates automatically once the transaction is confirmed on-chain." data-tr="İşlem blok zincirinde onaylandığında bakiyeniz otomatik güncellenir.">هيتقفل تلقائي في رصيدك فور تأكيد التحويل على البلوكتشين، من غير ما تعمل حاجة تانية.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ الإيداع اليدوي (الطريقة الأصلية) ══ -->
+      <div id="dep-manual-section" style="display:none">
       <div style="background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.3);border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:12px;color:var(--red);display:flex;gap:8px">
         <span>⚠️</span><span id="dep-warn" data-ar="أرسل فقط على الشبكة المحددة. الشبكة الخاطئة = فقدان الأموال نهائياً." data-en="Send only on the specified network. Wrong network = permanent loss." data-tr="Yalnızca belirtilen ağda gönderin.">أرسل فقط على الشبكة المحددة. الشبكة الخاطئة = فقدان الأموال نهائياً.</span>
       </div>
@@ -891,6 +927,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <div class="form-group"><label id="dep-amt-l" data-ar="المبلغ ($)" data-en="Amount ($)" data-tr="Miktar ($)">المبلغ ($)</label><input type="number" id="dep-amount" placeholder="100"></div>
         <button class="btn-primary" style="width:100%" onclick="submitDeposit()" id="dep-submit-btn" data-ar="إرسال طلب الإيداع" data-en="Submit Deposit Request" data-tr="Yatırım Talebi Gönder">إرسال طلب الإيداع</button>
         <div style="font-size:11px;color:var(--muted);margin-top:10px;text-align:center" id="dep-note" data-ar="سيتم مراجعة الإيداع وإضافته لحسابك خلال 5-30 دقيقة" data-en="Deposit will be reviewed within 5-30 minutes" data-tr="Yatırım 5-30 dakika içinde incelenecektir">سيتم مراجعة الإيداع وإضافته لحسابك خلال 5-30 دقيقة</div>
+      </div>
       </div>
     </div>
     <div id="dw-wd" class="dw-panel" style="display:none">
@@ -2847,6 +2884,76 @@ async function submitKYC() {
 }
 
 // ── DEPOSIT & WITHDRAW ──
+// ══ الإيداع التلقائي عبر NOWPayments ══
+let _autoDepositId = null;
+let _autoDepositChannel = null;
+
+function switchDepMode(el, mode){
+  document.getElementById('dep-mode-auto-btn').classList.toggle('active', mode==='auto');
+  document.getElementById('dep-mode-manual-btn').classList.toggle('active', mode==='manual');
+  document.getElementById('dep-auto-section').style.display = mode==='auto' ? 'block' : 'none';
+  document.getElementById('dep-manual-section').style.display = mode==='manual' ? 'block' : 'none';
+}
+
+async function createAutoDeposit(){
+  if(!userProfile){ openModal('login'); return; }
+  const errEl = document.getElementById('dep-auto-err');
+  errEl.style.display = 'none';
+  const amount = parseFloat(document.getElementById('dep-auto-amount').value);
+  const currency = document.getElementById('dep-auto-currency').value;
+  if(!amount || amount <= 0){
+    errEl.textContent = {ar:'أدخل مبلغ صحيح',en:'Enter a valid amount',tr:'Geçerli bir tutar girin'}[lang]||'Enter a valid amount';
+    errEl.style.display = 'block'; return;
+  }
+  const btn = document.getElementById('dep-auto-submit-btn');
+  btn.disabled = true;
+  try {
+    let planId = null;
+    if (window.__selectedPlanRate) { /* نفس منطق الربط بالباقة المستخدم في الإيداع اليدوي لو موجود */ }
+    const { data, error } = await db.functions.invoke('nowpayments-create', { body: { amount, pay_currency: currency, plan_id: planId } });
+    if(error || data?.error){
+      console.error('createAutoDeposit error:', error || data.error);
+      errEl.textContent = (data && data.error) || {ar:'تعذر إنشاء طلب الإيداع، حاول لاحقاً',en:'Could not create deposit, try again later',tr:'Yatırım oluşturulamadı, daha sonra tekrar deneyin'}[lang];
+      errEl.style.display = 'block';
+      return;
+    }
+    _autoDepositId = data.deposit_id;
+    document.getElementById('dep-auto-form').style.display = 'none';
+    document.getElementById('dep-auto-result').style.display = 'block';
+    document.getElementById('dep-auto-address').textContent = data.pay_address;
+
+    db.functions.invoke('send-email', { body: { template: 'deposit_received', params: { amount }, lang } }).catch(e => console.error('deposit email error:', e));
+
+    // ✅ متابعة حية لحالة الإيداع: يتحدث الرصيد فورًا لما الـ webhook يعتمده
+    if(_autoDepositChannel) db.removeChannel(_autoDepositChannel);
+    _autoDepositChannel = db.channel('deposit-'+_autoDepositId)
+      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'deposits', filter:'id=eq.'+_autoDepositId}, (payload) => {
+        const statusEl = document.getElementById('dep-auto-status');
+        if(payload.new.status === 'approved'){
+          statusEl.style.background = 'rgba(0,200,120,0.12)'; statusEl.style.borderColor = 'var(--green)'; statusEl.style.color = 'var(--green)';
+          statusEl.textContent = lang==='ar'?'✅ تم تأكيد الإيداع وإضافته لرصيدك':lang==='tr'?'✅ Yatırım onaylandı ve bakiyenize eklendi':'✅ Deposit confirmed and added to your balance';
+          fetchProfile().then(()=>{ if(document.getElementById('d-wallet').style.display!=='none') renderWalletDashboardList(); });
+        } else if(payload.new.status === 'rejected'){
+          statusEl.style.background = 'rgba(255,77,106,0.12)'; statusEl.style.borderColor = 'var(--red)'; statusEl.style.color = 'var(--red)';
+          statusEl.textContent = lang==='ar'?'✗ لم يتم تأكيد التحويل':lang==='tr'?'✗ İşlem onaylanmadı':'✗ Transaction was not confirmed';
+        }
+      })
+      .subscribe();
+  } catch(e){
+    console.error('createAutoDeposit exception:', e);
+    errEl.textContent = {ar:'حدث خطأ غير متوقع',en:'Unexpected error occurred',tr:'Beklenmeyen bir hata oluştu'}[lang];
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function copyAutoDepAddr(){
+  const addr = document.getElementById('dep-auto-address').textContent;
+  if(!addr || addr==='—') return;
+  navigator.clipboard.writeText(addr).then(()=> showToast(lang==='ar'?'✓ تم النسخ':lang==='tr'?'✓ Kopyalandı':'✓ Copied'));
+}
+
 async function submitDeposit() {
   if(!userProfile){openModal('login');return;}
   const hash=document.getElementById('dep-hash').value.trim();
