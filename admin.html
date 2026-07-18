@@ -1596,8 +1596,44 @@ function showUserModal(id){
       <b style="color:var(--gold)">إجمالي الأرباح:</b> $${parseFloat(u.total_profit||0).toFixed(2)} &nbsp;|&nbsp;
       <b style="color:var(--gold)">عمولات الإحالة:</b> $${parseFloat(u.ref_earnings||0).toFixed(2)} &nbsp;|&nbsp;
       <b style="color:var(--gold)">آخر نشاط:</b> ${(u.last_seen||'').slice(0,16).replace('T',' ')||'—'}
+    </div>
+    <div style="margin-top:16px">
+      <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:8px">📱 ${lang==='ar'?'الأجهزة المسجّلة':'Registered Devices'}</div>
+      <div id="user-devices-list" style="display:flex;flex-direction:column;gap:6px">
+        <div style="color:var(--muted);font-size:12px">${lang==='ar'?'...جاري التحميل':'Loading...'}</div>
+      </div>
     </div>`;
   document.getElementById('user-modal').classList.add('open');
+  loadUserDevices(u.id);
+}
+
+async function loadUserDevices(userId){
+  const wrap = document.getElementById('user-devices-list');
+  if(!wrap) return;
+  try {
+    const { data, error } = await sdb.from('user_devices')
+      .select('device_type,device_name,browser,os,ip_address,country,city,is_primary,last_seen,login_count')
+      .eq('user_id', userId)
+      .order('last_seen', { ascending:false });
+    if(error) throw error;
+    if(!data || !data.length){ wrap.innerHTML = `<div style="color:var(--muted);font-size:12px">${lang==='ar'?'لا توجد أجهزة مسجلة':'No registered devices'}</div>`; return; }
+    const devIcon = {mobile:'📱',desktop:'💻',tablet:'📟'};
+    wrap.innerHTML = data.map(d => `
+      <div style="background:var(--dark);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;font-size:12px">
+        <div>
+          <span>${devIcon[d.device_type]||'💻'} <b>${escapeHtml(d.device_name||d.browser||'—')}</b> ${d.os?'· '+escapeHtml(d.os):''}</span>
+          ${d.is_primary?`<span style="color:var(--gold);font-size:10px;margin-right:6px">★ ${lang==='ar'?'رئيسي':'Primary'}</span>`:''}
+          <div style="color:var(--muted);font-size:11px;margin-top:3px">${escapeHtml(d.ip_address||'—')} ${d.city?'· '+escapeHtml(d.city):''} ${d.country?'· '+escapeHtml(d.country):''}</div>
+        </div>
+        <div style="text-align:left;color:var(--muted);font-size:11px">
+          <div>${lang==='ar'?'آخر ظهور':'Last seen'}: ${(d.last_seen||'').slice(0,16).replace('T',' ')||'—'}</div>
+          <div>${lang==='ar'?'مرات الدخول':'Logins'}: ${d.login_count||0}</div>
+        </div>
+      </div>`).join('');
+  } catch(e){
+    console.error('loadUserDevices error:', e);
+    wrap.innerHTML = `<div style="color:var(--red);font-size:12px">${lang==='ar'?'تعذر تحميل الأجهزة':'Could not load devices'}</div>`;
+  }
 }
 
 function infoRow(label,val){
