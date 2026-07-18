@@ -857,12 +857,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
       <button class="dw-tab" onclick="switchDW(this,'dw-wd')" id="dwt2" data-ar="سحب" data-en="Withdraw" data-tr="Çekim">سحب</button>
     </div>
     <div id="dw-dep" class="dw-panel">
-      <div style="display:flex;gap:8px;margin-bottom:16px">
-        <button class="dw-tab active" style="flex:1" onclick="switchDepMode(this,'auto')" id="dep-mode-auto-btn" data-ar="⚡ إيداع تلقائي (سريع)" data-en="⚡ Automatic Deposit (Fast)" data-tr="⚡ Otomatik Yatırım (Hızlı)">⚡ إيداع تلقائي (سريع)</button>
-        <button class="dw-tab" style="flex:1" onclick="switchDepMode(this,'manual')" id="dep-mode-manual-btn" data-ar="✍️ إيداع يدوي" data-en="✍️ Manual Deposit" data-tr="✍️ Manuel Yatırım">✍️ إيداع يدوي</button>
-      </div>
-
-      <!-- ══ الإيداع التلقائي عبر NOWPayments ══ -->
+      <!-- ══ الإيداع التلقائي عبر NOWPayments (الطريقة الوحيدة المتاحة) ══ -->
       <div id="dep-auto-section">
         <div class="panel" style="margin-bottom:14px">
           <div id="dep-auto-form">
@@ -889,45 +884,6 @@ body:not(.ltr) .footer-grid{text-align:right;}
             <div style="font-size:11px;color:var(--muted);margin-top:10px" data-ar="هيتقفل تلقائي في رصيدك فور تأكيد التحويل على البلوكتشين، من غير ما تعمل حاجة تانية." data-en="Your balance updates automatically once the transaction is confirmed on-chain." data-tr="İşlem blok zincirinde onaylandığında bakiyeniz otomatik güncellenir.">هيتقفل تلقائي في رصيدك فور تأكيد التحويل على البلوكتشين، من غير ما تعمل حاجة تانية.</div>
           </div>
         </div>
-      </div>
-
-      <!-- ══ الإيداع اليدوي (الطريقة الأصلية) ══ -->
-      <div id="dep-manual-section" style="display:none">
-      <div style="background:rgba(255,77,106,0.08);border:1px solid rgba(255,77,106,0.3);border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:12px;color:var(--red);display:flex;gap:8px">
-        <span>⚠️</span><span id="dep-warn" data-ar="أرسل فقط على الشبكة المحددة. الشبكة الخاطئة = فقدان الأموال نهائياً." data-en="Send only on the specified network. Wrong network = permanent loss." data-tr="Yalnızca belirtilen ağda gönderin.">أرسل فقط على الشبكة المحددة. الشبكة الخاطئة = فقدان الأموال نهائياً.</span>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-        <button class="coin-btn active" onclick="setCoin(this,'USDT-TRC20')">USDT<br><span style="font-size:9px">TRC-20</span></button>
-        <button class="coin-btn" onclick="setCoin(this,'USDT-BEP20')">USDT<br><span style="font-size:9px">BEP-20</span></button>
-        <button class="coin-btn" onclick="setCoin(this,'ETH')">ETH<br><span style="font-size:9px">ERC-20</span></button>
-        <button class="coin-btn" onclick="setCoin(this,'BNB')">BNB<br><span style="font-size:9px">BEP-20</span></button>
-      </div>
-      <div id="net-info" style="background:var(--gold-dim);border:1px solid var(--border);border-radius:8px;padding:8px 14px;margin-bottom:14px;font-size:12px;display:flex;gap:20px;flex-wrap:wrap">
-        <span>🌐 <span id="net-name">TRON (TRC-20)</span></span>
-        <span>⏱ <span id="net-confirm">1-3 min</span></span>
-        <span>💰 <span id="net-min" data-ar="الحد الأدنى: $100" data-en="Minimum: $100" data-tr="Minimum: $100">الحد الأدنى: $100</span></span>
-      </div>
-      <div class="qr-box">
-        <div id="qr-display" style="width:150px;height:150px;background:#fff;border-radius:10px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:var(--mono);color:#000;padding:8px;text-align:center;word-break:break-all;line-height:1.5">TTU9KEnVv<br>jKFj7pAbt<br>k3hGZcep<br>AbYzuVeq</div>
-        <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:8px">
-          <span id="dep-coin-icon" style="font-size:18px;color:#26a17b">₮</span>
-          <span id="dep-addr-label" style="font-size:12px;color:var(--muted)">USDT — TRC-20</span>
-        </div>
-        <div class="wallet-addr" id="dep-addr" style="padding:10px;background:var(--dark3);border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:12px" onclick="copyDepAddr()">TTU9KEnVvjKFj7pAbtk3hGZcepAbYzuVeq</div>
-        <button class="copy-btn" onclick="copyDepAddr()" style="margin-top:12px" id="dep-copy-btn" data-ar="📋 نسخ العنوان" data-en="📋 Copy Address" data-tr="📋 Adresi Kopyala">📋 نسخ العنوان</button>
-        <div style="margin-top:14px;padding:12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:10px;text-align:center">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:6px" id="memo-lbl" data-ar="ضع هذا الكود في خانة Memo/Tag" data-en="Enter this code in Memo/Tag field" data-tr="Bu kodu Memo/Tag alanına girin">ضع هذا الكود في خانة Memo/Tag</div>
-          <div style="font-family:var(--mono);font-size:24px;font-weight:800;color:var(--blue);letter-spacing:4px" id="user-memo">---</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px" id="memo-sub" data-ar="هذا الكود يعرّف حسابك تلقائياً" data-en="This code identifies your account automatically" data-tr="Bu kod hesabınızı otomatik tanımlar">هذا الكود يعرّف حسابك تلقائياً</div>
-        </div>
-      </div>
-      <div class="panel" style="margin-top:14px">
-        <div class="panel-head" id="dep-confirm-h" data-ar="تأكيد الإيداع" data-en="Confirm Deposit" data-tr="Yatırımı Onayla">تأكيد الإيداع</div>
-        <div class="form-group"><label id="dep-hash-l" data-ar="رقم التحويل (TX Hash)" data-en="Transaction Hash" data-tr="İşlem Kodu">رقم التحويل (TX Hash)</label><input type="text" id="dep-hash" placeholder="0x... or T..."></div>
-        <div class="form-group"><label id="dep-amt-l" data-ar="المبلغ ($)" data-en="Amount ($)" data-tr="Miktar ($)">المبلغ ($)</label><input type="number" id="dep-amount" placeholder="100"></div>
-        <button class="btn-primary" style="width:100%" onclick="submitDeposit()" id="dep-submit-btn" data-ar="إرسال طلب الإيداع" data-en="Submit Deposit Request" data-tr="Yatırım Talebi Gönder">إرسال طلب الإيداع</button>
-        <div style="font-size:11px;color:var(--muted);margin-top:10px;text-align:center" id="dep-note" data-ar="سيتم مراجعة الإيداع وإضافته لحسابك خلال 5-30 دقيقة" data-en="Deposit will be reviewed within 5-30 minutes" data-tr="Yatırım 5-30 dakika içinde incelenecektir">سيتم مراجعة الإيداع وإضافته لحسابك خلال 5-30 دقيقة</div>
-      </div>
       </div>
     </div>
     <div id="dw-wd" class="dw-panel" style="display:none">
@@ -1492,6 +1448,22 @@ const PROTECTED = ['dashboard','deposit','referral'];
 
 // مراقبة الجلسة — الريفريش + الدخول التلقائي
 let authReady = false; // false لحد ما نتأكد فعليًا فيه جلسة محفوظة ولا لأ (بيحل مشكلة الخروج التلقائي لو ضغط المستخدم على صفحة محمية بسرعة قبل ما نتأكد)
+// ✅ FIX: استرجاع آخر صفحة زارها العميل بعد الريفريش بدل ما يرجع للرئيسية دايمًا
+;(function restoreLastPage(){
+  try {
+    const savedId = sessionStorage.getItem('crysanto_page');
+    if(!savedId || savedId === 'home') return;
+    const navEl = document.querySelector('.nav-links a[onclick*="showPage(\'' + savedId + '\'"]');
+    if(PROTECTED.includes(savedId)) {
+      // صفحة محمية: نستنى نتأكد من حالة تسجيل الدخول الأول (نفس منطق pendingPage المستخدم أصلاً)
+      pendingPage = { id: savedId, el: navEl };
+    } else {
+      // صفحة عامة: تظهر فورًا من غير ما تستنى شيء
+      showPage(savedId, navEl);
+    }
+  } catch(e) {}
+})();
+
 db.auth.onAuthStateChange(async (event, session) => {
   if(_authHandled) return; // doLogin / doRegister شغّالين
 
@@ -1537,6 +1509,7 @@ db.auth.onAuthStateChange(async (event, session) => {
   } else if(event === 'SIGNED_OUT') {
     _sessionGen++; // ✅ FIX
     isLoggedIn = false; currentUser = null; userProfile = null;
+    if(_userSyncChannel) { db.removeChannel(_userSyncChannel); _userSyncChannel = null; _userSyncUid = null; } // ✅ FIX: قفل قناة المزامنة عند الخروج
     document.body.classList.remove('logged-in');
     const bL=document.getElementById('btnLogin'); if(bL) bL.style.display='';
     const bR=document.getElementById('btnRegister'); if(bR) bR.style.display='';
@@ -1839,6 +1812,8 @@ const features = {
 
 // ── NAVIGATION ──
 function showPage(id, el) {
+  // ✅ FIX: حفظ آخر صفحة زارها العميل عشان لو عمل ريفريش يرجعله لنفس الصفحة بدل الرئيسية دايمًا
+  try { sessionStorage.setItem('crysanto_page', id); } catch(e) {}
   // ✅ FIX: لو فيه جلسة optimistic (من الكاش المحلي) أو المستخدم فعليًا داخل، اسمح بفتح الصفحة المحمية
   // وما تستناش authReady — البيانات هتتحدث لوحدها لما fetchProfile يخلص في الخلفية
   if(PROTECTED.includes(id) && !isLoggedIn && !_optimisticAuth) {
@@ -1860,7 +1835,13 @@ function showPage(id, el) {
   if(window._trackPage) window._trackPage(id);
   if(id==='dashboard') { if(userProfile) loadDashboard(); else _pendingDashboardLoad = true; }
   if(id==='referral')  { if(userProfile) loadReferral();  else _pendingReferralLoad = true; }
-  if(id==='deposit')   { const m=document.getElementById('user-memo'); if(m) m.textContent=userProfile?.memo||userProfile?.ref_code||'---'; }
+  if(id==='deposit')   {
+    const m=document.getElementById('user-memo'); if(m) m.textContent=userProfile?.memo||userProfile?.ref_code||'---';
+    try {
+      const savedTab = sessionStorage.getItem('crysanto_dw_tab');
+      if(savedTab === 'dw-wd') { const wdBtn = document.querySelector('.dw-tab:last-child'); if(wdBtn) switchDW(wdBtn,'dw-wd'); }
+    } catch(e) {}
+  }
 }
 
 function openModal(type) {
@@ -1915,6 +1896,7 @@ function switchDW(el, id) {
   el.classList.add('active');
   ['dw-dep','dw-wd'].forEach(d=>{const e=document.getElementById(d);if(e)e.style.display='none';});
   const p=document.getElementById(id); if(p) p.style.display='';
+  try { sessionStorage.setItem('crysanto_dw_tab', id); } catch(e) {}
 }
 
 // ── AUTH ──
@@ -2333,6 +2315,63 @@ async function fetchProfile(retries = 3, delay = 500) {
   console.error('fetchProfile: FAILED after', retries, 'attempts');
 }
 
+// ══ مزامنة حية عامة: أي تغيير في بيانات العميل (إيداع/سحب/استثمار/رصيد/KYC/إشعار)
+// يحدّث الواجهة فورًا من غير ما يحتاج يعمل ريفريش يدوي، بغض النظر عن أي تبويب هو فاتحه ══
+let _userSyncChannel = null;
+let _userSyncUid = null;
+
+function isTabVisible(id){
+  const el = document.getElementById(id);
+  return !!el && el.style.display !== 'none';
+}
+
+async function refreshBalanceAndOverview(){
+  await fetchProfile();
+  const _balNav = document.getElementById('user-balance-nav');
+  if(_balNav && userProfile){
+    const _b = parseFloat(userProfile.balance||0);
+    _balNav.textContent = ({ar:'الرصيد: $',en:'Balance: $',tr:'Bakiye: $'}[lang]||'Balance: $') + _b.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  if(isTabVisible('page-dashboard') || document.querySelector('#d-overview')?.style.display !== 'none') loadDashboard();
+}
+
+function setupUserRealtimeSync(){
+  if(!userProfile?.id) return;
+  if(_userSyncChannel && _userSyncUid === userProfile.id) return; // متبقاش تشترك مرتين لنفس اليوزر
+  if(_userSyncChannel) { db.removeChannel(_userSyncChannel); _userSyncChannel = null; }
+  _userSyncUid = userProfile.id;
+
+  _userSyncChannel = db.channel('user-sync-'+userProfile.id)
+    .on('postgres_changes', {event:'*', schema:'public', table:'deposits', filter:'user_id=eq.'+userProfile.id}, () => {
+      refreshBalanceAndOverview();
+      if(isTabVisible('d-history')) loadTransactions();
+      if(isTabVisible('d-wallet')) renderWalletDashboardList();
+    })
+    .on('postgres_changes', {event:'*', schema:'public', table:'withdrawals', filter:'user_id=eq.'+userProfile.id}, () => {
+      refreshBalanceAndOverview();
+      if(isTabVisible('d-history')) loadTransactions();
+      if(isTabVisible('d-wallet')) renderWalletDashboardList();
+    })
+    .on('postgres_changes', {event:'*', schema:'public', table:'investments', filter:'user_id=eq.'+userProfile.id}, () => {
+      refreshBalanceAndOverview();
+      if(isTabVisible('d-invest')) loadInvestments();
+    })
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'users', filter:'id=eq.'+userProfile.id}, () => {
+      refreshBalanceAndOverview();
+      if(isTabVisible('d-kyc')) renderKYCStatus();
+    })
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'notifications', filter:'user_id=eq.'+userProfile.id}, () => {
+      const badge=document.getElementById('notif-badge');
+      if(badge){ const c=(parseInt(badge.textContent)||0)+1; badge.textContent=c; badge.style.display='inline-flex'; }
+      if(isTabVisible('d-notif')) loadNotifications();
+    })
+    .on('postgres_changes', {event:'*', schema:'public', table:'daily_profits', filter:'user_id=eq.'+userProfile.id}, () => {
+      refreshBalanceAndOverview();
+      if(isTabVisible('d-profits-log')) loadMyDailyProfits();
+    })
+    .subscribe();
+}
+
 function afterLogin(isUpdate) {
   isLoggedIn = true;
   _optimisticAuth = false; // ✅ FIX: الجلسة اتأكدت رسميًا، مش محتاجين الـ optimistic flag بعد كده
@@ -2382,6 +2421,7 @@ function afterLogin(isUpdate) {
     if(_pendingDashboardLoad) { loadDashboard(); _pendingDashboardLoad = false; }
     if(_pendingReferralLoad)  { loadReferral();  _pendingReferralLoad = false; }
     if(!isUpdate) { db.rpc('update_last_seen').then(()=>{}).catch(()=>{}); trackDeviceLogin(); }
+    setupUserRealtimeSync(); // ✅ FIX: مزامنة حية عامة لكل بيانات العميل عبر كل التبويبات
   }
 
   // lang buttons
