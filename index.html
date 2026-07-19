@@ -2227,7 +2227,7 @@ function toggleUserDropdown() {
   const balEl = document.getElementById('user-balance-nav');
   if (balEl && userProfile) {
     const bal = parseFloat(userProfile.balance || 0);
-    balEl.textContent = ({ar:'الرصيد: $', en:'Balance: $', tr:'Bakiye: $'}[lang]||'Balance: $') + bal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    balEl.textContent = ({ar:'الرصيد: $', en:'Balance: $', tr:'Bakiye: $'}[lang]||'Balance: $') + bal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   }
   // إغلاق لو ضغط برا
   setTimeout(() => {
@@ -2334,7 +2334,7 @@ async function refreshBalanceAndOverview(){
   const _balNav = document.getElementById('user-balance-nav');
   if(_balNav && userProfile){
     const _b = parseFloat(userProfile.balance||0);
-    _balNav.textContent = ({ar:'الرصيد: $',en:'Balance: $',tr:'Bakiye: $'}[lang]||'Balance: $') + _b.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    _balNav.textContent = ({ar:'الرصيد: $',en:'Balance: $',tr:'Bakiye: $'}[lang]||'Balance: $') + _b.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   }
   if(isTabVisible('page-dashboard') || document.querySelector('#d-overview')?.style.display !== 'none') loadDashboard();
 }
@@ -2417,7 +2417,7 @@ function afterLogin(isUpdate) {
   const _balNav = document.getElementById('user-balance-nav');
   if(_balNav && userProfile) {
     const _b = parseFloat(userProfile.balance||0);
-    _balNav.textContent = ({ar:'الرصيد: $',en:'Balance: $',tr:'Bakiye: $'}[lang]||'Balance: $') + _b.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    _balNav.textContent = ({ar:'الرصيد: $',en:'Balance: $',tr:'Bakiye: $'}[lang]||'Balance: $') + _b.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   }
 
   // ✅ FIX: لو الصفحة اتفتحت optimistically قبل ما البروفايل يجهز، حمّل بياناتها دلوقتي
@@ -2482,8 +2482,8 @@ async function loadDashboard() {
     }).catch(()=>{});
 
   // ── بيانات من الـ profile ──
-  document.getElementById('d-bal').textContent     = '$'+(userProfile.balance||0).toLocaleString();
-  document.getElementById('d-profit').textContent  = '$'+(userProfile.total_profit||0).toLocaleString();
+  document.getElementById('d-bal').textContent     = '$'+(userProfile.balance||0).toLocaleString('en-US');
+  document.getElementById('d-profit').textContent  = '$'+(userProfile.total_profit||0).toLocaleString('en-US');
 
   // invested و ref_earnings بنحسبهم من الـ investments table
   try {
@@ -2499,15 +2499,15 @@ async function loadDashboard() {
     if (availBox) {
       const avail = (parseFloat(userProfile.balance)||0) - window.__lockedAmount;
       const _availLabel = {ar:'💰 المتاح للسحب: $', en:'💰 Available to withdraw: $', tr:'💰 Çekilebilir: $'}[lang] || '💰 Available to withdraw: $';
-      const _lockLabel  = {ar:` (مقفول في استثمار: $${window.__lockedAmount.toLocaleString()})`, en:` (locked in investment: $${window.__lockedAmount.toLocaleString()})`, tr:` (yatırımda kilitli: $${window.__lockedAmount.toLocaleString()})`}[lang] || '';
-      availBox.textContent = _availLabel + avail.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) +
+      const _lockLabel  = {ar:` (مقفول في استثمار: $${window.__lockedAmount.toLocaleString('en-US')})`, en:` (locked in investment: $${window.__lockedAmount.toLocaleString('en-US')})`, tr:` (yatırımda kilitli: $${window.__lockedAmount.toLocaleString('en-US')})`}[lang] || '';
+      availBox.textContent = _availLabel + avail.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) +
         (window.__lockedAmount > 0 ? _lockLabel : '');
     }
 
     // إجمالي المستثمر
     const totalInvested = invs.reduce((s,i)=>s+parseFloat(i.amount||0),0);
     const d_inv = document.getElementById('d-invested');
-    if(d_inv) d_inv.textContent = '$'+totalInvested.toLocaleString();
+    if(d_inv) d_inv.textContent = '$'+totalInvested.toLocaleString('en-US');
 
     // الربح اليومي الحالي = sum(amount * daily_rate / 100) للاستثمارات النشطة
     const dailyProfit = activeInvs.reduce((s,i)=>s+(parseFloat(i.amount||0)*parseFloat(i.daily_rate||0)/100),0);
@@ -2517,7 +2517,7 @@ async function loadDashboard() {
     // الإيداعات المقبولة
     const totalDep = (depRes.data||[]).reduce((s,d)=>s+parseFloat(d.amount||0),0);
     const d_dep = document.getElementById('d-total-dep');
-    if(d_dep) d_dep.textContent = '$'+totalDep.toLocaleString();
+    if(d_dep) d_dep.textContent = '$'+totalDep.toLocaleString('en-US');
 
     // عرض الاستثمارات النشطة
     const invBox = document.getElementById('d-active-inv');
@@ -2536,7 +2536,7 @@ async function loadDashboard() {
           return '<div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:var(--gold-dim);color:var(--gold)">💹</div>'+
           '<div><div class="w-name">'+escapeHtml(getPlanName(inv))+'</div>'+
           '<div class="w-addr">'+inv.daily_rate+'%/day · '+({ar:'اليوم ',en:'Day ',tr:'Gün '}[lang]||'Day ')+dayNum+({ar:' من ',en:'/',tr:'/'}[lang]||'/')+totalDays+' · ⏱ '+h+'h '+m+'m</div></div></div>'+
-          '<div class="w-bal">$'+parseFloat(inv.amount).toLocaleString()+'</div></div>';
+          '<div class="w-bal">$'+parseFloat(inv.amount).toLocaleString('en-US')+'</div></div>';
         }).join('')+'</div>';
       } else {
         invBox.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+({ar:'لا توجد استثمارات نشطة',en:'No active investments',tr:'Aktif yatırım yok'}[lang]||'No active investments')+'</div>';
@@ -2545,7 +2545,7 @@ async function loadDashboard() {
 
     // إجمالي الإحالة من ref_count في profile
     const d_ref = document.getElementById('d-ref-earn');
-    if(d_ref) d_ref.textContent = '$'+(userProfile.ref_earnings||0).toLocaleString();
+    if(d_ref) d_ref.textContent = '$'+(userProfile.ref_earnings||0).toLocaleString('en-US');
 
   } catch(e) { console.error('loadDashboard error', e); }
 }
@@ -2563,8 +2563,8 @@ async function loadTransactions(resetPage=true) {
   el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">⏳ '+({ar:'جاري التحميل...',en:'Loading...',tr:'Yükleniyor...'}[lang]||'Loading...')+'</div>';
   try {
     const [depRes,wdRes,txRes]=await Promise.all([
-      db.from('deposits').select('id,amount,coin,status,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(100),
-      db.from('withdrawals').select('id,amount,coin,status,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(100),
+      db.from('deposits').select('id,amount,credited_amount,coin,status,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(100),
+      db.from('withdrawals').select('id,amount,fee,net_amount,coin,status,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(100),
       db.from('transactions').select('id,amount,type,description,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(200)
     ]);
     const deps=(depRes.data||[]).map(d=>({...d,txType:'deposit'}));
@@ -2605,18 +2605,36 @@ function renderTransactionsList(){
     return;
   }
   el.innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">${filters.map(f=>`<button onclick="txFilter='${f}';txPage=0;renderTransactionsList()" style="padding:5px 12px;border-radius:20px;border:1px solid ${txFilter===f?'var(--gold)':'var(--border)'};background:${txFilter===f?'var(--gold-dim)':'transparent'};color:${txFilter===f?'var(--gold)':'var(--muted)'};cursor:pointer;font-size:12px;font-family:inherit">${(fLabels[f][lang]||fLabels[f].en)}</button>`).join('')}</div>
-${paged.map(tx=>`<div class="tx-item">
-  <div class="tx-left">
-    <span style="font-size:20px">${icons[tx.txType]||'💱'}</span>
-    <div>
-      <div class="tx-type">${((typeLabel[tx.txType]||{})[lang])||tx.txType}${tx.coin?' — '+escapeHtml(tx.coin):tx.description?' — '+escapeHtml((tx.description||'').slice(0,45)):''}</div>
-      <div class="tx-date">${(tx.created_at||'').slice(0,16).replace('T',' ')} · <span style="color:${tx.status==='approved'?'var(--green)':tx.status==='rejected'?'var(--red)':'var(--orange)'}">${((statusLabel[tx.status]||{})[lang])||tx.status||''}</span></div>
+${paged.map(tx=>{
+  const hasWdFee = tx.txType==='withdrawal' && tx.fee > 0;
+  const hasDepDiff = tx.txType==='deposit' && tx.credited_amount && Math.abs(tx.credited_amount - tx.amount) > 0.01;
+  const mainAmount = tx.txType==='withdrawal' ? tx.amount : (tx.credited_amount || tx.amount);
+  return `<div class="tx-item" style="flex-direction:column;align-items:stretch;gap:6px">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div class="tx-left">
+      <span style="font-size:20px">${icons[tx.txType]||'💱'}</span>
+      <div>
+        <div class="tx-type">${((typeLabel[tx.txType]||{})[lang])||tx.txType}${tx.coin?' — '+escapeHtml(tx.coin):tx.description?' — '+escapeHtml((tx.description||'').slice(0,45)):''}</div>
+        <div class="tx-date">${(tx.created_at||'').slice(0,16).replace('T',' ')} · <span style="color:${tx.status==='approved'?'var(--green)':tx.status==='rejected'?'var(--red)':'var(--orange)'}">${((statusLabel[tx.status]||{})[lang])||tx.status||''}</span></div>
+      </div>
+    </div>
+    <div class="tx-amt" style="color:${colors[tx.txType]||'var(--text)'}">
+      ${tx.txType==='withdrawal'?'−':'+'}$${parseFloat(mainAmount||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
     </div>
   </div>
-  <div class="tx-amt" style="color:${colors[tx.txType]||'var(--text)'}">
-    ${tx.txType==='withdrawal'?'−':'+'}$${parseFloat(tx.amount||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
-  </div>
-</div>`).join('')}
+  ${hasWdFee ? `
+  <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:8px 10px;background:var(--dark);border-radius:6px;font-family:var(--mono)">
+    <span>${lang==='ar'?'المبلغ المطلوب':lang==='tr'?'Talep edilen':'Requested'}: $${parseFloat(tx.amount).toFixed(2)}</span>
+    <span style="color:var(--red)">${lang==='ar'?'العمولة':lang==='tr'?'Ücret':'Fee'}: -$${parseFloat(tx.fee).toFixed(2)}</span>
+    <span style="color:var(--green);font-weight:700">${lang==='ar'?'الصافي المستلم':lang==='tr'?'Net alınan':'Net received'}: $${parseFloat(tx.net_amount||(tx.amount-tx.fee)).toFixed(2)}</span>
+  </div>` : ''}
+  ${hasDepDiff ? `
+  <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:8px 10px;background:var(--dark);border-radius:6px;font-family:var(--mono)">
+    <span>${lang==='ar'?'المبلغ المطلوب':lang==='tr'?'Talep edilen':'Requested'}: $${parseFloat(tx.amount).toFixed(2)}</span>
+    <span style="color:var(--green);font-weight:700">${lang==='ar'?'المُضاف فعليًا':lang==='tr'?'Gerçekte eklenen':'Actually credited'}: $${parseFloat(tx.credited_amount).toFixed(2)}</span>
+  </div>` : ''}
+</div>`;
+}).join('')}
 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 4px;margin-top:8px;font-size:12px;color:var(--muted)">
   <span>${lang==='ar'?`${paged.length} من ${total} معاملة`:lang==='tr'?`${paged.length} / ${total}`:`${paged.length} of ${total}`}</span>
   <div style="display:flex;gap:6px">
@@ -2760,7 +2778,7 @@ async function loadInvestments() {
           '<span style="font-size:11px;color:'+(statusColors[inv.status]||'var(--muted)')+'">● '+(statusLabel[inv.status]||inv.status)+'</span>'+
         '</div>'+
         '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
-          '<span style="font-family:var(--mono);color:var(--gold);font-size:15px;font-weight:700">$'+parseFloat(inv.amount).toLocaleString()+'</span>'+
+          '<span style="font-family:var(--mono);color:var(--gold);font-size:15px;font-weight:700">$'+parseFloat(inv.amount).toLocaleString('en-US')+'</span>'+
           '<span style="font-size:12px;color:var(--muted)">'+inv.daily_rate+'%/day</span>'+
         '</div>'+
         '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:8px">'+
@@ -2818,7 +2836,7 @@ async function loadReferral() {
     const total   = refs?.length || userProfile.ref_count || 0;
     const earned  = refs?.reduce((s,r)=>s+parseFloat(r.commission||0),0) || userProfile.ref_earnings || 0;
     const pending = refs?.filter(r=>r.status==='pending').reduce((s,r)=>s+parseFloat(r.commission||0),0) || 0;
-    const fmt = v=>'$'+parseFloat(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    const fmt = v=>'$'+parseFloat(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
     const rc=document.getElementById('d-ref-count'); if(rc) rc.textContent=total;
     const rt=document.getElementById('d-ref-total'); if(rt) rt.textContent=fmt(earned);
@@ -2859,7 +2877,7 @@ async function loadReferral() {
   } catch(e) {
     // fallback للبيانات المحلية
     const rc=document.getElementById('d-ref-count'); if(rc) rc.textContent=userProfile.ref_count||0;
-    const rt=document.getElementById('d-ref-total'); if(rt) rt.textContent='$'+(userProfile.ref_earnings||0).toLocaleString();
+    const rt=document.getElementById('d-ref-total'); if(rt) rt.textContent='$'+(userProfile.ref_earnings||0).toLocaleString('en-US');
   }
 }
 
@@ -3136,7 +3154,7 @@ async function submitWithdrawal() {
   if(!addr){showToast(lang==='ar'?'أدخل عنوان محفظتك':lang==='tr'?'Cüzdan adresinizi girin':'Enter wallet address','err');return;}
   if(!amount||amount<siteSettings.min_withdrawal){showToast(lang==='ar'?`الحد الأدنى للسحب $${siteSettings.min_withdrawal}`:lang==='tr'?`Minimum çekim $${siteSettings.min_withdrawal}`:`Minimum withdrawal $${siteSettings.min_withdrawal}`,'err');return;}
   // ✅ FIX: التحقق من الحد الأقصى للسحب
-  if(amount > siteSettings.max_withdrawal){showToast(lang==='ar'?`الحد الأقصى للسحب $${siteSettings.max_withdrawal.toLocaleString()}`:lang==='tr'?`Maksimum çekim $${siteSettings.max_withdrawal.toLocaleString()}`:`Maximum withdrawal $${siteSettings.max_withdrawal.toLocaleString()}`,'err');return;}
+  if(amount > siteSettings.max_withdrawal){showToast(lang==='ar'?`الحد الأقصى للسحب $${siteSettings.max_withdrawal.toLocaleString('en-US')}`:lang==='tr'?`Maksimum çekim $${siteSettings.max_withdrawal.toLocaleString('en-US')}`:`Maximum withdrawal $${siteSettings.max_withdrawal.toLocaleString('en-US')}`,'err');return;}
 
   // نحسب الرصيد المتاح الحقيقي = الرصيد الكلي ناقص أي فلوس مقفولة في استثمار نشط
   const { data: activeInvData } = await db.from('investments').select('amount').eq('user_id',userProfile.id).eq('status','active');
@@ -3554,7 +3572,7 @@ async function showInvestmentChoiceModal(rate, planId) {
             <div style="font-weight:700;font-size:14px">${lang==='ar'?'الاستثمار من رصيدي':lang==='tr'?'Bakiyemden Yatır':'Invest from My Balance'}</div>
             <div style="font-size:12px;color:var(--muted);margin-top:2px">
               ${lang==='ar'?'رصيدك الحالي:':lang==='tr'?'Mevcut bakiye:':'Current balance:'}
-              <span style="color:${canUseBalance?'var(--green)':'var(--red)'}">$${balance.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+              <span style="color:${canUseBalance?'var(--green)':'var(--red)'}">$${balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
             </div>
             ${!canUseBalance?`<div style="font-size:11px;color:var(--red);margin-top:4px">${lang==='ar'?'رصيدك أقل من الحد الأدنى $'+minAmt:lang==='tr'?'Bakiye yetersiz, min. $'+minAmt:'Balance below minimum $'+minAmt}</div>`:''}
           </div>
@@ -3636,9 +3654,9 @@ async function investFromBalance(planId, planName, rate, durationDays, minAmount
   }
 
   const confirmed = confirm(
-    lang==='ar'?`تأكيد الاستثمار:\n${planName}\nالمبلغ: $${amount.toLocaleString()}\nالعائد اليومي: ${rate}% ($${(amount*rate/100).toFixed(2)})\nالمدة: ${durationDays} يوم`:
-    lang==='tr'?`Yatırımı Onayla:\n${planName}\nTutar: $${amount.toLocaleString()}\nGünlük kâr: ${rate}% ($${(amount*rate/100).toFixed(2)})\nSüre: ${durationDays} gün`:
-    `Confirm Investment:\n${planName}\nAmount: $${amount.toLocaleString()}\nDaily profit: ${rate}% ($${(amount*rate/100).toFixed(2)})\nDuration: ${durationDays} days`
+    lang==='ar'?`تأكيد الاستثمار:\n${planName}\nالمبلغ: $${amount.toLocaleString('en-US')}\nالعائد اليومي: ${rate}% ($${(amount*rate/100).toFixed(2)})\nالمدة: ${durationDays} يوم`:
+    lang==='tr'?`Yatırımı Onayla:\n${planName}\nTutar: $${amount.toLocaleString('en-US')}\nGünlük kâr: ${rate}% ($${(amount*rate/100).toFixed(2)})\nSüre: ${durationDays} gün`:
+    `Confirm Investment:\n${planName}\nAmount: $${amount.toLocaleString('en-US')}\nDaily profit: ${rate}% ($${(amount*rate/100).toFixed(2)})\nDuration: ${durationDays} days`
   );
   if(!confirmed) return;
 
@@ -3748,9 +3766,9 @@ function setLang(l) {
 }
 
 // ── BUILDERS ──
-function buildTicker(){const t=document.getElementById('ticker');t.innerHTML=[...coins,...coins].map(c=>'<span class="tick-item"><span style="color:var(--muted)">'+c.sym+'</span><span>$'+c.price.toLocaleString()+'</span><span class="'+(c.change>=0?'tick-up':'tick-down')+'">'+(c.change>=0?'▲':'▼')+Math.abs(c.change)+'%</span></span>').join('');}
-function buildMarkets(){document.getElementById('markets-body').innerHTML=coins.map(c=>'<tr><td><div class="m-coin"><div class="m-icon" style="background:'+c.color+'22;color:'+c.color+'">'+c.icon+'</div><div><div style="font-weight:600">'+c.name+'</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">'+c.sym+'</div></div></div></td><td style="font-family:var(--mono)">$'+c.price.toLocaleString()+'</td><td class="'+(c.change>=0?'tick-up':'tick-down')+'" style="font-family:var(--mono)">'+(c.change>=0?'+':'')+c.change+'%</td><td style="color:var(--muted)">'+c.cap+'</td><td style="color:var(--muted)">'+c.vol+'</td></tr>').join('');}
-function buildLivePrices(){document.getElementById('live-prices').innerHTML=coins.slice(0,5).map(c=>'<div class="price-row"><div class="p-coin"><div class="m-icon" style="width:28px;height:28px;background:'+c.color+'22;color:'+c.color+';border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;font-family:var(--mono)">'+c.icon+'</div><div><div class="p-sym">'+c.sym+'</div><div class="p-name">'+c.name+'</div></div></div><div style="text-align:left"><div style="font-family:var(--mono);font-size:13px">$'+c.price.toLocaleString()+'</div><div class="'+(c.change>=0?'tick-up':'tick-down')+'" style="font-size:11px;font-weight:600">'+(c.change>=0?'+':'')+c.change+'%</div></div></div>').join('');}
+function buildTicker(){const t=document.getElementById('ticker');t.innerHTML=[...coins,...coins].map(c=>'<span class="tick-item"><span style="color:var(--muted)">'+c.sym+'</span><span>$'+c.price.toLocaleString('en-US')+'</span><span class="'+(c.change>=0?'tick-up':'tick-down')+'">'+(c.change>=0?'▲':'▼')+Math.abs(c.change)+'%</span></span>').join('');}
+function buildMarkets(){document.getElementById('markets-body').innerHTML=coins.map(c=>'<tr><td><div class="m-coin"><div class="m-icon" style="background:'+c.color+'22;color:'+c.color+'">'+c.icon+'</div><div><div style="font-weight:600">'+c.name+'</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)">'+c.sym+'</div></div></div></td><td style="font-family:var(--mono)">$'+c.price.toLocaleString('en-US')+'</td><td class="'+(c.change>=0?'tick-up':'tick-down')+'" style="font-family:var(--mono)">'+(c.change>=0?'+':'')+c.change+'%</td><td style="color:var(--muted)">'+c.cap+'</td><td style="color:var(--muted)">'+c.vol+'</td></tr>').join('');}
+function buildLivePrices(){document.getElementById('live-prices').innerHTML=coins.slice(0,5).map(c=>'<div class="price-row"><div class="p-coin"><div class="m-icon" style="width:28px;height:28px;background:'+c.color+'22;color:'+c.color+';border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;font-family:var(--mono)">'+c.icon+'</div><div><div class="p-sym">'+c.sym+'</div><div class="p-name">'+c.name+'</div></div></div><div style="text-align:left"><div style="font-family:var(--mono);font-size:13px">$'+c.price.toLocaleString('en-US')+'</div><div class="'+(c.change>=0?'tick-up':'tick-down')+'" style="font-size:11px;font-weight:600">'+(c.change>=0?'+':'')+c.change+'%</div></div></div>').join('');}
 function buildFaq(){
   const data = (faqs[lang]||faqs.en).filter(f => currentFaqCat==='all' || f.cat===currentFaqCat);
   document.getElementById('faq-list').innerHTML = data.map(f=>'<div class="faq-item" onclick="this.classList.toggle(\'open\')"><div class="faq-q">'+f.q+'<span class="faq-arrow">▼</span></div><div class="faq-a">'+f.a+'</div></div>').join('');
@@ -3777,7 +3795,7 @@ const planDisplayMeta = {
   ]
 };
 
-function fmtMoney(n){ return '$'+Number(n).toLocaleString(); }
+function fmtMoney(n){ return '$'+Number(n).toLocaleString('en-US'); }
 
 function planRowToCard(row, idx) {
   const meta = planDisplayMeta.tiers[Math.min(idx, planDisplayMeta.tiers.length-1)];
@@ -3935,10 +3953,10 @@ function init(){
       ]);
       const v1 = document.getElementById('ls1v');
       const v2 = document.getElementById('ls2v');
-      if(v1 && activeRes.count != null) v1.textContent = (activeRes.count||0).toLocaleString();
+      if(v1 && activeRes.count != null) v1.textContent = (activeRes.count||0).toLocaleString('en-US');
       if(v2 && depsRes.data) {
         const total = (depsRes.data||[]).reduce((s,d)=>s+parseFloat(d.amount||0),0);
-        v2.textContent = '$' + total.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+        v2.textContent = '$' + total.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
       }
     } catch(e){ /* silent fail */ }
   }
@@ -4084,7 +4102,7 @@ async function loadMyDailyProfits() {
     const monthStart=new Date().toISOString().slice(0,7)+'-01';
     let td=0,wk=0,mo=0;
     data.forEach(dp=>{const a=parseFloat(dp.amount||0);if(dp.profit_date===today)td+=a;if(dp.profit_date>=weekAgo)wk+=a;if(dp.profit_date>=monthStart)mo+=a;});
-    const fmt=v=>'$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    const fmt=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     const setEl=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
     setEl('my-dp-today',fmt(td)); setEl('my-dp-week',fmt(wk)); setEl('my-dp-month',fmt(mo));
     listEl.innerHTML=data.map(dp=>{
