@@ -1513,7 +1513,7 @@ function renderUsers(){
           </div>
         </td>
         <td>${escapeHtml(u.country||'—')}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(u.balance||0).toLocaleString()}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(u.balance||0).toLocaleString('en-US')}</td>
         <td>${escapeHtml(u.plan||'—')}</td>
         <td>${kycBadge(u.kyc_status||'—')}</td>
         <td>${statusBadge(u.status||'active')}</td>
@@ -1572,8 +1572,8 @@ function showUserModal(id){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
       ${infoRow(lang==='ar'?'البريد الإلكتروني':'Email',u.email)}
       ${infoRow(lang==='ar'?'الدولة':'Country',u.country||'—')}
-      ${infoRow(lang==='ar'?'الرصيد':'Balance','$'+parseFloat(u.balance||0).toLocaleString())}
-      ${infoRow(lang==='ar'?'المستثمر':'Invested','$'+parseFloat(u.invested||0).toLocaleString())}
+      ${infoRow(lang==='ar'?'الرصيد':'Balance','$'+parseFloat(u.balance||0).toLocaleString('en-US'))}
+      ${infoRow(lang==='ar'?'المستثمر':'Invested','$'+parseFloat(u.invested||0).toLocaleString('en-US'))}
       ${infoRow(lang==='ar'?'الباقة':'Plan',u.plan||'—')}
       ${infoRow(lang==='ar'?'الإحالات':'Referrals',u.ref_count||0)}
       ${infoRow('KYC',u.kyc_status||'—')}
@@ -1679,7 +1679,7 @@ async function renderInvestments(){
   const capital = active.reduce((s,i) => s + parseFloat(i.amount||0), 0);
   const setEl = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
   setEl('inv-stat-active',  active.length);
-  setEl('inv-stat-capital', '$' + capital.toLocaleString(undefined,{maximumFractionDigits:0}));
+  setEl('inv-stat-capital', '$' + capital.toLocaleString('en-US',{maximumFractionDigits:0}));
   setEl('inv-stat-done',    done.length);
   if (!data || !data.length) {
     wrap.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">${lang==='ar'?'لا توجد استثمارات':'No investments'}</div>`;
@@ -1712,12 +1712,12 @@ async function renderInvestments(){
       <tr>
         <td style="font-weight:600">${escapeHtml(inv.users?.name || '—')}<div style="font-size:11px;color:var(--muted)">${escapeHtml(inv.users?.email||'')}</div></td>
         <td>${escapeHtml(inv.plan_name_en || inv.plan_name || '—')}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(inv.amount).toLocaleString()}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(inv.amount).toLocaleString('en-US')}</td>
         <td style="color:var(--green);font-family:var(--mono)">${inv.daily_rate}%</td>
         <td>${srcLabel}</td>
         <td style="font-size:12px;color:var(--muted)">${inv.start_date||'—'}</td>
         <td style="font-size:12px;color:var(--muted)">${inv.end_date||'—'}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(inv.total_profit||0).toLocaleString()}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(inv.total_profit||0).toLocaleString('en-US')}</td>
         <td>${statusLabel(inv.status)}</td>
         <td>${inv.status==='active'
           ? `<button class="act-btn red" onclick="cancelInvestment('${escapeJsAttr(inv.id)}','${escapeJsAttr(inv.plan_name_en||inv.plan_name||'')}')">${lang==='ar'?'إلغاء':'Cancel'}</button>`
@@ -1911,7 +1911,7 @@ async function renderReferrals(){
       <tr>
         <td style="font-weight:600">${escapeHtml(r.referrer?.name || '—')}</td>
         <td>${escapeHtml(r.referred?.name || '—')}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(r.commission||0).toLocaleString()}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(r.commission||0).toLocaleString('en-US')}</td>
         <td style="font-size:12px;color:var(--muted)">${r.created_at?.slice(0,10)||'—'}</td>
         <td>${r.status==='paid'?`<span class="badge b-active">${lang==='ar'?'مدفوع':'Paid'}</span>`
             :r.status==='rejected'?`<span class="badge b-rejected">${lang==='ar'?'مرفوض':'Rejected'}</span>`
@@ -1949,7 +1949,7 @@ async function renderProfits(){
     const rEl = document.getElementById(rateEls[i]); if (rEl) rEl.value = p.daily_rate;
     const cap = capitalByPlan[p.name_ar] || capitalByPlan[p.name_en] || 0;
     const totalEl = document.getElementById(totalEls[i]);
-    if (totalEl) totalEl.textContent = '$' + (cap * parseFloat(p.daily_rate) / 100).toLocaleString(undefined,{maximumFractionDigits:2});
+    if (totalEl) totalEl.textContent = '$' + (cap * parseFloat(p.daily_rate) / 100).toLocaleString('en-US',{maximumFractionDigits:2});
   });
   await renderProfitLog();
 }
@@ -2008,7 +2008,7 @@ async function renderPackages(){
         ${editRow(lang==='ar'?'الحد الأقصى $':'Max Deposit $',p.max_amount,'$',`rpe-max-${p.id}`)}
       </div>
       <div style="margin-top:16px;padding:10px;background:var(--dark);border-radius:8px;font-size:12px;color:var(--muted)">
-        ${lang==='ar'?'المستثمرون النشطون:':'Active investors:'} <strong style="color:var(--gold)">${active.toLocaleString()}</strong>
+        ${lang==='ar'?'المستثمرون النشطون:':'Active investors:'} <strong style="color:var(--gold)">${active.toLocaleString('en-US')}</strong>
       </div>
       <button class="act-btn-primary" style="width:100%;margin-top:12px" onclick="savePlanRow('${p.id}')">${lang==='ar'?'💾 حفظ التغييرات':'💾 Save Changes'}</button>
     </div>`;
@@ -2088,7 +2088,7 @@ async function sendNotif(){
       await sdb.from('notifications').insert({ user_id: target, title, body, type: notifType });
     }
     const icons2={info:'💬',success:'✅',warning:'⚠️',profit:'💰'};
-    notifHistory.unshift({icon:icons2[notifType],title,body,target,time:new Date().toLocaleString(),count:target==='all'?'all':1});
+    notifHistory.unshift({icon:icons2[notifType],title,body,target,time:new Date().toLocaleString('en-US'),count:target==='all'?'all':1});
     renderNotifHistory();
     document.getElementById('notif-title-in').value='';
     document.getElementById('notif-body-in').value='';
@@ -2108,7 +2108,7 @@ function renderNotifHistory(){
         <span style="margin-right:auto;font-size:11px;color:var(--muted)">${n.target}</span>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${n.body}</div>
-      <div style="font-size:11px;color:var(--muted)">${n.time} · ${n.count.toLocaleString()} ${lang==='ar'?'مستلم':'recipients'}</div>
+      <div style="font-size:11px;color:var(--muted)">${n.time} · ${n.count.toLocaleString('en-US')} ${lang==='ar'?'مستلم':'recipients'}</div>
     </div>`).join('');
 }
 
@@ -2919,7 +2919,7 @@ function renderRealDeposits(data) {
         <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.id.slice(0,8)}...</td>
         <td style="font-weight:600">${escapeHtml(d.users?.name || '—')}</td>
         <td style="font-size:11px;color:var(--muted)">${escapeHtml(d.users?.email || '—')}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(d.amount).toLocaleString()}${(d.credited_amount && Math.abs(d.credited_amount - d.amount) > 0.01) ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">${lang==='ar'?'أُضيف فعليًا':'Actually credited'}: <span style="color:var(--green)">$${parseFloat(d.credited_amount).toLocaleString()}</span></div>` : ''}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(d.amount).toLocaleString('en-US')}${(d.credited_amount && Math.abs(d.credited_amount - d.amount) > 0.01) ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">${lang==='ar'?'أُضيف فعليًا':'Actually credited'}: <span style="color:var(--green)">$${parseFloat(d.credited_amount).toLocaleString('en-US')}</span></div>` : ''}</td>
         <td><span style="font-family:var(--mono)">${escapeHtml(d.coin)}</span></td>
         <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.nowpayments_payment_id ? `<span style="background:rgba(0,200,120,0.15);color:var(--green);padding:3px 8px;border-radius:6px;font-weight:700;font-size:10px">⚡ ${lang==='ar'?'تلقائي':'Auto'}</span>` : (d.tx_hash ? `<span onclick="copyTextStop(event,this.dataset.copyval,'TX Hash')" data-copyval="${escapeHtml(d.tx_hash)}" title="${escapeHtml(d.tx_hash)}" style="cursor:pointer;text-decoration:underline dotted">${escapeHtml(d.tx_hash.slice(0,16))}...  📋</span>` : '—')}</td>
         <td style="font-family:var(--mono);color:var(--blue)">${escapeHtml(d.memo || '—')}</td>
@@ -3056,7 +3056,7 @@ function renderRealWithdrawals(data) {
       <tr>
         <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${w.id.slice(0,8)}...</td>
         <td style="font-weight:600">${escapeHtml(w.users?.name || '—')}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(w.amount).toLocaleString()}${(w.net_amount && Math.abs(w.net_amount - w.amount) > 0.01) ? `<div style="font-size:11px;color:var(--red);margin-top:3px;font-weight:700">⚠️ ${lang==='ar'?'ابعت له صافي':'Send net'}: <span style="color:var(--green)">$${parseFloat(w.net_amount).toLocaleString()}</span></div>` : ''}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(w.amount).toLocaleString('en-US')}${(w.net_amount && Math.abs(w.net_amount - w.amount) > 0.01) ? `<div style="font-size:11px;color:var(--red);margin-top:3px;font-weight:700">⚠️ ${lang==='ar'?'ابعت له صافي':'Send net'}: <span style="color:var(--green)">$${parseFloat(w.net_amount).toLocaleString('en-US')}</span></div>` : ''}</td>
         <td><span style="font-family:var(--mono)">${escapeHtml(w.coin)}</span></td>
         <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${w.wallet_address ? `<span onclick="copyTextStop(event,this.dataset.copyval,'${lang==='ar'?'العنوان':'address'}')" data-copyval="${escapeHtml(w.wallet_address)}" title="${escapeHtml(w.wallet_address)}" style="cursor:pointer;text-decoration:underline dotted">${escapeHtml(w.wallet_address.slice(0,20))}...  📋</span>` : '—'}</td>
         <td style="font-size:11px;color:var(--muted)">${w.created_at?.slice(0,16)}</td>
@@ -3146,7 +3146,7 @@ function renderRealUsers(data) {
           <span style="font-weight:600">${escapeHtml(u.name||'—')}</span>
         </div></td>
         <td style="font-size:12px;color:var(--muted)">${escapeHtml(u.email)}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(u.balance||0).toLocaleString()}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(u.balance||0).toLocaleString('en-US')}</td>
         <td style="font-family:var(--mono);color:var(--blue);font-size:12px">${escapeHtml(u.memo||'—')}</td>
         <td>${kycBadge(u.kyc_status)}</td>
         <td>${statusBadge(u.status)}</td>
@@ -3189,7 +3189,7 @@ async function editUserBalance(userId, name, currentBal) {
         <h3 style="font-size:18px;font-weight:800;margin-bottom:6px">${lang==='ar'?'تعديل الرصيد':'Edit Balance'}</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:20px">${name}</p>
         <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;font-weight:600">${lang==='ar'?'الرصيد الحالي':'Current Balance'}</label>
-        <div style="background:var(--dark);border-radius:8px;padding:10px 14px;font-family:var(--mono);color:var(--gold);font-size:14px;margin-bottom:16px">$${parseFloat(currentBal).toLocaleString()}</div>
+        <div style="background:var(--dark);border-radius:8px;padding:10px 14px;font-family:var(--mono);color:var(--gold);font-size:14px;margin-bottom:16px">$${parseFloat(currentBal).toLocaleString('en-US')}</div>
         <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;font-weight:600">${lang==='ar'?'الرصيد الجديد ($)':'New Balance ($)'}</label>
         <input type="number" id="new-balance-input" value="${currentBal}" min="0" step="0.01"
           style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:11px 14px;color:var(--text);font-size:14px;font-family:var(--mono);margin-bottom:20px;outline:none"
@@ -3230,10 +3230,10 @@ async function confirmBalanceEdit(userId, name) {
   await sdb.from('notifications').insert({
     user_id: userId,
     title: lang==='ar'?'💰 تم تحديث رصيدك':'💰 Your balance was updated',
-    body: lang==='ar'?`رصيدك الجديد: $${newBal.toLocaleString()}`:`Your new balance: $${newBal.toLocaleString()}`,
+    body: lang==='ar'?`رصيدك الجديد: $${newBal.toLocaleString('en-US')}`:`Your new balance: $${newBal.toLocaleString('en-US')}`,
     type: 'info'
   });
-  showToast(lang==='ar'?`✓ تم تحديث رصيد ${name} إلى $${newBal.toLocaleString()}`:`✓ ${name} balance updated to $${newBal.toLocaleString()}`);
+  showToast(lang==='ar'?`✓ تم تحديث رصيد ${name} إلى $${newBal.toLocaleString('en-US')}`:`✓ ${name} balance updated to $${newBal.toLocaleString('en-US')}`);
   await loadRealUsers();
 }
 
@@ -3255,13 +3255,13 @@ async function loadRealOverviewStats() {
       if(!v) return '$0';
       if(v>=1000000) return '$'+(v/1000000).toFixed(1)+'M';
       if(v>=1000)    return '$'+(v/1000).toFixed(1)+'K';
-      return '$'+parseFloat(v).toLocaleString();
+      return '$'+parseFloat(v).toLocaleString('en-US');
     };
     const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
 
     // Stats cards
     set('sc1v', fmt(s.total_balance || s.total_invested || 0));
-    set('sc2v', (s.total_users||0).toLocaleString());
+    set('sc2v', (s.total_users||0).toLocaleString('en-US'));
     set('sc3v', fmt(s.total_deposits_amount || s.total_deposited || 0));
     set('sc4v', (s.pending_withdrawals||0).toString());
     set('sc5v', (s.kyc_pending||0).toString());
@@ -3283,7 +3283,7 @@ async function loadRealOverviewStats() {
 
     // زيارات اليوم — لو موجود عنصر
     const visEl = document.getElementById('visits-today-val');
-    if(visEl) visEl.textContent = (s.visits_today||0).toLocaleString();
+    if(visEl) visEl.textContent = (s.visits_today||0).toLocaleString('en-US');
 
     // Sidebar badges
     const depBadge = document.getElementById('dep-badge');
@@ -3330,7 +3330,7 @@ async function renderRecentTxFromSupabase() {
         <tr>
           <td>${tx.txtype==='deposit'?'📥':'📤'} ${tx.id?.slice(0,8)||'—'}</td>
           <td style="font-weight:600">${escapeHtml(tx.users?.name||'—')}</td>
-          <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(tx.amount||0).toLocaleString()}</td>
+          <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(tx.amount||0).toLocaleString('en-US')}</td>
           <td style="font-family:var(--mono)">${escapeHtml(tx.coin||'—')}</td>
           <td style="font-size:11px;color:var(--muted)">${tx.created_at?.slice(0,16)||'—'}</td>
           <td>${statusBadge(tx.status)}</td>
@@ -3990,7 +3990,7 @@ async function loadDailyProfitStats(){
     const { data, error } = await sdb.rpc('admin_get_profit_stats');
     if(error || !data || !data[0]) return;
     const s = data[0];
-    const fmt = v => '$' + parseFloat(v||0).toLocaleString(undefined,{maximumFractionDigits:2});
+    const fmt = v => '$' + parseFloat(v||0).toLocaleString('en-US',{maximumFractionDigits:2});
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
     set('dp-stat-today',  fmt(s.today_distributed));
     set('dp-stat-count',  (s.today_count ?? 0) + (lang==='ar'?' استثمار':' investments'));
@@ -4130,7 +4130,7 @@ async function loadVisitStats() {
     set('an-week-unique',  `${s.week_unique ?? 0} ${lang==='ar'?'زائر فريد':'unique'}`);
     set('an-month-views',  s.month_views ?? 0);
     set('an-month-unique', `${s.month_unique ?? 0} ${lang==='ar'?'زائر فريد':'unique'}`);
-    set('an-total-views',  (s.total_views ?? 0).toLocaleString());
+    set('an-total-views',  (s.total_views ?? 0).toLocaleString('en-US'));
     set('an-mobile-pct',   (s.mobile_pct ?? 0) + '%');
     set('an-top-country',  s.top_country || '—');
   } catch(e) { console.error('loadVisitStats:', e); }
@@ -4163,8 +4163,8 @@ async function loadDailyChart() {
         <span>${sorted[sorted.length-1]?.visit_date?.slice(5)||''}</span>
       </div>
       <div style="display:flex;gap:12px;justify-content:center;margin-top:8px;font-size:11px;color:var(--muted)">
-        <span>📊 ${lang==='ar'?'إجمالي':'Total'}: ${data.reduce((s,d)=>s+parseInt(d.views),0).toLocaleString()}</span>
-        <span>👤 ${lang==='ar'?'فريد':'Unique'}: ${data.reduce((s,d)=>s+parseInt(d.unique_visitors),0).toLocaleString()}</span>
+        <span>📊 ${lang==='ar'?'إجمالي':'Total'}: ${data.reduce((s,d)=>s+parseInt(d.views),0).toLocaleString('en-US')}</span>
+        <span>👤 ${lang==='ar'?'فريد':'Unique'}: ${data.reduce((s,d)=>s+parseInt(d.unique_visitors),0).toLocaleString('en-US')}</span>
       </div>`;
   } catch(e) { wrap.innerHTML = `<div style="color:var(--red);padding:16px">✗ ${escapeHtml(e.message)}</div>`; }
 }
