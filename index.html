@@ -690,7 +690,6 @@ body:not(.ltr) .footer-grid{text-align:right;}
     <div class="dash-grid">
       <div class="sidebar">
         <div class="sidebar-item active" onclick="switchDash(this,'d-overview')" data-ar="📊 نظرة عامة" data-en="📊 Overview" data-tr="📊 Genel Bakış">📊 نظرة عامة</div>
-        <div class="sidebar-item" onclick="switchDash(this,'d-wallet')" data-ar="💼 المحفظة" data-en="💼 Wallet" data-tr="💼 Cüzdan">💼 المحفظة</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-history')" data-ar="📋 السجل" data-en="📋 History" data-tr="📋 Geçmiş">📋 السجل</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-kyc')" data-ar="🪪 KYC" data-en="🪪 KYC" data-tr="🪪 KYC">🪪 KYC</div>
         <div class="sidebar-item" onclick="switchDash(this,'d-notif')" data-ar="🔔 الإشعارات" data-en="🔔 Notifications" data-tr="🔔 Bildirimler">🔔 الإشعارات
@@ -721,15 +720,6 @@ body:not(.ltr) .footer-grid{text-align:right;}
             <div class="panel"><div class="panel-head" id="lp-h" data-ar="أسعار مباشرة" data-en="Live Prices" data-tr="Canlı Fiyatlar">أسعار مباشرة</div><div class="live-prices" id="live-prices"></div></div>
             <div class="panel"><div class="panel-head" id="ai-h" data-ar="استثماراتي النشطة" data-en="Active Investments" data-tr="Aktif Yatırımlar">استثماراتي النشطة</div><div id="d-active-inv"><div style="color:var(--muted);font-size:13px;text-align:center;padding:20px" id="no-inv-txt" data-ar="لا توجد استثمارات نشطة" data-en="No active investments" data-tr="Aktif yatırım yok">لا توجد استثمارات نشطة</div></div></div>
           </div>
-        </div>
-        <div id="d-wallet" style="display:none">
-          <div class="panel"><div class="panel-head" id="wl-h" data-ar="عناوين الاستقبال" data-en="Deposit Addresses" data-tr="Yatırım Adresleri">عناوين الاستقبال</div>
-          <div class="wallet-list" id="wallet-list-dynamic">
-            <div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:#26a17b22;color:#26a17b">₮</div><div><div class="w-name">USDT TRC-20</div><div class="w-addr">TTU9KEnVvjKFj7pAbtk3hGZcepAbYzuVeq</div></div></div><div class="w-bal">TRC-20</div></div>
-            <div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:#26a17b22;color:#26a17b">₮</div><div><div class="w-name">USDT BEP-20</div><div class="w-addr">0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335</div></div></div><div class="w-bal">BEP-20</div></div>
-            <div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:#627eea22;color:#627eea">Ξ</div><div><div class="w-name">Ethereum (ETH)</div><div class="w-addr">0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335</div></div></div><div class="w-bal">ERC-20</div></div>
-            <div class="wallet-item"><div class="w-left"><div class="w-icon" style="background:#f0b90b22;color:#f0b90b">B</div><div><div class="w-name">BNB</div><div class="w-addr">0x88fa55f19b3cd0e59108d9e9d0450ccf4e3cb335</div></div></div><div class="w-bal">BEP-20</div></div>
-          </div></div>
         </div>
         <div id="d-history" style="display:none"><div class="panel"><div class="panel-head" id="hist-h" data-ar="سجل المعاملات" data-en="Transaction History" data-tr="İşlem Geçmişi">سجل المعاملات</div><div class="tx-list" id="tx-list"></div></div></div>
         <div id="d-kyc" style="display:none">
@@ -867,6 +857,9 @@ body:not(.ltr) .footer-grid{text-align:right;}
                 <option value="usdttrc20">USDT — TRC-20</option>
                 <option value="usdtbsc">USDT — BEP-20</option>
                 <option value="usdterc20">USDT — ERC-20</option>
+                <option value="btc">BTC — Bitcoin</option>
+                <option value="eth">ETH — ERC-20</option>
+                <option value="bnbbsc">BNB — BEP-20</option>
               </select>
             </div>
             <div class="form-group">
@@ -878,10 +871,18 @@ body:not(.ltr) .footer-grid{text-align:right;}
           </div>
           <div id="dep-auto-result" style="display:none;text-align:center">
             <div style="font-size:12px;color:var(--muted);margin-bottom:8px" data-ar="أرسل المبلغ بالظبط للعنوان ده:" data-en="Send the exact amount to this address:" data-tr="Tam tutarı bu adrese gönderin:">أرسل المبلغ بالظبط للعنوان ده:</div>
+            <div style="font-family:var(--mono);font-size:20px;font-weight:800;color:var(--gold);margin-bottom:12px;cursor:pointer" id="dep-auto-amount-display" onclick="copyAutoDepAmount()">—</div>
             <div class="wallet-addr" id="dep-auto-address" style="padding:10px;background:var(--dark3);border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:12px;word-break:break-all" onclick="copyAutoDepAddr()">—</div>
-            <button class="copy-btn" onclick="copyAutoDepAddr()" style="margin-top:10px" data-ar="📋 نسخ العنوان" data-en="📋 Copy Address" data-tr="📋 Adresi Kopyala">📋 نسخ العنوان</button>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px">
+              <button class="copy-btn" onclick="copyAutoDepAddr()" data-ar="📋 نسخ العنوان" data-en="📋 Copy Address" data-tr="📋 Adresi Kopyala">📋 نسخ العنوان</button>
+              <button class="copy-btn" onclick="copyAutoDepAmount()" data-ar="📋 نسخ المبلغ" data-en="📋 Copy Amount" data-tr="📋 Miktarı Kopyala">📋 نسخ المبلغ</button>
+            </div>
             <div id="dep-auto-status" style="margin-top:16px;padding:12px;background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;font-size:13px;font-weight:700;color:var(--gold)">⏳ في انتظار التحويل...</div>
             <div style="font-size:11px;color:var(--muted);margin-top:10px" data-ar="هيتقفل تلقائي في رصيدك فور تأكيد التحويل على البلوكتشين، من غير ما تعمل حاجة تانية." data-en="Your balance updates automatically once the transaction is confirmed on-chain." data-tr="İşlem blok zincirinde onaylandığında bakiyeniz otomatik güncellenir.">هيتقفل تلقائي في رصيدك فور تأكيد التحويل على البلوكتشين، من غير ما تعمل حاجة تانية.</div>
+            <div style="display:flex;gap:8px;justify-content:center;margin-top:16px">
+              <button class="copy-btn" onclick="checkAutoDepositStatus()" id="dep-auto-check-btn" data-ar="🔄 تحقق من الحالة الآن" data-en="🔄 Check Status Now" data-tr="🔄 Şimdi Kontrol Et">🔄 تحقق من الحالة الآن</button>
+              <button class="copy-btn" onclick="resetAutoDeposit()" data-ar="↺ إيداع جديد" data-en="↺ New Deposit" data-tr="↺ Yeni Yatırım">↺ إيداع جديد</button>
+            </div>
           </div>
         </div>
       </div>
@@ -899,8 +900,9 @@ body:not(.ltr) .footer-grid{text-align:right;}
           </select>
         </div>
         <div class="form-group"><label id="wdl2" data-ar="عنوان محفظتك" data-en="Your Wallet Address" data-tr="Cüzdan Adresiniz">عنوان محفظتك</label><input type="text" id="wd-addr" placeholder="T... or 0x..."></div>
-        <div class="form-group"><label id="wdl3" data-ar="المبلغ ($)" data-en="Amount ($)" data-tr="Miktar ($)">المبلغ ($)</label><input type="number" id="wd-amount" placeholder="50">
+        <div class="form-group"><label id="wdl3" data-ar="المبلغ ($)" data-en="Amount ($)" data-tr="Miktar ($)">المبلغ ($)</label><input type="number" id="wd-amount" placeholder="50" oninput="updateWithdrawFeePreview()">
           <div style="font-size:11px;color:var(--muted);margin-top:5px" id="wd-min-note" data-ar="الحد الأدنى $50" data-en="Minimum $50" data-tr="Minimum $50">الحد الأدنى $50</div>
+          <div id="wd-fee-preview" style="display:none;margin-top:8px;padding:10px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;font-size:12px"></div>
         </div>
         <button class="btn-primary" style="width:100%" onclick="submitWithdrawal()" id="wd-submit-btn" data-ar="تأكيد طلب السحب" data-en="Confirm Withdrawal" data-tr="Çekimi Onayla">تأكيد طلب السحب</button>
       </div>
@@ -1639,6 +1641,7 @@ async function fetchLivePrices() {
 const siteSettings = {
   site_name: 'Crysanto', support_email: 'support@crysanto.com',
   min_deposit: 100, min_withdrawal: 50, max_withdrawal: 50000, referral_rate: 5,
+  withdrawal_fee_pct: 0,
   maintenance_mode: false, registration_open: true,
 };
 async function fetchSiteSettingsFromDB() {
@@ -1647,7 +1650,7 @@ async function fetchSiteSettingsFromDB() {
     if (error) { console.error('fetchSiteSettingsFromDB error:', error.message || error); return; }
     (data||[]).forEach(r => {
       if (r.key === 'maintenance_mode' || r.key === 'registration_open') siteSettings[r.key] = r.value === 'true';
-      else if (['min_deposit','min_withdrawal','max_withdrawal','referral_rate'].includes(r.key)) siteSettings[r.key] = parseFloat(r.value) || siteSettings[r.key];
+      else if (['min_deposit','min_withdrawal','max_withdrawal','referral_rate','withdrawal_fee_pct'].includes(r.key)) siteSettings[r.key] = parseFloat(r.value) || siteSettings[r.key];
       else if (siteSettings.hasOwnProperty(r.key)) siteSettings[r.key] = r.value;
     });
     // ✅ FIX: تحديث عناصر الإيميل في الصفحة لو تغيّر في الـ settings
@@ -2961,6 +2964,11 @@ async function createAutoDeposit(){
     document.getElementById('dep-auto-form').style.display = 'none';
     document.getElementById('dep-auto-result').style.display = 'block';
     document.getElementById('dep-auto-address').textContent = data.pay_address;
+    const amtDisplay = document.getElementById('dep-auto-amount-display');
+    amtDisplay.textContent = data.pay_amount ? `${data.pay_amount} ${(data.pay_currency||'').toUpperCase()}` : `$${amount}`;
+    amtDisplay.dataset.raw = data.pay_amount || amount;
+    document.getElementById('dep-auto-status').textContent = '⏳ ' + ({ar:'في انتظار التحويل...',en:'Waiting for transfer...',tr:'Transfer bekleniyor...'}[lang]||'Waiting for transfer...');
+    document.getElementById('dep-auto-status').style.cssText = 'margin-top:16px;padding:12px;background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;font-size:13px;font-weight:700;color:var(--gold)';
 
     db.functions.invoke('send-email', { body: { template: 'deposit_received', params: { amount }, lang } }).catch(e => console.error('deposit email error:', e));
 
@@ -2972,7 +2980,7 @@ async function createAutoDeposit(){
         if(payload.new.status === 'approved'){
           statusEl.style.background = 'rgba(0,200,120,0.12)'; statusEl.style.borderColor = 'var(--green)'; statusEl.style.color = 'var(--green)';
           statusEl.textContent = lang==='ar'?'✅ تم تأكيد الإيداع وإضافته لرصيدك':lang==='tr'?'✅ Yatırım onaylandı ve bakiyenize eklendi':'✅ Deposit confirmed and added to your balance';
-          fetchProfile().then(()=>{ if(document.getElementById('d-wallet').style.display!=='none') renderWalletDashboardList(); });
+          fetchProfile();
         } else if(payload.new.status === 'rejected'){
           statusEl.style.background = 'rgba(255,77,106,0.12)'; statusEl.style.borderColor = 'var(--red)'; statusEl.style.color = 'var(--red)';
           statusEl.textContent = lang==='ar'?'✗ لم يتم تأكيد التحويل':lang==='tr'?'✗ İşlem onaylanmadı':'✗ Transaction was not confirmed';
@@ -2992,6 +3000,48 @@ function copyAutoDepAddr(){
   const addr = document.getElementById('dep-auto-address').textContent;
   if(!addr || addr==='—') return;
   navigator.clipboard.writeText(addr).then(()=> showToast(lang==='ar'?'✓ تم النسخ':lang==='tr'?'✓ Kopyalandı':'✓ Copied'));
+}
+
+function copyAutoDepAmount(){
+  const el = document.getElementById('dep-auto-amount-display');
+  const raw = el?.dataset?.raw;
+  if(!raw) return;
+  navigator.clipboard.writeText(String(raw)).then(()=> showToast(lang==='ar'?'✓ تم نسخ المبلغ':lang==='tr'?'✓ Miktar kopyalandı':'✓ Amount copied'));
+}
+
+async function checkAutoDepositStatus(){
+  if(!_autoDepositId) return;
+  const btn = document.getElementById('dep-auto-check-btn');
+  if(btn) btn.disabled = true;
+  try {
+    const { data, error } = await db.from('deposits').select('status').eq('id', _autoDepositId).single();
+    if(error) throw error;
+    const statusEl = document.getElementById('dep-auto-status');
+    if(data.status === 'approved'){
+      statusEl.style.cssText = 'margin-top:16px;padding:12px;background:rgba(0,200,120,0.12);border:1px solid var(--green);border-radius:10px;font-size:13px;font-weight:700;color:var(--green)';
+      statusEl.textContent = lang==='ar'?'✅ تم تأكيد الإيداع وإضافته لرصيدك':lang==='tr'?'✅ Yatırım onaylandı ve bakiyenize eklendi':'✅ Deposit confirmed and added to your balance';
+      fetchProfile();
+    } else if(data.status === 'rejected'){
+      statusEl.style.cssText = 'margin-top:16px;padding:12px;background:rgba(255,77,106,0.12);border:1px solid var(--red);border-radius:10px;font-size:13px;font-weight:700;color:var(--red)';
+      statusEl.textContent = lang==='ar'?'✗ لم يتم تأكيد التحويل':lang==='tr'?'✗ İşlem onaylanmadı':'✗ Transaction was not confirmed';
+    } else {
+      showToast(lang==='ar'?'⏳ لسه في انتظار التأكيد على البلوكتشين':lang==='tr'?'⏳ Blok zincirinde onay bekleniyor':'⏳ Still waiting for blockchain confirmation');
+    }
+  } catch(e){
+    console.error('checkAutoDepositStatus error:', e);
+    showToast(lang==='ar'?'تعذر التحقق من الحالة':'Could not check status');
+  } finally {
+    if(btn) btn.disabled = false;
+  }
+}
+
+function resetAutoDeposit(){
+  if(_autoDepositChannel){ db.removeChannel(_autoDepositChannel); _autoDepositChannel = null; }
+  _autoDepositId = null;
+  document.getElementById('dep-auto-result').style.display = 'none';
+  document.getElementById('dep-auto-form').style.display = 'block';
+  document.getElementById('dep-auto-amount').value = '';
+  document.getElementById('dep-auto-err').style.display = 'none';
 }
 
 async function submitDeposit() {
@@ -3035,17 +3085,30 @@ async function submitDeposit() {
   } catch(e){showToast(lang==='ar'?'حدث خطأ':lang==='tr'?'Bir hata oluştu':'Error occurred','err');}
 }
 
+function updateWithdrawFeePreview(){
+  const box = document.getElementById('wd-fee-preview');
+  const amount = parseFloat(document.getElementById('wd-amount').value);
+  const feePct = siteSettings.withdrawal_fee_pct || 0;
+  if(!amount || amount <= 0){ box.style.display = 'none'; return; }
+  const fee = Math.round(amount * feePct / 100 * 100) / 100;
+  const net = Math.round((amount - fee) * 100) / 100;
+  if(feePct <= 0){
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div style="display:flex;justify-content:space-between;color:var(--muted)"><span>${lang==='ar'?'المبلغ المطلوب':lang==='tr'?'Talep edilen':'Requested amount'}</span><span>$${amount.toFixed(2)}</span></div>
+    <div style="display:flex;justify-content:space-between;color:var(--red);margin-top:4px"><span>${lang==='ar'?`عمولة السحب (${feePct}%)`:lang==='tr'?`Çekim ücreti (%${feePct})`:`Withdrawal fee (${feePct}%)`}</span><span>-$${fee.toFixed(2)}</span></div>
+    <div style="display:flex;justify-content:space-between;color:var(--green);font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span>${lang==='ar'?'الصافي اللي هيوصلك':lang==='tr'?'Alacağınız net tutar':'You will receive'}</span><span>$${net.toFixed(2)}</span></div>`;
+}
+
 async function submitWithdrawal() {
   if(!userProfile){openModal('login');return;}
   const addr=document.getElementById('wd-addr').value.trim();
   const amount=parseFloat(document.getElementById('wd-amount').value);
   const coin=document.getElementById('wd-coin').value;
   if(!addr){showToast(lang==='ar'?'أدخل عنوان محفظتك':lang==='tr'?'Cüzdan adresinizi girin':'Enter wallet address','err');return;}
-  // ✅ FIX: التحقق من شكل عنوان المحفظة حسب الشبكة قبل القبول — يمنع خسارة الفلوس بسبب عنوان غلط
-  if(!isValidWalletAddress(coin, addr)){
-    showToast(lang==='ar'?'⚠️ عنوان المحفظة غير صحيح لهذه الشبكة، تحقق منه وحاول مرة أخرى':lang==='tr'?'⚠️ Bu ağ için cüzdan adresi geçersiz, kontrol edip tekrar deneyin':'⚠️ Wallet address looks invalid for this network. Please check and try again','err');
-    return;
-  }
   if(!amount||amount<siteSettings.min_withdrawal){showToast(lang==='ar'?`الحد الأدنى للسحب $${siteSettings.min_withdrawal}`:lang==='tr'?`Minimum çekim $${siteSettings.min_withdrawal}`:`Minimum withdrawal $${siteSettings.min_withdrawal}`,'err');return;}
   // ✅ FIX: التحقق من الحد الأقصى للسحب
   if(amount > siteSettings.max_withdrawal){showToast(lang==='ar'?`الحد الأقصى للسحب $${siteSettings.max_withdrawal.toLocaleString()}`:lang==='tr'?`Maksimum çekim $${siteSettings.max_withdrawal.toLocaleString()}`:`Maximum withdrawal $${siteSettings.max_withdrawal.toLocaleString()}`,'err');return;}
@@ -3091,6 +3154,7 @@ async function submitWithdrawal() {
     showToast(lang==='ar'?'✓ تم إرسال طلب السحب':lang==='tr'?'✓ Çekim talebi gönderildi':'✓ Withdrawal request sent');
     document.getElementById('wd-addr').value='';
     document.getElementById('wd-amount').value='';
+    document.getElementById('wd-fee-preview').style.display='none';
   } catch(e){showToast(lang==='ar'?'حدث خطأ':lang==='tr'?'Bir hata oluştu':'Error occurred','err');}
 }
 
