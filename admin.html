@@ -2919,7 +2919,7 @@ function renderRealDeposits(data) {
         <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.id.slice(0,8)}...</td>
         <td style="font-weight:600">${escapeHtml(d.users?.name || '—')}</td>
         <td style="font-size:11px;color:var(--muted)">${escapeHtml(d.users?.email || '—')}</td>
-        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(d.amount).toLocaleString()}</td>
+        <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(d.amount).toLocaleString()}${(d.credited_amount && Math.abs(d.credited_amount - d.amount) > 0.01) ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">${lang==='ar'?'أُضيف فعليًا':'Actually credited'}: <span style="color:var(--green)">$${parseFloat(d.credited_amount).toLocaleString()}</span></div>` : ''}</td>
         <td><span style="font-family:var(--mono)">${escapeHtml(d.coin)}</span></td>
         <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.nowpayments_payment_id ? `<span style="background:rgba(0,200,120,0.15);color:var(--green);padding:3px 8px;border-radius:6px;font-weight:700;font-size:10px">⚡ ${lang==='ar'?'تلقائي':'Auto'}</span>` : (d.tx_hash ? `<span onclick="copyTextStop(event,this.dataset.copyval,'TX Hash')" data-copyval="${escapeHtml(d.tx_hash)}" title="${escapeHtml(d.tx_hash)}" style="cursor:pointer;text-decoration:underline dotted">${escapeHtml(d.tx_hash.slice(0,16))}...  📋</span>` : '—')}</td>
         <td style="font-family:var(--mono);color:var(--blue)">${escapeHtml(d.memo || '—')}</td>
