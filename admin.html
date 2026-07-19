@@ -415,9 +415,6 @@ body.ltr .toast{left:auto;right:24px;}
     <div class="sb-item" onclick="switchSection('s-notifs')" id="sb-notifs">
       <span class="sb-icon">📢</span><span class="sb-lbl" data-ar="إرسال إشعارات" data-en="Send Notifications" data-tr="Bildirim Gönder">إرسال إشعارات</span>
     </div>
-    <div class="sb-item" onclick="switchSection('s-wallets')" id="sb-wallets">
-      <span class="sb-icon">👛</span><span class="sb-lbl" data-ar="محافظ الاستقبال" data-en="Deposit Wallets" data-tr="Yatırım Cüzdanları">محافظ الاستقبال</span>
-    </div>
     <div class="sb-item" onclick="switchSection('s-stats')" id="sb-stats">
       <span class="sb-icon">📈</span><span class="sb-lbl" data-ar="الإحصائيات" data-en="Statistics" data-tr="İstatistikler">الإحصائيات</span>
     </div>
@@ -677,12 +674,6 @@ body.ltr .toast{left:auto;right:24px;}
     </div>
 
     <!-- ══ WALLETS ══ -->
-    <div id="s-wallets" class="section-wrap" style="display:none">
-      <div class="section-title" id="wallets-title">محافظ الاستقبال</div>
-      <div class="alert-bar">🔐 <span id="wallets-alert">هذه هي عناوين محافظ استقبال الإيداعات — تأكد من دقتها دائماً</span></div>
-      <div id="wallets-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px"></div>
-    </div>
-
     <!-- ══ STATS ══ -->
     <div id="s-stats" class="section-wrap" style="display:none">
       <div class="section-title" id="stats-title">الإحصائيات التفصيلية</div>
@@ -716,6 +707,7 @@ body.ltr .toast{left:auto;right:24px;}
           <div class="form-g"><label id="set-email-l">البريد الإلكتروني</label><input id="set-email" type="email" value="support@crysanto.io" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font)"></div>
           <div class="form-g"><label id="set-min-dep-l">الحد الأدنى للإيداع ($)</label><input id="set-min-dep" type="number" value="100" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
           <div class="form-g"><label id="set-min-wd-l">الحد الأدنى للسحب ($)</label><input id="set-min-wd" type="number" value="50" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
+          <div class="form-g"><label id="set-wd-fee-l">عمولة السحب (%)</label><input id="set-wd-fee" type="number" step="0.1" min="0" max="100" value="4" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
           <div class="form-g"><label id="set-ref-rate-l">نسبة عمولة الإحالة (%)</label><input id="set-ref-rate" type="number" value="5" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
           <button class="act-btn-primary" onclick="saveSiteSettings()" id="set-save-btn">💾 حفظ الإعدادات</button>
         </div>
@@ -1449,7 +1441,7 @@ function renderCurrentSection(){
     's-overview':renderOverview,'s-users':renderUsers,'s-deposits':loadRealDeposits,
     's-withdrawals':loadRealWithdrawals,'s-investments':renderInvestments,
     's-kyc':renderKYC,'s-referrals':renderReferrals,'s-profits':renderProfits,
-    's-packages':renderPackages,'s-notifs':renderNotifs,'s-wallets':renderWallets,
+    's-packages':renderPackages,'s-notifs':renderNotifs,
     's-stats':renderStats,'s-settings':renderSettings,'s-audit':renderAuditLog,
     's-contact':renderContactMessages,'s-security':loadSecurityAlerts,
     's-daily-profits':loadDailyProfits,'s-admins':renderAdminsList
@@ -2419,7 +2411,7 @@ function showToast(msg){
 }
 
 async function renderSettings(){
-  const keys = ['site_name','support_email','min_deposit','min_withdrawal','referral_rate','maintenance_mode','registration_open'];
+  const keys = ['site_name','support_email','min_deposit','min_withdrawal','withdrawal_fee_pct','referral_rate','maintenance_mode','registration_open'];
   const { data, error } = await sdb.from('settings').select('key,value').in('key', keys);
   if (error) { console.error('renderSettings error:', error); showToast((lang==='ar'?'✗ فشل تحميل الإعدادات: ':'✗ Failed to load settings: ')+error.message); return; }
   const byKey = {}; (data||[]).forEach(r => byKey[r.key] = r.value);
@@ -2428,6 +2420,7 @@ async function renderSettings(){
   setVal('set-email', byKey.support_email);
   setVal('set-min-dep', byKey.min_deposit);
   setVal('set-min-wd', byKey.min_withdrawal);
+  setVal('set-wd-fee', byKey.withdrawal_fee_pct);
   setVal('set-ref-rate', byKey.referral_rate);
 
   const maintOn = byKey.maintenance_mode === 'true';
@@ -2547,6 +2540,7 @@ async function saveSiteSettings(){
     { key: 'support_email', value: document.getElementById('set-email').value.trim() },
     { key: 'min_deposit', value: document.getElementById('set-min-dep').value },
     { key: 'min_withdrawal', value: document.getElementById('set-min-wd').value },
+    { key: 'withdrawal_fee_pct', value: document.getElementById('set-wd-fee').value },
     { key: 'referral_rate', value: document.getElementById('set-ref-rate').value },
   ];
   for (const u of updates) {
@@ -2927,7 +2921,7 @@ function renderRealDeposits(data) {
         <td style="font-size:11px;color:var(--muted)">${escapeHtml(d.users?.email || '—')}</td>
         <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(d.amount).toLocaleString()}</td>
         <td><span style="font-family:var(--mono)">${escapeHtml(d.coin)}</span></td>
-        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.tx_hash ? `<span onclick="copyTextStop(event,this.dataset.copyval,'TX Hash')" data-copyval="${escapeHtml(d.tx_hash)}" title="${escapeHtml(d.tx_hash)}" style="cursor:pointer;text-decoration:underline dotted">${escapeHtml(d.tx_hash.slice(0,16))}...  📋</span>` : '—'}</td>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.nowpayments_payment_id ? `<span style="background:rgba(0,200,120,0.15);color:var(--green);padding:3px 8px;border-radius:6px;font-weight:700;font-size:10px">⚡ ${lang==='ar'?'تلقائي':'Auto'}</span>` : (d.tx_hash ? `<span onclick="copyTextStop(event,this.dataset.copyval,'TX Hash')" data-copyval="${escapeHtml(d.tx_hash)}" title="${escapeHtml(d.tx_hash)}" style="cursor:pointer;text-decoration:underline dotted">${escapeHtml(d.tx_hash.slice(0,16))}...  📋</span>` : '—')}</td>
         <td style="font-family:var(--mono);color:var(--blue)">${escapeHtml(d.memo || '—')}</td>
         <td style="font-size:11px;color:var(--muted)">${d.created_at?.slice(0,16)}</td>
         <td>${statusBadge(d.status)}</td>
