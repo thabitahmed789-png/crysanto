@@ -853,7 +853,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
           <div id="dep-auto-form">
             <div class="form-group">
               <label data-ar="العملة والشبكة" data-en="Currency & Network" data-tr="Para Birimi ve Ağ">العملة والشبكة</label>
-              <select id="dep-auto-currency" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;font-family:inherit;cursor:pointer">
+              <select id="dep-auto-currency" onchange="updateDepositEstimate()" style="width:100%;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;font-family:inherit;cursor:pointer">
                 <option value="usdttrc20">USDT — TRC-20</option>
                 <option value="usdtbsc">USDT — BEP-20</option>
                 <option value="usdterc20">USDT — ERC-20</option>
@@ -864,7 +864,8 @@ body:not(.ltr) .footer-grid{text-align:right;}
             </div>
             <div class="form-group">
               <label data-ar="المبلغ ($)" data-en="Amount ($)" data-tr="Miktar ($)">المبلغ ($)</label>
-              <input type="number" id="dep-auto-amount" placeholder="100">
+              <input type="number" id="dep-auto-amount" placeholder="100" oninput="updateDepositEstimate()">
+              <div id="dep-auto-estimate" style="display:none;margin-top:8px;padding:10px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--gold);font-weight:700;font-family:var(--mono)"></div>
             </div>
             <div id="dep-auto-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px"></div>
             <button class="btn-primary" style="width:100%" id="dep-auto-submit-btn" onclick="createAutoDeposit()" data-ar="🔗 توليد عنوان الإيداع" data-en="🔗 Generate Deposit Address" data-tr="🔗 Yatırım Adresi Oluştur">🔗 توليد عنوان الإيداع</button>
@@ -2927,6 +2928,27 @@ async function submitKYC() {
 }
 
 // ── DEPOSIT & WITHDRAW ──
+let _depEstimateTimer = null;
+function updateDepositEstimate(){
+  clearTimeout(_depEstimateTimer);
+  const box = document.getElementById('dep-auto-estimate');
+  const amount = parseFloat(document.getElementById('dep-auto-amount').value);
+  const currency = document.getElementById('dep-auto-currency').value;
+  if(!amount || amount <= 0){ box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  box.textContent = ({ar:'...جاري الحساب',en:'Calculating...',tr:'Hesaplanıyor...'}[lang]||'Calculating...');
+  _depEstimateTimer = setTimeout(async () => {
+    try {
+      const { data, error } = await db.functions.invoke('nowpayments-estimate', { body: { amount, pay_currency: currency } });
+      if(error || data?.error || !data?.estimated_amount){ box.style.display = 'none'; return; }
+      box.textContent = '≈ ' + data.estimated_amount + ' ' + currency.toUpperCase();
+    } catch(e){
+      console.error('updateDepositEstimate error:', e);
+      box.style.display = 'none';
+    }
+  }, 500);
+}
+
 // ══ الإيداع التلقائي عبر NOWPayments ══
 let _autoDepositId = null;
 let _autoDepositChannel = null;
@@ -3041,6 +3063,7 @@ function resetAutoDeposit(){
   document.getElementById('dep-auto-result').style.display = 'none';
   document.getElementById('dep-auto-form').style.display = 'block';
   document.getElementById('dep-auto-amount').value = '';
+  document.getElementById('dep-auto-estimate').style.display = 'none';
   document.getElementById('dep-auto-err').style.display = 'none';
 }
 
