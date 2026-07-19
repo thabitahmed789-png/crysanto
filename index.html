@@ -3001,7 +3001,8 @@ async function createAutoDeposit(){
         const statusEl = document.getElementById('dep-auto-status');
         if(payload.new.status === 'approved'){
           statusEl.style.background = 'rgba(0,200,120,0.12)'; statusEl.style.borderColor = 'var(--green)'; statusEl.style.color = 'var(--green)';
-          statusEl.textContent = lang==='ar'?'✅ تم تأكيد الإيداع وإضافته لرصيدك':lang==='tr'?'✅ Yatırım onaylandı ve bakiyenize eklendi':'✅ Deposit confirmed and added to your balance';
+          const credited = payload.new.credited_amount || payload.new.amount;
+          statusEl.textContent = (lang==='ar'?`✅ تم تأكيد الإيداع، تم إضافة $${credited} لرصيدك`:lang==='tr'?`✅ Yatırım onaylandı, hesabınıza $${credited} eklendi`:`✅ Deposit confirmed, $${credited} added to your balance`);
           fetchProfile();
         } else if(payload.new.status === 'rejected'){
           statusEl.style.background = 'rgba(255,77,106,0.12)'; statusEl.style.borderColor = 'var(--red)'; statusEl.style.color = 'var(--red)';
@@ -3036,12 +3037,13 @@ async function checkAutoDepositStatus(){
   const btn = document.getElementById('dep-auto-check-btn');
   if(btn) btn.disabled = true;
   try {
-    const { data, error } = await db.from('deposits').select('status').eq('id', _autoDepositId).single();
+    const { data, error } = await db.from('deposits').select('status,amount,credited_amount').eq('id', _autoDepositId).single();
     if(error) throw error;
     const statusEl = document.getElementById('dep-auto-status');
     if(data.status === 'approved'){
       statusEl.style.cssText = 'margin-top:16px;padding:12px;background:rgba(0,200,120,0.12);border:1px solid var(--green);border-radius:10px;font-size:13px;font-weight:700;color:var(--green)';
-      statusEl.textContent = lang==='ar'?'✅ تم تأكيد الإيداع وإضافته لرصيدك':lang==='tr'?'✅ Yatırım onaylandı ve bakiyenize eklendi':'✅ Deposit confirmed and added to your balance';
+      const credited = data.credited_amount || data.amount;
+      statusEl.textContent = (lang==='ar'?`✅ تم تأكيد الإيداع، تم إضافة $${credited} لرصيدك`:lang==='tr'?`✅ Yatırım onaylandı, hesabınıza $${credited} eklendi`:`✅ Deposit confirmed, $${credited} added to your balance`);
       fetchProfile();
     } else if(data.status === 'rejected'){
       statusEl.style.cssText = 'margin-top:16px;padding:12px;background:rgba(255,77,106,0.12);border:1px solid var(--red);border-radius:10px;font-size:13px;font-weight:700;color:var(--red)';
