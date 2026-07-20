@@ -357,6 +357,10 @@ body.ltr .toast{left:auto;right:24px;}
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="tb-logo" style="display:flex;align-items:center;gap:10px"><svg width="32" height="32" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg"><rect width="34" height="34" rx="8" fill="#0F1520" stroke="#C9A84C" stroke-width="1.2"/><path d="M20 8.5 A8.5 8.5 0 1 0 20 25.5 L18.6 23.3 A6.5 6.5 0 1 1 18.6 10.7 Z" fill="#C9A84C"/><rect x="20.5" y="8.5" width="2.2" height="17" rx="1" fill="#C9A84C"/><path d="M22.7 8.5 Q29 8.5 29 13.5 Q29 18.5 22.7 18.5 L22.7 16.5 Q27 16.5 27 13.5 Q27 10.5 22.7 10.5 Z" fill="#C9A84C"/><path d="M22.7 17.5 L30 25.5 L27.5 25.5 L20.5 17.8 Z" fill="#C9A84C"/></svg><span style="font-family:Georgia,serif;letter-spacing:2px">Crysanto</span> <span id="adm-tag">ADMIN</span></div>
+    <div style="position:relative;flex:1;max-width:380px;margin:0 20px">
+      <input type="text" id="global-search-input" oninput="handleGlobalSearch()" onfocus="handleGlobalSearch()" placeholder="🔍 بحث بالاسم / الإيميل / المحفظة..." style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:10px;padding:9px 14px;color:var(--text);font-size:13px;font-family:inherit">
+      <div id="global-search-results" style="display:none;position:absolute;top:calc(100% + 6px);right:0;left:0;background:var(--panel);border:1px solid var(--border2);border-radius:10px;max-height:400px;overflow-y:auto;z-index:500;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
+    </div>
     <div class="tb-right">
       <div class="lang-sw">
         <button class="lb on" onclick="setLang('ar')">عر</button>
@@ -505,6 +509,11 @@ body.ltr .toast{left:auto;right:24px;}
         <button class="ft" onclick="filterDep(this,'approved')" id="fd-app">مقبول</button>
         <button class="ft" onclick="filterDep(this,'rejected')" id="fd-rej">مرفوض</button>
       </div>
+      <div id="dep-bulk-bar" style="display:none;align-items:center;gap:10px;background:var(--dark);border:1px solid var(--gold);border-radius:8px;padding:10px 14px;margin-bottom:10px">
+        <span id="dep-bulk-count" style="font-size:13px;font-weight:700;color:var(--gold)"></span>
+        <button class="act-btn green" onclick="bulkApprove('deposits')">✓ موافقة على المحدد</button>
+        <button class="act-btn" onclick="clearBulkSelection('dep')">إلغاء التحديد</button>
+      </div>
       <div class="panel">
         <div class="tbl-wrap" id="dep-table-wrap"></div>
       </div>
@@ -520,6 +529,11 @@ body.ltr .toast{left:auto;right:24px;}
         <button class="ft" onclick="filterWd(this,'pending')" id="fw-pend">معلق</button>
         <button class="ft" onclick="filterWd(this,'approved')" id="fw-app">مقبول</button>
         <button class="ft" onclick="filterWd(this,'rejected')" id="fw-rej">مرفوض</button>
+      </div>
+      <div id="wd-bulk-bar" style="display:none;align-items:center;gap:10px;background:var(--dark);border:1px solid var(--gold);border-radius:8px;padding:10px 14px;margin-bottom:10px">
+        <span id="wd-bulk-count" style="font-size:13px;font-weight:700;color:var(--gold)"></span>
+        <button class="act-btn green" onclick="bulkApprove('withdrawals')">✓ موافقة على المحدد</button>
+        <button class="act-btn" onclick="clearBulkSelection('wd')">إلغاء التحديد</button>
       </div>
       <div class="panel">
         <div class="tbl-wrap" id="wd-table-wrap"></div>
@@ -708,6 +722,7 @@ body.ltr .toast{left:auto;right:24px;}
           <div class="form-g"><label id="set-min-dep-l">الحد الأدنى للإيداع ($)</label><input id="set-min-dep" type="number" value="100" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
           <div class="form-g"><label id="set-min-wd-l">الحد الأدنى للسحب ($)</label><input id="set-min-wd" type="number" value="50" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
           <div class="form-g"><label id="set-wd-fee-l">عمولة السحب (%)</label><input id="set-wd-fee" type="number" step="0.1" min="0" max="100" value="4" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
+          <div class="form-g"><label id="set-wd-otp-l">حد التحقق الإضافي بالإيميل للسحب ($)</label><input id="set-wd-otp" type="number" min="0" value="500" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
           <div class="form-g"><label id="set-ref-rate-l">نسبة عمولة الإحالة (%)</label><input id="set-ref-rate" type="number" value="5" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--mono)"></div>
           <button class="act-btn-primary" onclick="saveSiteSettings()" id="set-save-btn">💾 حفظ الإعدادات</button>
         </div>
@@ -1583,6 +1598,7 @@ function showUserModal(id){
       <button class="act-btn-primary" onclick="sendNotifToUser('${u.id}')">${lang==='ar'?'إرسال إشعار':'Send Notification'}</button>
       <button class="act-btn" style="background:var(--gold);color:#000" onclick="adminAddProfit('${u.id}', this.dataset.name);closeModal()" data-name="${(u.name||'').replace(/"/g,'&quot;')}">💰 ${lang==='ar'?'إضافة ربح':'Add Profit'}</button>
       <button class="act-btn red" onclick="toggleUserBlock('${u.id}','${u.status==='blocked'?'active':'blocked'}');closeModal()">${u.status==='blocked'?t('unblock'):t('block')}</button>
+      <button class="act-btn ${u.withdrawal_locked?'green':'red'}" onclick="toggleWithdrawalLock('${u.id}',${!u.withdrawal_locked});closeModal()">${u.withdrawal_locked?(lang==='ar'?'🔓 فتح السحب':'🔓 Unlock Withdrawals'):(lang==='ar'?'🔒 قفل السحب فقط':'🔒 Lock Withdrawals Only')}</button>
     </div>
     <div style="margin-top:12px;padding:12px;background:var(--dark);border-radius:8px;font-size:11px;color:var(--muted)">
       <b style="color:var(--gold)">إجمالي الأرباح:</b> $${parseFloat(u.total_profit||0).toFixed(2)} &nbsp;|&nbsp;
@@ -2411,7 +2427,7 @@ function showToast(msg){
 }
 
 async function renderSettings(){
-  const keys = ['site_name','support_email','min_deposit','min_withdrawal','withdrawal_fee_pct','referral_rate','maintenance_mode','registration_open'];
+  const keys = ['site_name','support_email','min_deposit','min_withdrawal','withdrawal_fee_pct','withdrawal_otp_threshold','referral_rate','maintenance_mode','registration_open'];
   const { data, error } = await sdb.from('settings').select('key,value').in('key', keys);
   if (error) { console.error('renderSettings error:', error); showToast((lang==='ar'?'✗ فشل تحميل الإعدادات: ':'✗ Failed to load settings: ')+error.message); return; }
   const byKey = {}; (data||[]).forEach(r => byKey[r.key] = r.value);
@@ -2421,6 +2437,7 @@ async function renderSettings(){
   setVal('set-min-dep', byKey.min_deposit);
   setVal('set-min-wd', byKey.min_withdrawal);
   setVal('set-wd-fee', byKey.withdrawal_fee_pct);
+  setVal('set-wd-otp', byKey.withdrawal_otp_threshold);
   setVal('set-ref-rate', byKey.referral_rate);
 
   const maintOn = byKey.maintenance_mode === 'true';
@@ -2541,6 +2558,7 @@ async function saveSiteSettings(){
     { key: 'min_deposit', value: document.getElementById('set-min-dep').value },
     { key: 'min_withdrawal', value: document.getElementById('set-min-wd').value },
     { key: 'withdrawal_fee_pct', value: document.getElementById('set-wd-fee').value },
+    { key: 'withdrawal_otp_threshold', value: document.getElementById('set-wd-otp').value },
     { key: 'referral_rate', value: document.getElementById('set-ref-rate').value },
   ];
   for (const u of updates) {
@@ -2903,6 +2921,7 @@ function renderRealDeposits(data) {
   }
   wrap.innerHTML = `<table>
     <thead><tr>
+      <th><input type="checkbox" id="dep-select-all" onchange="toggleBulkSelectAll('dep', this.checked)"></th>
       <th>ID</th>
       <th>${lang==='ar'?'العميل':'Client'}</th>
       <th>${lang==='ar'?'البريد':'Email'}</th>
@@ -2916,6 +2935,7 @@ function renderRealDeposits(data) {
     </tr></thead>
     <tbody>${filtered.map(d => `
       <tr>
+        <td>${d.status==='pending' ? `<input type="checkbox" class="dep-row-check" data-id="${d.id}" onchange="onBulkRowCheck('dep')">` : ''}</td>
         <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${d.id.slice(0,8)}...</td>
         <td style="font-weight:600">${escapeHtml(d.users?.name || '—')}</td>
         <td style="font-size:11px;color:var(--muted)">${escapeHtml(d.users?.email || '—')}</td>
@@ -3043,6 +3063,7 @@ function renderRealWithdrawals(data) {
   }
   wrap.innerHTML = `<table>
     <thead><tr>
+      <th><input type="checkbox" id="wd-select-all" onchange="toggleBulkSelectAll('wd', this.checked)"></th>
       <th>ID</th>
       <th>${lang==='ar'?'العميل':'Client'}</th>
       <th>${lang==='ar'?'المبلغ':'Amount'}</th>
@@ -3054,6 +3075,7 @@ function renderRealWithdrawals(data) {
     </tr></thead>
     <tbody>${filtered.map(w => `
       <tr>
+        <td>${w.status==='pending' ? `<input type="checkbox" class="wd-row-check" data-id="${w.id}" onchange="onBulkRowCheck('wd')">` : ''}</td>
         <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${w.id.slice(0,8)}...</td>
         <td style="font-weight:600">${escapeHtml(w.users?.name || '—')}</td>
         <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(w.amount).toLocaleString('en-US')}${(w.net_amount && Math.abs(w.net_amount - w.amount) > 0.01) ? `<div style="font-size:11px;color:var(--red);margin-top:3px;font-weight:700">⚠️ ${lang==='ar'?'ابعت له صافي':'Send net'}: <span style="color:var(--green)">$${parseFloat(w.net_amount).toLocaleString('en-US')}</span></div>` : ''}</td>
@@ -3144,6 +3166,7 @@ function renderRealUsers(data) {
         <td><div style="display:flex;align-items:center;gap:10px">
           <div class="u-av" style="background:var(--gold-dim);color:var(--gold)">${escapeHtml((u.name||'?')[0])}</div>
           <span style="font-weight:600">${escapeHtml(u.name||'—')}</span>
+          ${u.withdrawal_locked ? `<span title="${lang==='ar'?'السحب مقفول لهذا العميل':'Withdrawals locked'}" style="font-size:13px">🔒</span>` : ''}
         </div></td>
         <td style="font-size:12px;color:var(--muted)">${escapeHtml(u.email)}</td>
         <td style="font-family:var(--mono);color:var(--gold)">$${parseFloat(u.balance||0).toLocaleString('en-US')}</td>
@@ -3161,6 +3184,170 @@ function renderRealUsers(data) {
       </tr>`).join('')}
     </tbody></table>`;
 }
+
+async function toggleWithdrawalLock(userId, lock){
+  let reason = null;
+  if(lock){
+    reason = prompt(lang==='ar'?'سبب قفل السحب (اختياري):':'Reason for locking withdrawals (optional):') || 'Locked by admin';
+  }
+  const { data, error } = await sdb.rpc('admin_toggle_withdrawal_lock', { p_user_id: userId, p_locked: lock, p_reason: reason });
+  const result = Array.isArray(data) ? data[0] : data;
+  if(error || !result?.success){ showToast((lang==='ar'?'✗ فشل: ':'✗ Failed: ')+(result?.message||error?.message||'')); return; }
+  showToast(lock ? (lang==='ar'?'🔒 تم قفل السحب لهذا العميل (الإيداع لسه شغال)':'🔒 Withdrawals locked for this user (deposits still work)')
+                 : (lang==='ar'?'🔓 تم فتح السحب لهذا العميل':'🔓 Withdrawals unlocked for this user'));
+  await loadRealUsers();
+}
+
+// ══ إجراءات جماعية (Bulk Actions) للإيداعات والسحوبات ══
+function onBulkRowCheck(prefix){
+  const checks = document.querySelectorAll(`.${prefix}-row-check`);
+  const checked = document.querySelectorAll(`.${prefix}-row-check:checked`);
+  const bar = document.getElementById(`${prefix}-bulk-bar`);
+  const countEl = document.getElementById(`${prefix}-bulk-count`);
+  const selectAll = document.getElementById(`${prefix}-select-all`);
+  if(checked.length > 0){
+    bar.style.display = 'flex';
+    countEl.textContent = (lang==='ar'?`✓ ${checked.length} محدد`:`✓ ${checked.length} selected`);
+  } else {
+    bar.style.display = 'none';
+  }
+  if(selectAll) selectAll.checked = checks.length > 0 && checked.length === checks.length;
+}
+
+function toggleBulkSelectAll(prefix, checked){
+  document.querySelectorAll(`.${prefix}-row-check`).forEach(cb => cb.checked = checked);
+  onBulkRowCheck(prefix);
+}
+
+function clearBulkSelection(prefix){
+  document.querySelectorAll(`.${prefix}-row-check`).forEach(cb => cb.checked = false);
+  const selectAll = document.getElementById(`${prefix}-select-all`);
+  if(selectAll) selectAll.checked = false;
+  document.getElementById(`${prefix}-bulk-bar`).style.display = 'none';
+}
+
+async function bulkApprove(table){
+  const prefix = table === 'deposits' ? 'dep' : 'wd';
+  const ids = Array.from(document.querySelectorAll(`.${prefix}-row-check:checked`)).map(cb => cb.dataset.id);
+  if(!ids.length) return;
+  const confirmed = confirm(lang==='ar' ? `تأكيد الموافقة على ${ids.length} طلب دفعة واحدة؟` : `Confirm approving ${ids.length} requests at once?`);
+  if(!confirmed) return;
+
+  showToast(lang==='ar'?`⏳ جارٍ معالجة ${ids.length} طلب...`:`⏳ Processing ${ids.length} requests...`);
+  let successCount = 0, failCount = 0, failMessages = [];
+  const source = table === 'deposits' ? (window.realDeposits||[]) : (window.realWithdrawals||[]);
+
+  for(const id of ids){
+    const row = source.find(r => r.id === id);
+    if(!row){ failCount++; continue; }
+    try {
+      let result;
+      if(table === 'deposits'){
+        const { data, error } = await sdb.rpc('admin_approve_deposit', { p_deposit_id: id });
+        result = Array.isArray(data) ? data[0] : data;
+        if(error || !result?.success){ failCount++; failMessages.push(`${row.users?.name||id}: ${result?.message||error?.message||''}`); continue; }
+        await sendEmailNotification(row.users?.email, row.users?.name, row.amount, 'approved', '', row.users?.preferred_lang||'ar');
+      } else {
+        const { data, error } = await sdb.rpc('admin_approve_withdrawal', { p_withdrawal_id: id });
+        result = Array.isArray(data) ? data[0] : data;
+        if(error || !result?.success){ failCount++; failMessages.push(`${row.users?.name||id}: ${result?.message||error?.message||''}`); continue; }
+        await sendEmailNotification(row.users?.email, row.users?.name, row.amount, 'approved', '', row.users?.preferred_lang||'ar');
+      }
+      successCount++;
+    } catch(e){
+      failCount++;
+      failMessages.push(`${id}: ${e.message}`);
+    }
+  }
+
+  showToast(lang==='ar'
+    ? `✓ نجح: ${successCount}${failCount?` — ✗ فشل: ${failCount}`:''}`
+    : `✓ Success: ${successCount}${failCount?` — ✗ Failed: ${failCount}`:''}`);
+  if(failMessages.length) console.error('Bulk approve failures:', failMessages);
+
+  clearBulkSelection(prefix);
+  if(table === 'deposits') await loadRealDeposits(); else await loadRealWithdrawals();
+}
+
+// ══ بحث سريع شامل (اسم / إيميل / عنوان محفظة) ══
+let _globalSearchTimer = null;
+function handleGlobalSearch(){
+  clearTimeout(_globalSearchTimer);
+  const q = document.getElementById('global-search-input').value.trim();
+  const box = document.getElementById('global-search-results');
+  if(q.length < 2){ box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  box.innerHTML = `<div style="padding:16px;color:var(--muted);font-size:12px;text-align:center">${lang==='ar'?'...جاري البحث':'Searching...'}</div>`;
+  _globalSearchTimer = setTimeout(() => runGlobalSearch(q), 400);
+}
+
+async function runGlobalSearch(q){
+  const box = document.getElementById('global-search-results');
+  try {
+    const [usersRes, depRes, wdRes] = await Promise.all([
+      sdb.from('users').select('id,name,email,balance,status').or(`name.ilike.%${q}%,email.ilike.%${q}%`).limit(6),
+      sdb.from('deposits').select('id,amount,status,wallet_address,users(name,email)').ilike('wallet_address', `%${q}%`).limit(4),
+      sdb.from('withdrawals').select('id,amount,status,wallet_address,users(name,email)').ilike('wallet_address', `%${q}%`).limit(4),
+    ]);
+
+    const users = usersRes.data || [];
+    const deps = depRes.data || [];
+    const wds = wdRes.data || [];
+
+    if(!users.length && !deps.length && !wds.length){
+      box.innerHTML = `<div style="padding:16px;color:var(--muted);font-size:12px;text-align:center">${lang==='ar'?'لا توجد نتائج':'No results'}</div>`;
+      return;
+    }
+
+    let html = '';
+    if(users.length){
+      html += `<div style="padding:8px 12px;font-size:11px;color:var(--gold);font-weight:700;border-bottom:1px solid var(--border2)">${lang==='ar'?'العملاء':'Users'}</div>`;
+      html += users.map(u => `
+        <div onclick="openUserFromSearch('${u.id}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border2)" onmouseover="this.style.background='var(--dark)'" onmouseout="this.style.background='transparent'">
+          <div style="font-size:13px;font-weight:700">${escapeHtml(u.name||'—')} <span style="font-size:11px;color:${u.status==='blocked'?'var(--red)':'var(--muted)'}">(${u.status})</span></div>
+          <div style="font-size:11px;color:var(--muted)">${escapeHtml(u.email||'')} · $${parseFloat(u.balance||0).toLocaleString('en-US')}</div>
+        </div>`).join('');
+    }
+    if(deps.length){
+      html += `<div style="padding:8px 12px;font-size:11px;color:var(--gold);font-weight:700;border-bottom:1px solid var(--border2)">${lang==='ar'?'إيداعات (محفظة مطابقة)':'Deposits (wallet match)'}</div>`;
+      html += deps.map(d => `
+        <div onclick="switchSection('s-deposits');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border2)">
+          <div style="font-size:13px;font-weight:700">${escapeHtml(d.users?.name||'—')} — $${parseFloat(d.amount).toLocaleString('en-US')}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${escapeHtml((d.wallet_address||'').slice(0,30))}...</div>
+        </div>`).join('');
+    }
+    if(wds.length){
+      html += `<div style="padding:8px 12px;font-size:11px;color:var(--gold);font-weight:700;border-bottom:1px solid var(--border2)">${lang==='ar'?'سحوبات (محفظة مطابقة)':'Withdrawals (wallet match)'}</div>`;
+      html += wds.map(w => `
+        <div onclick="switchSection('s-withdrawals');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border2)">
+          <div style="font-size:13px;font-weight:700">${escapeHtml(w.users?.name||'—')} — $${parseFloat(w.amount).toLocaleString('en-US')}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${escapeHtml((w.wallet_address||'').slice(0,30))}...</div>
+        </div>`).join('');
+    }
+    box.innerHTML = html;
+  } catch(e){
+    console.error('runGlobalSearch error:', e);
+    box.innerHTML = `<div style="padding:16px;color:var(--red);font-size:12px">${lang==='ar'?'حدث خطأ في البحث':'Search error'}</div>`;
+  }
+}
+
+async function openUserFromSearch(userId){
+  closeGlobalSearch();
+  switchSection('s-users');
+  await loadRealUsers();
+  showUserModal(userId);
+}
+
+function closeGlobalSearch(){
+  document.getElementById('global-search-results').style.display = 'none';
+  document.getElementById('global-search-input').value = '';
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('global-search-input');
+  const box = document.getElementById('global-search-results');
+  if(wrap && box && !wrap.contains(e.target) && !box.contains(e.target)) box.style.display = 'none';
+});
 
 async function toggleUserBlock(userId, newStatus) {
   const reason = newStatus === 'blocked'
