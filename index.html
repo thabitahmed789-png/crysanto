@@ -781,6 +781,20 @@ body:not(.ltr) .footer-grid{text-align:right;}
             </div>
           </div>
         </div>
+        <div id="modal-wd-otp" class="modal-overlay">
+          <div class="modal" style="max-width:380px">
+            <button class="modal-close" onclick="closeModal('wd-otp')">✕</button>
+            <h3 style="font-size:16px;font-weight:800;margin-bottom:10px" data-ar="🔐 تأكيد إضافي مطلوب" data-en="🔐 Extra Verification Required" data-tr="🔐 Ek Doğrulama Gerekli">🔐 تأكيد إضافي مطلوب</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:16px" data-ar="لحماية حسابك، بعتنالك كود تحقق على إيميلك. اكتبه هنا لإتمام طلب السحب." data-en="For your account's protection, we sent a verification code to your email. Enter it here to complete the withdrawal." data-tr="Hesabınızın korunması için e-postanıza bir doğrulama kodu gönderdik. Çekimi tamamlamak için buraya girin.">لحماية حسابك، بعتنالك كود تحقق على إيميلك. اكتبه هنا لإتمام طلب السحب.</p>
+            <div class="form-group">
+              <label data-ar="كود التحقق" data-en="Verification Code" data-tr="Doğrulama Kodu">كود التحقق</label>
+              <input type="text" id="wd-otp-input" maxlength="6" inputmode="numeric" style="text-align:center;font-size:24px;letter-spacing:8px;font-family:var(--mono)" placeholder="------">
+            </div>
+            <div id="wd-otp-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px"></div>
+            <button class="btn-primary" id="wd-otp-submit-btn" onclick="confirmWithdrawalOtp()" data-ar="تأكيد" data-en="Confirm" data-tr="Onayla">تأكيد</button>
+            <button style="background:none;border:none;color:var(--muted);font-size:12px;margin-top:10px;cursor:pointer;width:100%" onclick="resendWithdrawalOtp()" data-ar="لم يصلني الكود، إعادة الإرسال" data-en="Didn't receive it? Resend" data-tr="Kod gelmedi mi? Yeniden gönder">لم يصلني الكود، إعادة الإرسال</button>
+          </div>
+        </div>
         <div id="modal-new-ticket" class="modal-overlay">
           <div class="modal" style="max-width:420px">
             <button class="modal-close" onclick="closeModal('new-ticket')">✕</button>
@@ -871,13 +885,15 @@ body:not(.ltr) .footer-grid{text-align:right;}
             <button class="btn-primary" style="width:100%" id="dep-auto-submit-btn" onclick="createAutoDeposit()" data-ar="🔗 توليد عنوان الإيداع" data-en="🔗 Generate Deposit Address" data-tr="🔗 Yatırım Adresi Oluştur">🔗 توليد عنوان الإيداع</button>
           </div>
           <div id="dep-auto-result" style="display:none;text-align:center">
-            <div style="font-size:12px;color:var(--muted);margin-bottom:8px" data-ar="أرسل المبلغ بالظبط للعنوان ده:" data-en="Send the exact amount to this address:" data-tr="Tam tutarı bu adrese gönderin:">أرسل المبلغ بالظبط للعنوان ده:</div>
-            <div style="font-family:var(--mono);font-size:20px;font-weight:800;color:var(--gold);margin-bottom:12px;cursor:pointer" id="dep-auto-amount-display" onclick="copyAutoDepAmount()">—</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px" data-ar="أرسل المبلغ بالظبط للعنوان ده (شامل عمولة الشبكة):" data-en="Send the exact amount to this address (fee included):" data-tr="Tam tutarı bu adrese gönderin (ücret dahil):">أرسل المبلغ بالظبط للعنوان ده (شامل عمولة الشبكة):</div>
+            <div style="font-family:var(--mono);font-size:20px;font-weight:800;color:var(--gold);margin-bottom:4px;cursor:pointer" id="dep-auto-amount-display" onclick="copyAutoDepAmount()">—</div>
+            <div id="dep-auto-credit-note" style="font-size:11px;color:var(--green);margin-bottom:12px"></div>
             <div class="wallet-addr" id="dep-auto-address" style="padding:10px;background:var(--dark3);border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:12px;word-break:break-all" onclick="copyAutoDepAddr()">—</div>
             <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px">
               <button class="copy-btn" onclick="copyAutoDepAddr()" data-ar="📋 نسخ العنوان" data-en="📋 Copy Address" data-tr="📋 Adresi Kopyala">📋 نسخ العنوان</button>
               <button class="copy-btn" onclick="copyAutoDepAmount()" data-ar="📋 نسخ المبلغ" data-en="📋 Copy Amount" data-tr="📋 Miktarı Kopyala">📋 نسخ المبلغ</button>
             </div>
+            <div id="dep-auto-timer" style="margin-top:10px;font-size:12px;color:var(--orange);font-weight:700"></div>
             <div id="dep-auto-status" style="margin-top:16px;padding:12px;background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;font-size:13px;font-weight:700;color:var(--gold)">⏳ في انتظار التحويل...</div>
             <div style="font-size:11px;color:var(--muted);margin-top:10px" data-ar="هيتقفل تلقائي في رصيدك فور تأكيد التحويل على البلوكتشين، من غير ما تعمل حاجة تانية." data-en="Your balance updates automatically once the transaction is confirmed on-chain." data-tr="İşlem blok zincirinde onaylandığında bakiyeniz otomatik güncellenir.">هيتقفل تلقائي في رصيدك فور تأكيد التحويل على البلوكتشين، من غير ما تعمل حاجة تانية.</div>
             <div style="display:flex;gap:8px;justify-content:center;margin-top:16px">
@@ -1642,7 +1658,7 @@ async function fetchLivePrices() {
 const siteSettings = {
   site_name: 'Crysanto', support_email: 'support@crysanto.com',
   min_deposit: 100, min_withdrawal: 50, max_withdrawal: 50000, referral_rate: 5,
-  withdrawal_fee_pct: 0,
+  withdrawal_fee_pct: 0, withdrawal_otp_threshold: 999999999,
   maintenance_mode: false, registration_open: true,
 };
 async function fetchSiteSettingsFromDB() {
@@ -1651,7 +1667,7 @@ async function fetchSiteSettingsFromDB() {
     if (error) { console.error('fetchSiteSettingsFromDB error:', error.message || error); return; }
     (data||[]).forEach(r => {
       if (r.key === 'maintenance_mode' || r.key === 'registration_open') siteSettings[r.key] = r.value === 'true';
-      else if (['min_deposit','min_withdrawal','max_withdrawal','referral_rate','withdrawal_fee_pct'].includes(r.key)) siteSettings[r.key] = parseFloat(r.value) || siteSettings[r.key];
+      else if (['min_deposit','min_withdrawal','max_withdrawal','referral_rate','withdrawal_fee_pct','withdrawal_otp_threshold'].includes(r.key)) siteSettings[r.key] = parseFloat(r.value) || siteSettings[r.key];
       else if (siteSettings.hasOwnProperty(r.key)) siteSettings[r.key] = r.value;
     });
     // ✅ FIX: تحديث عناصر الإيميل في الصفحة لو تغيّر في الـ settings
@@ -2951,20 +2967,17 @@ function updateDepositEstimate(){
   clearTimeout(_depEstimateTimer);
   const box = document.getElementById('dep-auto-estimate');
   const amount = parseFloat(document.getElementById('dep-auto-amount').value);
-  const currency = document.getElementById('dep-auto-currency').value;
   if(!amount || amount <= 0){ box.style.display = 'none'; return; }
+  // ✅ FIX: العميل هو اللي بيدفع عمولة NOWPayments (1% ثابتة مع خيار fee-paid-by-user) —
+  // بيبان له بالظبط قد إيه هيبعت زيادة، وإنت تستلم المبلغ المطلوب كامل من غير خصم
+  const fee = Math.round(amount * 0.01 * 100) / 100;
+  const total = amount + fee;
   box.style.display = 'block';
-  box.textContent = ({ar:'...جاري الحساب',en:'Calculating...',tr:'Hesaplanıyor...'}[lang]||'Calculating...');
-  _depEstimateTimer = setTimeout(async () => {
-    try {
-      const { data, error } = await db.functions.invoke('nowpayments-estimate', { body: { amount, pay_currency: currency } });
-      if(error || data?.error || !data?.estimated_amount){ box.style.display = 'none'; return; }
-      box.textContent = '≈ ' + data.estimated_amount + ' ' + currency.toUpperCase();
-    } catch(e){
-      console.error('updateDepositEstimate error:', e);
-      box.style.display = 'none';
-    }
-  }, 500);
+  box.innerHTML = `
+    <div style="display:flex;justify-content:space-between;color:var(--muted)"><span>${lang==='ar'?'المبلغ اللي هيتقفل في رصيدك':lang==='tr'?'Bakiyenize eklenecek':'Amount credited to your balance'}</span><span>$${amount.toFixed(2)}</span></div>
+    <div style="display:flex;justify-content:space-between;color:var(--muted);margin-top:4px"><span>${lang==='ar'?'عمولة شبكة الدفع (~1%)':lang==='tr'?'Ödeme ağı ücreti (~%1)':'Payment network fee (~1%)'}</span><span>+$${fee.toFixed(2)}</span></div>
+    <div style="display:flex;justify-content:space-between;color:var(--gold);font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span>${lang==='ar'?'إجمالي المطلوب إرساله':lang==='tr'?'Gönderilecek toplam':'Total to send'}</span><span>≈$${total.toFixed(2)}</span></div>
+    <div id="dep-auto-estimate-crypto" style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono)"></div>`;
 }
 
 // ══ الإيداع التلقائي عبر NOWPayments ══
@@ -3007,6 +3020,9 @@ async function createAutoDeposit(){
     const amtDisplay = document.getElementById('dep-auto-amount-display');
     amtDisplay.textContent = data.pay_amount ? `${data.pay_amount} ${(data.pay_currency||'').toUpperCase()}` : `$${amount}`;
     amtDisplay.dataset.raw = data.pay_amount || amount;
+    const creditNote = document.getElementById('dep-auto-credit-note');
+    creditNote.textContent = (lang==='ar'?`سيتم إضافة $${amount.toFixed(2)} كاملة لرصيدك (عمولة الشبكة مدفوعة بالفعل ضمن المبلغ ده)`:lang==='tr'?`Hesabınıza tam $${amount.toFixed(2)} eklenecek (ağ ücreti bu tutara dahil)`:`The full $${amount.toFixed(2)} will be credited to your balance (network fee is already included above)`);
+    startDepositCountdown();
     document.getElementById('dep-auto-status').textContent = '⏳ ' + ({ar:'في انتظار التحويل...',en:'Waiting for transfer...',tr:'Transfer bekleniyor...'}[lang]||'Waiting for transfer...');
     document.getElementById('dep-auto-status').style.cssText = 'margin-top:16px;padding:12px;background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;font-size:13px;font-weight:700;color:var(--gold)';
 
@@ -3018,6 +3034,8 @@ async function createAutoDeposit(){
       .on('postgres_changes', {event:'UPDATE', schema:'public', table:'deposits', filter:'id=eq.'+_autoDepositId}, (payload) => {
         const statusEl = document.getElementById('dep-auto-status');
         if(payload.new.status === 'approved'){
+          clearInterval(_depCountdownInterval);
+          document.getElementById('dep-auto-timer').textContent = '';
           statusEl.style.background = 'rgba(0,200,120,0.12)'; statusEl.style.borderColor = 'var(--green)'; statusEl.style.color = 'var(--green)';
           const credited = payload.new.credited_amount || payload.new.amount;
           statusEl.textContent = (lang==='ar'?`✅ تم تأكيد الإيداع، تم إضافة $${credited} لرصيدك`:lang==='tr'?`✅ Yatırım onaylandı, hesabınıza $${credited} eklendi`:`✅ Deposit confirmed, $${credited} added to your balance`);
@@ -3035,6 +3053,27 @@ async function createAutoDeposit(){
   } finally {
     btn.disabled = false;
   }
+}
+
+let _depCountdownInterval = null;
+function startDepositCountdown(){
+  clearInterval(_depCountdownInterval);
+  let secondsLeft = 10 * 60; // ✅ سعر NOWPayments الثابت بيفضل صالح 10 دقايق بس (fixed-rate window)
+  const timerEl = document.getElementById('dep-auto-timer');
+  const tick = () => {
+    if(secondsLeft <= 0){
+      clearInterval(_depCountdownInterval);
+      timerEl.style.color = 'var(--red)';
+      timerEl.textContent = lang==='ar'?'⚠️ انتهت صلاحية السعر الثابت — لو لسه ما بعتش، السعر ممكن يتغير شوية':lang==='tr'?'⚠️ Sabit fiyat süresi doldu — henüz göndermediyseniz fiyat değişebilir':'⚠️ Fixed rate window expired — if not sent yet, the rate may change slightly';
+      return;
+    }
+    const m = Math.floor(secondsLeft/60), s = secondsLeft%60;
+    timerEl.style.color = secondsLeft < 120 ? 'var(--red)' : 'var(--orange)';
+    timerEl.textContent = (lang==='ar'?`⏱ السعر ثابت لمدة: ${m}:${s.toString().padStart(2,'0')} دقيقة`:lang==='tr'?`⏱ Sabit fiyat süresi: ${m}:${s.toString().padStart(2,'0')}`:`⏱ Fixed rate valid for: ${m}:${s.toString().padStart(2,'0')}`);
+    secondsLeft--;
+  };
+  tick();
+  _depCountdownInterval = setInterval(tick, 1000);
 }
 
 function copyAutoDepAddr(){
@@ -3059,6 +3098,8 @@ async function checkAutoDepositStatus(){
     if(error) throw error;
     const statusEl = document.getElementById('dep-auto-status');
     if(data.status === 'approved'){
+      clearInterval(_depCountdownInterval);
+      document.getElementById('dep-auto-timer').textContent = '';
       statusEl.style.cssText = 'margin-top:16px;padding:12px;background:rgba(0,200,120,0.12);border:1px solid var(--green);border-radius:10px;font-size:13px;font-weight:700;color:var(--green)';
       const credited = data.credited_amount || data.amount;
       statusEl.textContent = (lang==='ar'?`✅ تم تأكيد الإيداع، تم إضافة $${credited} لرصيدك`:lang==='tr'?`✅ Yatırım onaylandı, hesabınıza $${credited} eklendi`:`✅ Deposit confirmed, $${credited} added to your balance`);
@@ -3079,6 +3120,8 @@ async function checkAutoDepositStatus(){
 
 function resetAutoDeposit(){
   if(_autoDepositChannel){ db.removeChannel(_autoDepositChannel); _autoDepositChannel = null; }
+  clearInterval(_depCountdownInterval);
+  document.getElementById('dep-auto-timer').textContent = '';
   _autoDepositId = null;
   document.getElementById('dep-auto-result').style.display = 'none';
   document.getElementById('dep-auto-form').style.display = 'block';
@@ -3135,16 +3178,21 @@ function updateWithdrawFeePreview(){
   if(!amount || amount <= 0){ box.style.display = 'none'; return; }
   const fee = Math.round(amount * feePct / 100 * 100) / 100;
   const net = Math.round((amount - fee) * 100) / 100;
-  if(feePct <= 0){
+  const needsOtp = amount >= (siteSettings.withdrawal_otp_threshold || Infinity);
+  if(feePct <= 0 && !needsOtp){
     box.style.display = 'none';
     return;
   }
   box.style.display = 'block';
   box.innerHTML = `
+    ${feePct > 0 ? `
     <div style="display:flex;justify-content:space-between;color:var(--muted)"><span>${lang==='ar'?'المبلغ المطلوب':lang==='tr'?'Talep edilen':'Requested amount'}</span><span>$${amount.toFixed(2)}</span></div>
     <div style="display:flex;justify-content:space-between;color:var(--red);margin-top:4px"><span>${lang==='ar'?`عمولة السحب (${feePct}%)`:lang==='tr'?`Çekim ücreti (%${feePct})`:`Withdrawal fee (${feePct}%)`}</span><span>-$${fee.toFixed(2)}</span></div>
-    <div style="display:flex;justify-content:space-between;color:var(--green);font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span>${lang==='ar'?'الصافي اللي هيوصلك':lang==='tr'?'Alacağınız net tutar':'You will receive'}</span><span>$${net.toFixed(2)}</span></div>`;
+    <div style="display:flex;justify-content:space-between;color:var(--green);font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span>${lang==='ar'?'الصافي اللي هيوصلك':lang==='tr'?'Alacağınız net tutar':'You will receive'}</span><span>$${net.toFixed(2)}</span></div>` : ''}
+    ${needsOtp ? `<div style="margin-top:${feePct>0?'8':'0'}px;font-size:11px;color:var(--gold)">🔐 ${lang==='ar'?'هذا المبلغ يتطلب كود تحقق إضافي عبر إيميلك':lang==='tr'?'Bu tutar için e-posta ile ek doğrulama gerekir':'This amount requires an extra email verification code'}</div>` : ''}`;
 }
+
+let _pendingWithdrawal = null;
 
 async function submitWithdrawal() {
   if(!userProfile){openModal('login');return;}
@@ -3174,17 +3222,43 @@ async function submitWithdrawal() {
     return;
   }
 
+  _pendingWithdrawal = { amount, coin, addr };
+  await executeWithdrawal(null);
+}
+
+async function executeWithdrawal(otpCode){
+  if(!_pendingWithdrawal) return;
+  const { amount, coin, addr } = _pendingWithdrawal;
   try {
-    // ✅ FIX: الطلب بقى بينادي RPC آمنة بتحجز (تخصم) المبلغ من الرصيد فوراً وقت الطلب نفسه،
-    // بدل ما تسيب الرصيد زي ما هو لحد ما الأدمن يوافق — ده كان بيسمح بطلب سحب أكتر من
-    // الرصيد الفعلي، وكان بيخلي "رفض الطلب" يرجّع فلوس ماكانتش اتخصمت أصلاً.
     const { data: wdRpc, error: wdErr } = await db.rpc('user_request_withdrawal', {
-      p_amount: amount, p_coin: coin.split('-')[0], p_network: coin, p_wallet_address: addr
+      p_amount: amount, p_coin: coin.split('-')[0], p_network: coin, p_wallet_address: addr, p_otp_code: otpCode
     });
     if(wdErr) throw wdErr;
     const wdResult = Array.isArray(wdRpc) ? wdRpc[0] : wdRpc;
     if(!wdResult || !wdResult.success) {
-      // ✅ FIX: رسالة مترجمة وواضحة لو الرفض بسبب حد الـ KYC، مع توجيه المستخدم لصفحة التوثيق
+      // ✅ التحقق الإضافي مطلوب: نطلب كود ونفتح المودال
+      if(wdResult?.message === 'OTP_REQUIRED'){
+        const { data: otpData, error: otpErr } = await db.rpc('request_withdrawal_otp', { p_amount: amount });
+        const otpResult = Array.isArray(otpData) ? otpData[0] : otpData;
+        if(otpErr || !otpResult?.success){
+          showToast(otpResult?.message || (lang==='ar'?'تعذر إرسال كود التحقق':'Could not send verification code'), 'err');
+          return;
+        }
+        document.getElementById('wd-otp-input').value = '';
+        document.getElementById('wd-otp-err').style.display = 'none';
+        document.getElementById('modal-wd-otp').classList.add('open');
+        showToast(lang==='ar'?'✓ تم إرسال كود التحقق لإيميلك':lang==='tr'?'✓ Doğrulama kodu e-postanıza gönderildi':'✓ Verification code sent to your email');
+        return;
+      }
+      if(otpCode){
+        // كان جوه مودال الكود — اعرض الخطأ جواه مش toast عام
+        const errEl = document.getElementById('wd-otp-err');
+        errEl.textContent = wdResult?.message === 'Invalid or expired verification code'
+          ? ({ar:'الكود غير صحيح أو منتهي الصلاحية',en:'Invalid or expired code',tr:'Geçersiz veya süresi dolmuş kod'}[lang]||'Invalid or expired code')
+          : (wdResult?.message || '');
+        errEl.style.display = 'block';
+        return;
+      }
       if((wdResult?.message||'').includes('KYC verification required')) {
         showToast(lang==='ar'?'⚠️ لازم توثّق هويتك (KYC) الأول عشان تقدر تسحب هذا المبلغ':lang==='tr'?'⚠️ Bu tutarı çekmek için önce kimliğinizi doğrulamanız (KYC) gerekiyor':'⚠️ Please verify your identity (KYC) first to withdraw this amount', 'err');
       } else {
@@ -3194,11 +3268,38 @@ async function submitWithdrawal() {
     }
     userProfile.balance -= amount; // الرصيد اتخصم فعلياً في الـ RPC، نعكسها محلياً فوراً
     db.functions.invoke('send-email', { body: { template: 'withdrawal_received', params: { amount }, lang } }).catch(e => console.error('withdrawal email error:', e));
+    closeModal('wd-otp');
     showToast(lang==='ar'?'✓ تم إرسال طلب السحب':lang==='tr'?'✓ Çekim talebi gönderildi':'✓ Withdrawal request sent');
     document.getElementById('wd-addr').value='';
     document.getElementById('wd-amount').value='';
     document.getElementById('wd-fee-preview').style.display='none';
+    _pendingWithdrawal = null;
   } catch(e){showToast(lang==='ar'?'حدث خطأ':lang==='tr'?'Bir hata oluştu':'Error occurred','err');}
+}
+
+async function confirmWithdrawalOtp(){
+  const code = document.getElementById('wd-otp-input').value.trim();
+  if(!code || code.length !== 6){
+    const errEl = document.getElementById('wd-otp-err');
+    errEl.textContent = {ar:'اكتب الكود المكون من 6 أرقام',en:'Enter the 6-digit code',tr:'6 haneli kodu girin'}[lang]||'Enter the 6-digit code';
+    errEl.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('wd-otp-submit-btn');
+  btn.disabled = true;
+  await executeWithdrawal(code);
+  btn.disabled = false;
+}
+
+async function resendWithdrawalOtp(){
+  if(!_pendingWithdrawal) return;
+  const { data, error } = await db.rpc('request_withdrawal_otp', { p_amount: _pendingWithdrawal.amount });
+  const result = Array.isArray(data) ? data[0] : data;
+  if(error || !result?.success){
+    showToast(result?.message || (lang==='ar'?'تعذر إعادة إرسال الكود':'Could not resend code'), 'err');
+    return;
+  }
+  showToast(lang==='ar'?'✓ تم إعادة إرسال الكود':lang==='tr'?'✓ Kod yeniden gönderildi':'✓ Code resent');
 }
 
 // ── COIN SELECTOR ──
