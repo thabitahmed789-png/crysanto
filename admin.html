@@ -907,17 +907,20 @@ body.ltr .toast{left:auto;right:24px;}
       <div class="section-title">تذاكر الدعم الفني</div>
       <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
         <div class="panel" style="padding:0;overflow:hidden">
-          <div class="panel-head" style="padding:14px">
-            <span>التذاكر</span>
-            <div style="display:flex;gap:8px;align-items:center">
-              <select id="sup-status-filter" onchange="loadSupportTickets()" style="background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px">
-                <option value="all">الكل</option>
-                <option value="open">مفتوحة</option>
-                <option value="answered">تم الرد</option>
-                <option value="closed">مغلقة</option>
-              </select>
-              <button class="act-btn" onclick="loadSupportTickets()" style="font-size:12px">🔄</button>
+          <div class="panel-head" style="padding:14px;flex-direction:column;align-items:stretch;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span>التذاكر</span>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select id="sup-status-filter" onchange="loadSupportTickets()" style="background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px">
+                  <option value="all">الكل</option>
+                  <option value="open">مفتوحة</option>
+                  <option value="answered">تم الرد</option>
+                  <option value="closed">مغلقة</option>
+                </select>
+                <button class="act-btn" onclick="loadSupportTickets()" style="font-size:12px">🔄</button>
+              </div>
             </div>
+            <input type="text" id="sup-ticket-search" oninput="loadSupportTickets()" placeholder="🔍 بحث برقم التذكرة أو الموضوع..." style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px">
           </div>
           <div id="sup-admin-list" style="max-height:70vh;overflow-y:auto">
             <div style="color:var(--muted);text-align:center;padding:40px">جاري التحميل...</div>
@@ -938,7 +941,11 @@ body.ltr .toast{left:auto;right:24px;}
               </select>
             </div>
             <div id="sup-admin-messages" style="display:flex;flex-direction:column;gap:10px;max-height:45vh;overflow-y:auto;margin-bottom:14px;padding:4px"></div>
-            <div style="display:flex;gap:8px">
+            <div id="sup-admin-attach-preview" style="display:none;font-size:11px;color:var(--gold);margin-bottom:6px"></div>
+            <div style="display:flex;gap:8px;align-items:flex-end">
+              <label style="cursor:pointer;padding:8px;background:var(--dark);border-radius:8px;border:1px solid var(--border2)" title="إرفاق صورة/ملف">
+                📎<input type="file" id="sup-admin-file" accept="image/*,application/pdf" style="display:none" onchange="handleAdminTicketFileSelect()">
+              </label>
               <textarea id="sup-admin-reply" rows="2" style="flex:1;background:var(--dark);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:8px;font-family:inherit" placeholder="اكتب ردك للعميل..."></textarea>
               <button class="act-btn-primary" onclick="sendAdminTicketReply()">➤ إرسال</button>
             </div>
@@ -1599,6 +1606,8 @@ function showUserModal(id){
       <button class="act-btn" style="background:var(--gold);color:#000" onclick="adminAddProfit('${u.id}', this.dataset.name);closeModal()" data-name="${(u.name||'').replace(/"/g,'&quot;')}">💰 ${lang==='ar'?'إضافة ربح':'Add Profit'}</button>
       <button class="act-btn red" onclick="toggleUserBlock('${u.id}','${u.status==='blocked'?'active':'blocked'}');closeModal()">${u.status==='blocked'?t('unblock'):t('block')}</button>
       <button class="act-btn ${u.withdrawal_locked?'green':'red'}" onclick="toggleWithdrawalLock('${u.id}',${!u.withdrawal_locked});closeModal()">${u.withdrawal_locked?(lang==='ar'?'🔓 فتح السحب':'🔓 Unlock Withdrawals'):(lang==='ar'?'🔒 قفل السحب فقط':'🔒 Lock Withdrawals Only')}</button>
+      <button class="act-btn" onclick="resetUserWithdrawalPin('${u.id}','${escapeJsAttr(u.name||'')}')">${lang==='ar'?'🔁 إعادة تعيين رقم السحب السري':'🔁 Reset Withdrawal PIN'}</button>
+      <button class="act-btn" onclick="triggerPasswordResetEmail('${escapeJsAttr(u.email||'')}')">${lang==='ar'?'✉️ إرسال إيميل استرجاع كلمة السر':'✉️ Send Password Reset Email'}</button>
     </div>
     <div style="margin-top:12px;padding:12px;background:var(--dark);border-radius:8px;font-size:11px;color:var(--muted)">
       <b style="color:var(--gold)">إجمالي الأرباح:</b> $${parseFloat(u.total_profit||0).toFixed(2)} &nbsp;|&nbsp;
@@ -3185,6 +3194,30 @@ function renderRealUsers(data) {
     </tbody></table>`;
 }
 
+async function resetUserWithdrawalPin(userId, userName){
+  const confirmed = confirm(lang==='ar' ? `تأكيد إعادة تعيين رقم السحب السري لـ ${userName}؟ العميل هيحتاج يعمل رقم جديد.` : `Confirm resetting the withdrawal PIN for ${userName}? They will need to set a new one.`);
+  if(!confirmed) return;
+  const { data, error } = await sdb.rpc('admin_reset_withdrawal_pin', { p_user_id: userId });
+  const result = Array.isArray(data) ? data[0] : data;
+  if(error || !result?.success){ showToast((lang==='ar'?'✗ فشل: ':'✗ Failed: ')+(result?.message||error?.message||'')); return; }
+  showToast(lang==='ar'?'✓ تم إعادة تعيين الرقم السري، العميل هيحتاج يعمل رقم جديد':'✓ PIN reset — user will need to set a new one');
+  closeModal();
+  await loadRealUsers();
+}
+
+async function triggerPasswordResetEmail(email){
+  if(!email){ showToast(lang==='ar'?'لا يوجد إيميل مسجل لهذا العميل':'No email found for this user'); return; }
+  const confirmed = confirm(lang==='ar' ? `تأكيد إرسال إيميل استرجاع كلمة السر إلى ${email}؟` : `Confirm sending a password reset email to ${email}?`);
+  if(!confirmed) return;
+  try {
+    const { error } = await sdb.auth.resetPasswordForEmail(email);
+    if(error){ showToast((lang==='ar'?'✗ فشل الإرسال: ':'✗ Failed to send: ')+error.message); return; }
+    showToast(lang==='ar'?'✓ تم إرسال إيميل الاسترجاع (لو الإيميل ده مسجل فعلاً)':'✓ Reset email sent (if that email is registered)');
+  } catch(e){
+    showToast((lang==='ar'?'✗ خطأ: ':'✗ Error: ')+e.message);
+  }
+}
+
 async function toggleWithdrawalLock(userId, lock){
   let reason = null;
   if(lock){
@@ -3930,8 +3963,11 @@ async function loadSupportTickets(){
   wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px">⏳ جاري التحميل...</div>`;
   try {
     const filter = document.getElementById('sup-status-filter')?.value || 'all';
-    let q = sdb.from('support_tickets').select('id,subject,status,updated_at,user_id,users(name,email)').order('updated_at', { ascending:false });
+    const searchQ = document.getElementById('sup-ticket-search')?.value?.trim() || '';
+    let q = sdb.from('support_tickets').select('id,ticket_number,subject,status,updated_at,user_id,users(name,email)').order('updated_at', { ascending:false });
     if(filter !== 'all') q = q.eq('status', filter);
+    if(searchQ && /^\d+$/.test(searchQ)) q = q.eq('ticket_number', parseInt(searchQ));
+    else if(searchQ) q = q.ilike('subject', `%${searchQ}%`);
     const { data, error } = await q;
     if(error) throw error;
     if(!data || !data.length){ wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:40px">لا توجد تذاكر</div>`; return; }
@@ -3940,7 +3976,7 @@ async function loadSupportTickets(){
     wrap.innerHTML = data.map(t => `
       <div onclick="openAdminTicketThread('${t.id}')" style="padding:14px;border-bottom:1px solid var(--border2);cursor:pointer;${_adminActiveTicketId===t.id?'background:var(--dark)':''}">
         <div style="display:flex;justify-content:space-between;align-items:start">
-          <div style="font-size:13px;font-weight:700">${escapeHtml(t.subject)}</div>
+          <div style="font-size:13px;font-weight:700">#${t.ticket_number} — ${escapeHtml(t.subject)}</div>
           <span style="font-size:10px;font-weight:700;color:${statusColor[t.status]||'var(--muted)'};white-space:nowrap;margin-right:8px">${statusLbl[t.status]||t.status}</span>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">${escapeHtml(t.users?.name || t.users?.email || '—')}</div>
@@ -3967,40 +4003,77 @@ async function loadAdminTicketThread(){
   if(!_adminActiveTicketId) return;
   try {
     const { data: ticket, error: tErr } = await sdb.from('support_tickets')
-      .select('subject,status,users(name,email)').eq('id', _adminActiveTicketId).single();
+      .select('ticket_number,subject,status,users(name,email)').eq('id', _adminActiveTicketId).single();
     if(tErr) throw tErr;
-    document.getElementById('sup-admin-subject').textContent = ticket.subject;
+    document.getElementById('sup-admin-subject').textContent = `#${ticket.ticket_number} — ${ticket.subject}`;
     document.getElementById('sup-admin-user').textContent = ticket.users?.name ? `${ticket.users.name} — ${ticket.users.email}` : (ticket.users?.email || '—');
     document.getElementById('sup-admin-status-select').value = ticket.status;
 
     const { data: messages, error: mErr } = await sdb.from('support_messages')
-      .select('sender_role,message,created_at').eq('ticket_id', _adminActiveTicketId)
+      .select('sender_role,message,created_at,attachment_url,attachment_name,attachment_type').eq('ticket_id', _adminActiveTicketId)
       .order('created_at', { ascending:true });
     if(mErr) throw mErr;
     const box = document.getElementById('sup-admin-messages');
-    box.innerHTML = (messages||[]).map(m => `
-      <div style="align-self:${m.sender_role==='admin'?'flex-end':'flex-start'};max-width:80%;background:${m.sender_role==='admin'?'var(--gold)':'var(--dark)'};color:${m.sender_role==='admin'?'#000':'var(--text)'};border-radius:10px;padding:8px 12px;font-size:13px">
-        ${escapeHtml(m.message)}
+    box.innerHTML = (await Promise.all((messages||[]).map(async m => {
+      let attachHtml = '';
+      if(m.attachment_url){
+        const { data: signed } = await sdb.storage.from('support-attachments').createSignedUrl(m.attachment_url, 3600);
+        const url = signed?.signedUrl || '#';
+        attachHtml = (m.attachment_type||'').startsWith('image/')
+          ? `<a href="${url}" target="_blank"><img src="${url}" style="max-width:200px;border-radius:8px;margin-top:6px;display:block"></a>`
+          : `<a href="${url}" target="_blank" style="display:block;margin-top:6px;color:inherit;text-decoration:underline;font-size:12px">📎 ${escapeHtml(m.attachment_name||'file')}</a>`;
+      }
+      return `<div style="align-self:${m.sender_role==='admin'?'flex-end':'flex-start'};max-width:80%;background:${m.sender_role==='admin'?'var(--gold)':'var(--dark)'};color:${m.sender_role==='admin'?'#000':'var(--text)'};border-radius:10px;padding:8px 12px;font-size:13px">
+        ${m.message ? escapeHtml(m.message) : ''}${attachHtml}
         <div style="font-size:10px;opacity:.7;margin-top:4px">${new Date(m.created_at).toLocaleString('ar-EG')}</div>
-      </div>`).join('');
+      </div>`;
+    }))).join('');
     box.scrollTop = box.scrollHeight;
   } catch(e){
     showToast('✗ ' + e.message, 'error');
   }
 }
 
+let _pendingAdminTicketFile = null;
+function handleAdminTicketFileSelect(){
+  const input = document.getElementById('sup-admin-file');
+  const preview = document.getElementById('sup-admin-attach-preview');
+  const file = input.files?.[0];
+  if(!file){ _pendingAdminTicketFile = null; preview.style.display = 'none'; return; }
+  if(file.size > 10 * 1024 * 1024){
+    showToast('الملف كبير جدًا (الحد الأقصى 10MB)');
+    input.value = ''; _pendingAdminTicketFile = null; preview.style.display = 'none';
+    return;
+  }
+  _pendingAdminTicketFile = file;
+  preview.style.display = 'block';
+  preview.textContent = `📎 ${file.name}`;
+}
+
 async function sendAdminTicketReply(){
   const ta = document.getElementById('sup-admin-reply');
   const msg = (ta.value||'').trim();
-  if(!msg || !_adminActiveTicketId) return;
+  if(!msg && !_pendingAdminTicketFile) return;
+  if(!_adminActiveTicketId) return;
   try {
     const { data: { user } } = await sdb.auth.getUser();
+    let attachment_url = null, attachment_name = null, attachment_type = null;
+    if(_pendingAdminTicketFile){
+      const file = _pendingAdminTicketFile;
+      const path = `${_adminActiveTicketId}/${Date.now()}_${file.name}`;
+      const { error: upErr } = await sdb.storage.from('support-attachments').upload(path, file);
+      if(upErr) throw upErr;
+      attachment_url = path; attachment_name = file.name; attachment_type = file.type;
+    }
     const { error } = await sdb.from('support_messages')
-      .insert({ ticket_id: _adminActiveTicketId, sender_role:'admin', sender_id: user.id, message: msg });
+      .insert({ ticket_id: _adminActiveTicketId, sender_role:'admin', sender_id: user.id, message: msg || '', attachment_url, attachment_name, attachment_type });
     if(error) throw error;
     ta.value = '';
+    document.getElementById('sup-admin-file').value = '';
+    document.getElementById('sup-admin-attach-preview').style.display = 'none';
+    _pendingAdminTicketFile = null;
     await loadAdminTicketThread();
-    sendTicketReplyEmailNotification(_adminActiveTicketId, msg); // ✅ إيميل حقيقي للعميل عند رد الأدمن
+    sendTicketReplyEmailNotification(_adminActiveTicketId, msg || '📎 مرفق'); // ✅ إيميل حقيقي للعميل عند رد الأدمن
   } catch(e){
     showToast('✗ ' + e.message, 'error');
   }
@@ -4010,11 +4083,11 @@ async function sendAdminTicketReply(){
 async function sendTicketReplyEmailNotification(ticketId, replyMsg){
   try {
     const { data: t, error } = await sdb.from('support_tickets')
-      .select('subject, users(email,name)').eq('id', ticketId).single();
+      .select('ticket_number, subject, users(email,name)').eq('id', ticketId).single();
     if(error || !t?.users?.email) return;
     const n = escapeHtml(t.users.name || '');
-    const subject = `📩 New reply on your support ticket — Crysanto`;
-    const bodyHtml = `<div style="font-family:sans-serif"><h2>Hi ${n},</h2><p>You have a new reply on your ticket "<b>${escapeHtml(t.subject)}</b>":</p><p style="background:#f5f5f5;padding:12px;border-radius:8px">${escapeHtml(replyMsg)}</p><p>Log in to Crysanto to reply.</p></div>`;
+    const subject = `📩 New reply on ticket #${t.ticket_number} — Crysanto`;
+    const bodyHtml = `<div style="font-family:sans-serif"><h2>Hi ${n},</h2><p>You have a new reply on your ticket #${t.ticket_number} "<b>${escapeHtml(t.subject)}</b>":</p><p style="background:#f5f5f5;padding:12px;border-radius:8px">${escapeHtml(replyMsg)}</p><p>Log in to Crysanto to reply.</p></div>`;
     await sdb.functions.invoke('send-email', { body: { to: t.users.email, subject, html: bodyHtml } });
   } catch(e){
     console.error('sendTicketReplyEmailNotification error:', e);
