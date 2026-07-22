@@ -3319,7 +3319,7 @@ async function runGlobalSearch(q){
   try {
     const [usersRes, depRes, wdRes] = await Promise.all([
       sdb.from('users').select('id,name,email,balance,status').or(`name.ilike.%${q}%,email.ilike.%${q}%`).limit(6),
-      sdb.from('deposits').select('id,amount,status,wallet_address,users(name,email)').ilike('wallet_address', `%${q}%`).limit(4),
+      sdb.from('deposits').select('id,amount,status,pay_address,users(name,email)').ilike('pay_address', `%${q}%`).limit(4),
       sdb.from('withdrawals').select('id,amount,status,wallet_address,users(name,email)').ilike('wallet_address', `%${q}%`).limit(4),
     ]);
 
@@ -3346,7 +3346,7 @@ async function runGlobalSearch(q){
       html += deps.map(d => `
         <div onclick="switchSection('s-deposits');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border2)">
           <div style="font-size:13px;font-weight:700">${escapeHtml(d.users?.name||'—')} — $${parseFloat(d.amount).toLocaleString('en-US')}</div>
-          <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${escapeHtml((d.wallet_address||'').slice(0,30))}...</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${escapeHtml((d.pay_address||'').slice(0,30))}...</div>
         </div>`).join('');
     }
     if(wds.length){
