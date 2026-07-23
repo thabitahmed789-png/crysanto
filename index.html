@@ -41,7 +41,7 @@
 <meta property="og:url" content="">
 <meta property="og:image" content="">
 <meta name="twitter:image" content="">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%230F1520"/><rect width="32" height="32" rx="7" fill="none" stroke="%23C9A84C" stroke-width="1.5"/><path d="M18 6 A10 10 0 1 0 18 26 L16.5 23.5 A7 7 0 1 1 16.5 8.5 Z" fill="%23C9A84C"/><rect x="18.5" y="6" width="2.2" height="20" rx="1" fill="%23C9A84C"/><path d="M20.7 6 Q28 6 28 12 Q28 18 20.7 18 L20.7 15.5 Q25.5 15.5 25.5 12 Q25.5 8.5 20.7 8.5 Z" fill="%23C9A84C"/><path d="M20.7 16.5 L28.5 26 L26 26 L18.5 17 Z" fill="%23C9A84C"/></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230F1520'/><rect width='32' height='32' rx='7' fill='none' stroke='%23C9A84C' stroke-width='1.5'/><path d='M18 6 A10 10 0 1 0 18 26 L16.5 23.5 A7 7 0 1 1 16.5 8.5 Z' fill='%23C9A84C'/><rect x='18.5' y='6' width='2.2' height='20' rx='1' fill='%23C9A84C'/><path d='M20.7 6 Q28 6 28 12 Q28 18 20.7 18 L20.7 15.5 Q25.5 15.5 25.5 12 Q25.5 8.5 20.7 8.5 Z' fill='%23C9A84C'/><path d='M20.7 16.5 L28.5 26 L26 26 L18.5 17 Z' fill='%23C9A84C'/></svg>">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cairo:wght@300;400;600;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -417,7 +417,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
 <!-- HOME -->
 <div class="page active" id="page-home">
   <div class="hero">
-    <div class="hero-badge"><span class="badge-dot"></span><span id="h-live" data-ar="منصة مباشرة · 12,847 مستثمر نشط" data-en="Live · 12,847 Active Investors" data-tr="Canlı · 12,847 Aktif Yatırımcı">منصة مباشرة · 12,847 مستثمر نشط</span></div>
+    <div class="hero-badge"><span class="badge-dot"></span><span id="h-live" data-ar="منصة مباشرة · 12,847 مستثمر نشط" data-en="Live · 12,847 Active Investors" data-tr="Canlı · 12.847 Aktif Yatırımcı">منصة مباشرة · 12,847 مستثمر نشط</span></div>
     <h1><span id="h1" data-ar="استثمر في" data-en="Invest in" data-tr="Yatırım Yap">استثمر في</span><br><span class="gold" id="h2" data-ar="مستقبلك الرقمي" data-en="Your Digital Future" data-tr="Dijital Geleceğine">مستقبلك الرقمي</span><br><span class="outline">Crysanto</span></h1>
     <p id="h-sub" data-ar="منصة استثمار رقمي آمنة وموثوقة. حقق عوائد يومية على استثماراتك." data-en="A secure digital investment platform. Earn daily returns on your crypto investments." data-tr="Güvenli dijital yatırım platformu. Günlük gelir elde edin.">منصة استثمار رقمي آمنة وموثوقة. حقق عوائد يومية على استثماراتك.</p>
     <div class="hero-cta">
@@ -903,7 +903,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
             <button class="btn-primary" style="width:100%" id="dep-auto-submit-btn" onclick="createAutoDeposit()" data-ar="🔗 توليد عنوان الإيداع" data-en="🔗 Generate Deposit Address" data-tr="🔗 Yatırım Adresi Oluştur">🔗 توليد عنوان الإيداع</button>
           </div>
           <div id="dep-auto-result" style="display:none;text-align:center">
-            <div style="font-size:12px;color:var(--muted);margin-bottom:8px" data-ar="أرسل المبلغ بالظبط للعنوان ده (شامل عمولة الشبكة):" data-en="Send the exact amount to this address (fee included):" data-tr="Tam tutarı bu adrese gönderin (ücret dahil):">أرسل المبلغ بالظبط للعنوان ده (شامل عمولة الشبكة):</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px" data-ar="أرسل المبلغ بالضبط إلى هذا العنوان (شامل عمولة الشبكة):" data-en="Send the exact amount to this address (fee included):" data-tr="Tam tutarı bu adrese gönderin (ücret dahil):">أرسل المبلغ بالضبط إلى هذا العنوان (شامل عمولة الشبكة):</div>
             <div style="font-family:var(--mono);font-size:20px;font-weight:800;color:var(--gold);margin-bottom:4px;cursor:pointer" id="dep-auto-amount-display" onclick="copyAutoDepAmount()">—</div>
             <div id="dep-auto-credit-note" style="font-size:11px;color:var(--green);margin-bottom:12px"></div>
             <div class="wallet-addr" id="dep-auto-address" style="padding:10px;background:var(--dark3);border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:12px;word-break:break-all" onclick="copyAutoDepAddr()">—</div>
@@ -913,7 +913,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
             </div>
             <div id="dep-auto-timer" style="margin-top:10px;font-size:12px;color:var(--orange);font-weight:700"></div>
             <div id="dep-auto-status" style="margin-top:16px;padding:12px;background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;font-size:13px;font-weight:700;color:var(--gold)">⏳ في انتظار التحويل...</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:10px" data-ar="هيتقفل تلقائي في رصيدك فور تأكيد التحويل على البلوكتشين، من غير ما تعمل حاجة تانية." data-en="Your balance updates automatically once the transaction is confirmed on-chain." data-tr="İşlem blok zincirinde onaylandığında bakiyeniz otomatik güncellenir.">هيتقفل تلقائي في رصيدك فور تأكيد التحويل على البلوكتشين، من غير ما تعمل حاجة تانية.</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:10px" data-ar="سيُضاف المبلغ تلقائيًا إلى رصيدك فور تأكيد التحويل على البلوكتشين، دون الحاجة لأي إجراء إضافي." data-en="Your balance updates automatically once the transaction is confirmed on-chain." data-tr="İşlem blok zincirinde onaylandığında bakiyeniz otomatik güncellenir.">سيُضاف المبلغ تلقائيًا إلى رصيدك فور تأكيد التحويل على البلوكتشين، دون الحاجة لأي إجراء إضافي.</div>
             <div style="display:flex;gap:8px;justify-content:center;margin-top:16px">
               <button class="copy-btn" onclick="checkAutoDepositStatus()" id="dep-auto-check-btn" data-ar="🔄 تحقق من الحالة الآن" data-en="🔄 Check Status Now" data-tr="🔄 Şimdi Kontrol Et">🔄 تحقق من الحالة الآن</button>
               <button class="copy-btn" onclick="resetAutoDeposit()" data-ar="↺ إيداع جديد" data-en="↺ New Deposit" data-tr="↺ Yeni Yatırım">↺ إيداع جديد</button>
@@ -1448,6 +1448,29 @@ function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+
+// ✅ FIX: الأرقام في المشروع لازم تبقى إنجليزية بس (0-9) في كل مكان — لو حد كتب بلوحة مفاتيح
+// عربية (١٢٣...) أو فارسية (۱۲۳...)، الأرقام دي مش هتتفهم صح في الحسابات (parseFloat بيرجع NaN)،
+// فبنحولها فورًا لحظة الكتابة لأرقام إنجليزية عادية — في كل حقول الإدخال في الموقع.
+function normalizeDigits(str) {
+  if (str === null || str === undefined) return str;
+  return String(str)
+    .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660)) // أرقام عربية-هندية
+    .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x06F0)); // أرقام فارسية
+}
+document.addEventListener('input', function(e){
+  const el = e.target;
+  if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA')) return;
+  const type = (el.getAttribute('type')||'text').toLowerCase();
+  if (['checkbox','radio','file','button','submit','hidden','password'].includes(type)) return;
+  const before = el.value;
+  const after = normalizeDigits(before);
+  if (before !== after) {
+    const pos = el.selectionStart;
+    el.value = after;
+    if (pos !== null && el.setSelectionRange) { try { el.setSelectionRange(pos, pos); } catch(_){} }
+  }
+}, true);
 
 let lang = localStorage.getItem('crysanto_lang') || "en";
 let _optimisticAuth = false; // ✅ FIX: true مؤقتًا لو فيه كاش محلي، لحد ما Supabase يتأكد فعليًا
@@ -3098,7 +3121,7 @@ function updateDepositEstimate(){
   const total = amount + fee;
   box.style.display = 'block';
   box.innerHTML = `
-    <div style="display:flex;justify-content:space-between;color:var(--muted)"><span>${lang==='ar'?'المبلغ اللي هيتقفل في رصيدك':lang==='tr'?'Bakiyenize eklenecek':'Amount credited to your balance'}</span><span>$${amount.toFixed(2)}</span></div>
+    <div style="display:flex;justify-content:space-between;color:var(--muted)"><span>${lang==='ar'?'المبلغ الذي سيُضاف إلى رصيدك':lang==='tr'?'Bakiyenize eklenecek':'Amount credited to your balance'}</span><span>$${amount.toFixed(2)}</span></div>
     <div style="display:flex;justify-content:space-between;color:var(--muted);margin-top:4px"><span>${lang==='ar'?'عمولة شبكة الدفع (~1%)':lang==='tr'?'Ödeme ağı ücreti (~%1)':'Payment network fee (~1%)'}</span><span>+$${fee.toFixed(2)}</span></div>
     <div style="display:flex;justify-content:space-between;color:var(--gold);font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span>${lang==='ar'?'إجمالي المطلوب إرساله':lang==='tr'?'Gönderilecek toplam':'Total to send'}</span><span>≈$${total.toFixed(2)}</span></div>
     <div id="dep-auto-estimate-crypto" style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono)"></div>`;
@@ -3145,7 +3168,7 @@ async function createAutoDeposit(){
     amtDisplay.textContent = data.pay_amount ? `${data.pay_amount} ${(data.pay_currency||'').toUpperCase()}` : `$${amount}`;
     amtDisplay.dataset.raw = data.pay_amount || amount;
     const creditNote = document.getElementById('dep-auto-credit-note');
-    creditNote.textContent = (lang==='ar'?`سيتم إضافة $${amount.toFixed(2)} كاملة لرصيدك (عمولة الشبكة مدفوعة بالفعل ضمن المبلغ ده)`:lang==='tr'?`Hesabınıza tam $${amount.toFixed(2)} eklenecek (ağ ücreti bu tutara dahil)`:`The full $${amount.toFixed(2)} will be credited to your balance (network fee is already included above)`);
+    creditNote.textContent = (lang==='ar'?`سيُضاف المبلغ الكامل $${amount.toFixed(2)} إلى رصيدك (عمولة الشبكة مدفوعة بالفعل ضمن هذا المبلغ)`:lang==='tr'?`Hesabınıza tam $${amount.toFixed(2)} eklenecek (ağ ücreti bu tutara dahil)`:`The full $${amount.toFixed(2)} will be credited to your balance (network fee is already included above)`);
     startDepositCountdown();
     document.getElementById('dep-auto-status').textContent = '⏳ ' + ({ar:'في انتظار التحويل...',en:'Waiting for transfer...',tr:'Transfer bekleniyor...'}[lang]||'Waiting for transfer...');
     document.getElementById('dep-auto-status').style.cssText = 'margin-top:16px;padding:12px;background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;font-size:13px;font-weight:700;color:var(--gold)';
@@ -3312,7 +3335,7 @@ function updateWithdrawFeePreview(){
     ${feePct > 0 ? `
     <div style="display:flex;justify-content:space-between;color:var(--muted)"><span>${lang==='ar'?'المبلغ المطلوب':lang==='tr'?'Talep edilen':'Requested amount'}</span><span>$${amount.toFixed(2)}</span></div>
     <div style="display:flex;justify-content:space-between;color:var(--red);margin-top:4px"><span>${lang==='ar'?`عمولة السحب (${feePct}%)`:lang==='tr'?`Çekim ücreti (%${feePct})`:`Withdrawal fee (${feePct}%)`}</span><span>-$${fee.toFixed(2)}</span></div>
-    <div style="display:flex;justify-content:space-between;color:var(--green);font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span>${lang==='ar'?'الصافي اللي هيوصلك':lang==='tr'?'Alacağınız net tutar':'You will receive'}</span><span>$${net.toFixed(2)}</span></div>` : ''}
+    <div style="display:flex;justify-content:space-between;color:var(--green);font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span>${lang==='ar'?'الصافي الذي ستستلمه':lang==='tr'?'Alacağınız net tutar':'You will receive'}</span><span>$${net.toFixed(2)}</span></div>` : ''}
     ${needsOtp ? `<div style="margin-top:${feePct>0?'8':'0'}px;font-size:11px;color:var(--gold)">🔐 ${lang==='ar'?'هذا المبلغ يتطلب كود تحقق إضافي عبر إيميلك':lang==='tr'?'Bu tutar için e-posta ile ek doğrulama gerekir':'This amount requires an extra email verification code'}</div>` : ''}`;
 }
 
@@ -3423,7 +3446,7 @@ async function renderSupportTickets(){
     <div onclick="openTicketThread('${t.id}')" style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:14px;font-weight:700">#${t.ticket_number} — ${escapeHtmlSafe(t.subject)}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${new Date(t.updated_at).toLocaleString(lang==='ar'?'ar-EG':lang==='tr'?'tr-TR':'en-US')}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${new Date(t.updated_at).toLocaleString(lang==='tr'?'tr-TR':'en-US')}</div>
       </div>
       <span style="font-size:11px;font-weight:700;color:${statusColor[t.status]||'var(--muted)'}">${statusLabel[t.status]||t.status}</span>
     </div>`).join('');
@@ -3551,7 +3574,7 @@ async function loadTicketThread(){
     }
     return `<div style="align-self:${m.sender_role==='user'?'flex-end':'flex-start'};max-width:80%;background:${m.sender_role==='user'?'var(--gold)':'var(--dark2)'};color:${m.sender_role==='user'?'#000':'var(--text)'};border-radius:10px;padding:8px 12px;font-size:13px">
       ${m.message ? escapeHtmlSafe(m.message) : ''}${attachHtml}
-      <div style="font-size:10px;opacity:.7;margin-top:4px">${new Date(m.created_at).toLocaleString(lang==='ar'?'ar-EG':lang==='tr'?'tr-TR':'en-US')}</div>
+      <div style="font-size:10px;opacity:.7;margin-top:4px">${new Date(m.created_at).toLocaleString(lang==='tr'?'tr-TR':'en-US')}</div>
     </div>`;
   }))).join('');
   box.scrollTop = box.scrollHeight;
@@ -3640,7 +3663,7 @@ async function saveWithdrawalPin(){
     errEl.style.display = 'block'; return;
   }
   if(!/^\d{6}$/.test(newPin)){
-    errEl.textContent = {ar:'الرقم السري لازم يكون 6 أرقام بالظبط',en:'PIN must be exactly 6 digits',tr:'PIN tam olarak 6 hane olmalı'}[lang]||'PIN must be exactly 6 digits';
+    errEl.textContent = {ar:'يجب أن يتكون الرقم السري من 6 أرقام بالضبط',en:'PIN must be exactly 6 digits',tr:'PIN tam olarak 6 hane olmalı'}[lang]||'PIN must be exactly 6 digits';
     errEl.style.display = 'block'; return;
   }
   if(newPin !== confirmPin){
@@ -3804,7 +3827,7 @@ async function sendPasswordReset(){
     const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
     // مش بنفرق في الرسالة بين إيميل موجود أو لأ، عشان الأمان (منع تخمين إيميلات مسجلة)
     closeModal('forgot');
-    showToast(lang==='ar'?'✓ لو الإيميل ده مسجّل، هتستقبل رابط إعادة تعيين كلمة المرور':lang==='tr'?'✓ Bu e-posta kayıtlıysa, bir sıfırlama bağlantısı alacaksınız':'✓ If this email is registered, you will receive a reset link');
+    showToast(lang==='ar'?'✓ إذا كان هذا البريد الإلكتروني مسجّلاً، ستصلك رسالة لإعادة تعيين كلمة المرور':lang==='tr'?'✓ Bu e-posta kayıtlıysa, bir sıfırlama bağlantısı alacaksınız':'✓ If this email is registered, you will receive a reset link');
   } catch(e) {
     showErr(errEl, {ar:'حدث خطأ، حاول مرة أخرى', en:'An error occurred, please try again', tr:'Bir hata oluştu, lütfen tekrar deneyin'});
   } finally {
@@ -4099,6 +4122,11 @@ function setLang(l) {
     else el.textContent = v;
   });
 
+  // ✅ FIX: سنة حقوق النشر في الفوتر كانت ثابتة (© 2025) ومش بتتحدّث لوحدها —
+  // بنستبدل أي سنة 4 أرقام فيها بالسنة الحالية تلقائيًا، عشان الفوتر ميبقاش قديم أبدًا.
+  const footerTxt = document.getElementById('footer-txt');
+  if (footerTxt) footerTxt.textContent = footerTxt.textContent.replace(/\b20\d{2}\b/, new Date().getFullYear());
+
   // إعادة بناء المحتوى الديناميكي (JS-generated) باللغة الجديدة
   buildFaq(); buildFeatures(); buildPlans();
 
@@ -4184,7 +4212,7 @@ async function buildPlans(){
   const pl = rows.map(planRowToCard);
   const popL={ar:'الأكثر شعبية',en:'Most Popular',tr:'En Popüler'};
   const invL={ar:'استثمر الآن',en:'Invest Now',tr:'Şimdi Yatır'};
-  document.getElementById('plans-grid').innerHTML=pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>/day</span></div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\',\''+( p.planId||'')+'\')">'+invL[lang]+'</button></div>').join('');
+  document.getElementById('plans-grid').innerHTML=pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>%/day</span></div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\',\''+( p.planId||'')+'\')">'+invL[lang]+'</button></div>').join('');
 }
 
 function calcProfit(){const a=parseFloat(document.getElementById('calc-amt').value)||0;const [r,d]=document.getElementById('calc-plan').value.split(',').map(Number);const dl=a*r/100,tot=dl*d,ret=a+tot;document.getElementById('c-daily').textContent='$'+dl.toFixed(2);document.getElementById('c-total').textContent='$'+tot.toFixed(0);document.getElementById('c-return').textContent='$'+ret.toFixed(0);}
