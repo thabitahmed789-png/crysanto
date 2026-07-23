@@ -1042,6 +1042,27 @@ function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+// ✅ FIX: تحويل أي أرقام عربية/فارسية متكتوبة في أي حقل إدخال لأرقام إنجليزية فورًا —
+// عشان الحسابات (زي تعديل رصيد أو مبلغ ربح يدوي) متتكسرش لو الأدمن كتب بلوحة مفاتيح عربية.
+function normalizeDigits(str) {
+  if (str === null || str === undefined) return str;
+  return String(str)
+    .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x06F0));
+}
+document.addEventListener('input', function(e){
+  const el = e.target;
+  if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA')) return;
+  const type = (el.getAttribute('type')||'text').toLowerCase();
+  if (['checkbox','radio','file','button','submit','hidden','password'].includes(type)) return;
+  const before = el.value;
+  const after = normalizeDigits(before);
+  if (before !== after) {
+    const pos = el.selectionStart;
+    el.value = after;
+    if (pos !== null && el.setSelectionRange) { try { el.setSelectionRange(pos, pos); } catch(_){} }
+  }
+}, true);
 // نسخة آمنة لتمرير نص جوه onclick="...('${...}')" — بتمنع كسر الـ JS لو فيه quotes
 function escapeJsAttr(str) {
   if (str === null || str === undefined) return '';
@@ -2392,7 +2413,7 @@ async function drawMonthlyChart(){
   for (let i = monthsBack-1; i >= 0; i--) {
     const d = new Date(); d.setMonth(d.getMonth()-i); d.setDate(1);
     keys.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
-    labels.push(d.toLocaleDateString(lang==='ar'?'ar':'en', { month:'short' }));
+    labels.push(d.toLocaleDateString('en-US', { month:'short' }));
   }
   const byMonth = {}; keys.forEach(k=>byMonth[k]=0);
   (data||[]).forEach(d => { const key = (d.created_at||'').slice(0,7); if (byMonth[key]!==undefined) byMonth[key] += parseFloat(d.amount||0); });
@@ -3980,7 +4001,7 @@ async function loadSupportTickets(){
           <span style="font-size:10px;font-weight:700;color:${statusColor[t.status]||'var(--muted)'};white-space:nowrap;margin-right:8px">${statusLbl[t.status]||t.status}</span>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">${escapeHtml(t.users?.name || t.users?.email || '—')}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">${new Date(t.updated_at).toLocaleString('ar-EG')}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${new Date(t.updated_at).toLocaleString('en-US')}</div>
       </div>`).join('');
 
     const openCount = data.filter(t=>t.status==='open').length;
@@ -4025,7 +4046,7 @@ async function loadAdminTicketThread(){
       }
       return `<div style="align-self:${m.sender_role==='admin'?'flex-end':'flex-start'};max-width:80%;background:${m.sender_role==='admin'?'var(--gold)':'var(--dark)'};color:${m.sender_role==='admin'?'#000':'var(--text)'};border-radius:10px;padding:8px 12px;font-size:13px">
         ${m.message ? escapeHtml(m.message) : ''}${attachHtml}
-        <div style="font-size:10px;opacity:.7;margin-top:4px">${new Date(m.created_at).toLocaleString('ar-EG')}</div>
+        <div style="font-size:10px;opacity:.7;margin-top:4px">${new Date(m.created_at).toLocaleString('en-US')}</div>
       </div>`;
     }))).join('');
     box.scrollTop = box.scrollHeight;
