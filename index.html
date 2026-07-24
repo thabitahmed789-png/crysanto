@@ -693,26 +693,30 @@ body:not(.ltr) .footer-grid{text-align:right;}
   <div class="dashboard-wrap">
     <div class="dash-grid">
       <div class="sidebar">
-        <div class="sidebar-item active" onclick="switchDash(this,'d-overview')" data-ar="📊 نظرة عامة" data-en="📊 Overview" data-tr="📊 Genel Bakış">📊 نظرة عامة</div>
-        <div class="sidebar-item" onclick="switchDash(this,'d-history')" data-ar="📋 السجل" data-en="📋 History" data-tr="📋 Geçmiş">📋 السجل</div>
-        <div class="sidebar-item" onclick="switchDash(this,'d-kyc')" data-ar="🪪 KYC" data-en="🪪 KYC" data-tr="🪪 KYC">🪪 KYC</div>
-        <div class="sidebar-item" onclick="switchDash(this,'d-notif')" data-ar="🔔 الإشعارات" data-en="🔔 Notifications" data-tr="🔔 Bildirimler">🔔 الإشعارات
+        <div class="sidebar-item active" data-menu-key="overview" onclick="switchDash(this,'d-overview')" data-ar="📊 نظرة عامة" data-en="📊 Overview" data-tr="📊 Genel Bakış">📊 نظرة عامة</div>
+        <div class="sidebar-item" data-menu-key="deposit" onclick="switchToDepositTab(this)" data-ar="📥 إيداع" data-en="📥 Deposit" data-tr="📥 Yatırım">📥 إيداع</div>
+        <div class="sidebar-item" data-menu-key="withdraw" onclick="switchToWithdrawTab(this)" data-ar="📤 سحب" data-en="📤 Withdraw" data-tr="📤 Çekim">📤 سحب</div>
+        <div class="sidebar-item" data-menu-key="invest" onclick="switchDash(this,'d-invest-new-tab')" data-ar="💹 استثمر" data-en="💹 Invest" data-tr="💹 Yatır">💹 استثمر</div>
+        <div class="sidebar-item" data-menu-key="history" onclick="switchDash(this,'d-history')" data-ar="📋 السجل" data-en="📋 History" data-tr="📋 Geçmiş">📋 السجل</div>
+        <div class="sidebar-item" data-menu-key="kyc" onclick="switchDash(this,'d-kyc')" data-ar="🪪 KYC" data-en="🪪 KYC" data-tr="🪪 KYC">🪪 KYC</div>
+        <div class="sidebar-item" data-menu-key="notifications" onclick="switchDash(this,'d-notif')" data-ar="🔔 الإشعارات" data-en="🔔 Notifications" data-tr="🔔 Bildirimler">🔔 الإشعارات
           <span id="notif-badge" style="background:var(--red,#e44);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:100px;margin-right:auto;display:none">0</span>
         </div>
-        <div class="sidebar-item" onclick="switchDash(this,'d-invest')" data-ar="💹 استثماراتي" data-en="💹 My Investments" data-tr="💹 Yatırımlarım">💹 استثماراتي</div>
-        <div class="sidebar-item" onclick="switchDash(this,'d-profits-log')" data-ar="💰 الأرباح اليومية" data-en="💰 Daily Profits" data-tr="💰 Günlük Karlar">💰 الأرباح اليومية</div>
-        <div class="sidebar-item" onclick="switchDash(this,'d-account')" data-ar="👤 حسابي" data-en="👤 My Account" data-tr="👤 Hesabım">👤 حسابي</div>
-        <div class="sidebar-item" onclick="switchDash(this,'d-support')" data-ar="🎫 الدعم الفني" data-en="🎫 Support" data-tr="🎫 Destek">🎫 الدعم الفني</div>
-        <div class="sidebar-item" onclick="switchDash(this,'d-security')" data-ar="🔒 الأمان" data-en="🔒 Security" data-tr="🔒 Güvenlik">🔒 الأمان</div>
+        <div class="sidebar-item" data-menu-key="my-investments" onclick="switchDash(this,'d-invest')" data-ar="💹 استثماراتي" data-en="💹 My Investments" data-tr="💹 Yatırımlarım">💹 استثماراتي</div>
+        <div class="sidebar-item" data-menu-key="daily-profits" onclick="switchDash(this,'d-profits-log')" data-ar="💰 الأرباح اليومية" data-en="💰 Daily Profits" data-tr="💰 Günlük Karlar">💰 الأرباح اليومية</div>
+        <div class="sidebar-item" data-menu-key="account" onclick="switchDash(this,'d-account')" data-ar="👤 حسابي" data-en="👤 My Account" data-tr="👤 Hesabım">👤 حسابي</div>
+        <div class="sidebar-item" data-menu-key="referral" onclick="switchDash(this,'d-referral-tab')" data-ar="🎁 الإحالة" data-en="🎁 Referral" data-tr="🎁 Referans">🎁 الإحالة</div>
+        <div class="sidebar-item" data-menu-key="support" onclick="switchDash(this,'d-support')" data-ar="🎫 الدعم الفني" data-en="🎫 Support" data-tr="🎫 Destek">🎫 الدعم الفني</div>
+        <div class="sidebar-item" data-menu-key="security" onclick="switchDash(this,'d-security')" data-ar="🔒 الأمان" data-en="🔒 Security" data-tr="🔒 Güvenlik">🔒 الأمان</div>
       </div>
       <div class="dash-main">
         <div id="d-overview">
           <!-- Quick Actions -->
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
-            <button onclick="showPage('deposit',null)" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--gold);background:var(--gold-dim);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.background='var(--gold)';this.style.color='#000'" onmouseout="this.style.background='var(--gold-dim)';this.style.color='var(--gold)'" id="qa1" data-ar="📥 إيداع" data-en="📥 Deposit" data-tr="📥 Yatırım">📥 Deposit</button>
-            <button onclick="switchDW(document.querySelector('.dw-tab:last-child'),'dw-wd');showPage('deposit',null)" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" id="qa2" data-ar="📤 سحب" data-en="📤 Withdraw" data-tr="📤 Çekim">📤 Withdraw</button>
-            <button onclick="showPage('plans',null)" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" id="qa3" data-ar="💹 استثمر" data-en="💹 Invest" data-tr="💹 Yatır">💹 Invest</button>
-            <button onclick="showPage('referral',null)" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" id="qa4" data-ar="🎁 الإحالة" data-en="🎁 Referral" data-tr="🎁 Referans">🎁 Referral</button>
+            <button onclick="switchToDepositTab(document.querySelector('.sidebar-item[onclick*=&quot;d-deposit-tab&quot;]'))" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--gold);background:var(--gold-dim);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.background='var(--gold)';this.style.color='#000'" onmouseout="this.style.background='var(--gold-dim)';this.style.color='var(--gold)'" id="qa1" data-ar="📥 إيداع" data-en="📥 Deposit" data-tr="📥 Yatırım">📥 Deposit</button>
+            <button onclick="switchToWithdrawTab(document.querySelector('.sidebar-item[onclick*=&quot;d-deposit-tab&quot;]'))" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" id="qa2" data-ar="📤 سحب" data-en="📤 Withdraw" data-tr="📤 Çekim">📤 Withdraw</button>
+            <button onclick="switchDash(document.querySelector('.sidebar-item[onclick*=&quot;d-invest-new-tab&quot;]'),'d-invest-new-tab')" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" id="qa3" data-ar="💹 استثمر" data-en="💹 Invest" data-tr="💹 Yatır">💹 Invest</button>
+            <button onclick="switchDash(document.querySelector('.sidebar-item[onclick*=&quot;d-referral-tab&quot;]'),'d-referral-tab')" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" id="qa4" data-ar="🎁 الإحالة" data-en="🎁 Referral" data-tr="🎁 Referans">🎁 Referral</button>
           </div>
           <div class="stat-cards">
             <div class="stat-card"><div class="sc-label" id="dc1" data-ar="الرصيد الكلي" data-en="Total Balance" data-tr="Toplam Bakiye">الرصيد الكلي</div><div class="sc-val" id="d-bal">$0</div></div>
@@ -725,6 +729,12 @@ body:not(.ltr) .footer-grid{text-align:right;}
             <div class="panel"><div class="panel-head" id="ai-h" data-ar="استثماراتي النشطة" data-en="Active Investments" data-tr="Aktif Yatırımlar">استثماراتي النشطة</div><div id="d-active-inv"><div style="color:var(--muted);font-size:13px;text-align:center;padding:20px" id="no-inv-txt" data-ar="لا توجد استثمارات نشطة" data-en="No active investments" data-tr="Aktif yatırım yok">لا توجد استثمارات نشطة</div></div></div>
           </div>
         </div>
+        <div id="d-deposit-tab" style="display:none"></div>
+        <div id="d-invest-new-tab" style="display:none">
+          <div class="section-head" style="margin-bottom:16px"><div class="gold-line"></div><h2 id="dinv-h" data-ar="خطط الاستثمار" data-en="Investment Plans" data-tr="Yatırım Planları">خطط الاستثمار</h2></div>
+          <div class="plans-grid" id="dash-plans-grid"></div>
+        </div>
+        <div id="d-referral-tab" style="display:none"></div>
         <div id="d-history" style="display:none"><div class="panel"><div class="panel-head" id="hist-h" data-ar="سجل المعاملات" data-en="Transaction History" data-tr="İşlem Geçmişi">سجل المعاملات</div><div class="tx-list" id="tx-list"></div></div></div>
         <div id="d-kyc" style="display:none">
           <div class="panel">
@@ -872,7 +882,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
 
 <!-- DEPOSIT -->
 <div class="page" id="page-deposit">
-  <div class="section">
+  <div class="section" id="dw-section-content">
     <div class="section-head"><div class="gold-line"></div><h2 id="dw-h" data-ar="إيداع / سحب" data-en="Deposit / Withdraw" data-tr="Yatırım / Çekim">إيداع / سحب</h2></div>
     <div class="dw-tabs">
       <button class="dw-tab active" onclick="switchDW(this,'dw-dep')" id="dwt1" data-ar="إيداع" data-en="Deposit" data-tr="Yatırım">إيداع</button>
@@ -943,7 +953,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
           <label data-ar="🔐 الرقم السري للسحب (6 أرقام)" data-en="🔐 Withdrawal PIN (6 digits)" data-tr="🔐 Çekim PIN'i (6 hane)">🔐 الرقم السري للسحب (6 أرقام)</label>
           <input type="password" id="wd-pin" maxlength="6" inputmode="numeric" style="text-align:center;font-size:20px;letter-spacing:6px;font-family:var(--mono)" placeholder="------">
           <div id="wd-pin-not-set-note" style="display:none;font-size:11px;color:var(--gold);margin-top:6px">
-            <span data-ar="لسه معملتش رقم سري للسحب — " data-en="You haven't set a withdrawal PIN yet — " data-tr="Henüz çekim PIN'i belirlemediniz — ">لسه معملتش رقم سري للسحب — </span>
+            <span data-ar="لم تقم بتعيين رقم سري للسحب بعد — " data-en="You haven't set a withdrawal PIN yet — " data-tr="Henüz çekim PIN'i belirlemediniz — ">لم تقم بتعيين رقم سري للسحب بعد — </span>
             <a onclick="switchDash(document.querySelector('[onclick*=\'d-account\']'),'d-account')" style="color:var(--gold);text-decoration:underline;cursor:pointer" data-ar="اضبطه من هنا" data-en="Set it here" data-tr="Buradan ayarlayın">اضبطه من هنا</a>
           </div>
         </div>
@@ -955,7 +965,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
 
 <!-- REFERRAL -->
 <div class="page" id="page-referral">
-  <div class="section">
+  <div class="section" id="ref-section-content">
     <div class="section-head"><div class="gold-line"></div><h2 id="ref-h" data-ar="برنامج الإحالة" data-en="Referral Program" data-tr="Referans Programı">برنامج الإحالة</h2></div>
     <div style="max-width:580px;margin:0 auto">
       <div class="ref-box">
@@ -1180,8 +1190,8 @@ body:not(.ltr) .footer-grid{text-align:right;}
       <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="reset-title" data-ar="تعيين كلمة مرور جديدة" data-en="Set New Password" data-tr="Yeni Şifre Belirle">Set New Password</h3>
     </div>
     <div class="err-msg" id="reset-err"></div>
-    <div class="form-group"><label id="rl1" data-ar="كلمة المرور الجديدة" data-en="New Password" data-tr="Yeni Şifre">New Password</label><input type="password" id="reset-pass1" placeholder="••••••••"></div>
-    <div class="form-group"><label id="rl2" data-ar="تأكيد كلمة المرور" data-en="Confirm Password" data-tr="Şifreyi Onayla">Confirm Password</label><input type="password" id="reset-pass2" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmPasswordReset()"></div>
+    <div class="form-group"><label id="rpl1" data-ar="كلمة المرور الجديدة" data-en="New Password" data-tr="Yeni Şifre">New Password</label><input type="password" id="reset-pass1" placeholder="••••••••"></div>
+    <div class="form-group"><label id="rpl2" data-ar="تأكيد كلمة المرور" data-en="Confirm Password" data-tr="Şifreyi Onayla">Confirm Password</label><input type="password" id="reset-pass2" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmPasswordReset()"></div>
     <button class="btn-primary" style="width:100%" onclick="confirmPasswordReset()" id="reset-btn-txt" data-ar="حفظ كلمة المرور" data-en="Save Password" data-tr="Şifreyi Kaydet">Save Password</button>
   </div>
 </div>
@@ -1747,11 +1757,14 @@ async function fetchSiteSettingsFromDB() {
   try {
     const { data, error } = await db.from('settings').select('key,value');
     if (error) { console.error('fetchSiteSettingsFromDB error:', error.message || error); return; }
+    let sidebarConfigRaw = null;
     (data||[]).forEach(r => {
+      if (r.key === 'sidebar_menu_config') { sidebarConfigRaw = r.value; return; }
       if (r.key === 'maintenance_mode' || r.key === 'registration_open') siteSettings[r.key] = r.value === 'true';
       else if (['min_deposit','min_withdrawal','max_withdrawal','referral_rate','withdrawal_fee_pct','withdrawal_otp_threshold'].includes(r.key)) siteSettings[r.key] = parseFloat(r.value) || siteSettings[r.key];
       else if (siteSettings.hasOwnProperty(r.key)) siteSettings[r.key] = r.value;
     });
+    applySidebarOrder(sidebarConfigRaw);
     // ✅ FIX: تحديث عناصر الإيميل في الصفحة لو تغيّر في الـ settings
     const email = siteSettings.support_email;
     if(email) {
@@ -1761,6 +1774,35 @@ async function fetchSiteSettingsFromDB() {
       if(f) f.textContent = email;
     }
   } catch(e) { console.error('fetchSiteSettingsFromDB exception:', e.message || e); }
+}
+// ✅ FIX: ترتيب/إظهار عناصر السايدبار حسب إعدادات الأدمن (sidebar_menu_config في جدول settings)
+// لو مفيش إعداد محفوظ أو فيه خطأ في القراءة، بيفضل الترتيب الافتراضي في HTML زي ما هو (fail-safe).
+const DEFAULT_SIDEBAR_ORDER = ['overview','deposit','withdraw','invest','history','kyc','notifications','my-investments','daily-profits','account','referral','support','security'];
+function applySidebarOrder(rawConfig) {
+  const sidebar = document.querySelector('.sidebar') || document.querySelector('[data-menu-key="overview"]')?.parentElement;
+  if (!sidebar) return;
+  let config;
+  try { config = rawConfig ? JSON.parse(rawConfig) : null; } catch(e) { config = null; }
+  if (!Array.isArray(config) || !config.length) {
+    config = DEFAULT_SIDEBAR_ORDER.map(key => ({key, enabled:true}));
+  }
+  const seen = new Set();
+  config.forEach(entry => {
+    if (!entry || !entry.key || seen.has(entry.key)) return;
+    seen.add(entry.key);
+    const el = sidebar.querySelector('[data-menu-key="'+entry.key+'"]');
+    if (!el) return;
+    // ✅ "نظرة عامة" لازم تفضل ظاهرة دايمًا — هي التبويب الافتراضي، تعطيلها ممكن يسيب الداشبورد فاضي
+    const enabled = entry.key === 'overview' ? true : (entry.enabled !== false);
+    el.style.display = enabled ? '' : 'none';
+    sidebar.appendChild(el); // بيرتب العناصر بالترتيب اللي بنلف عليه
+  });
+  // أي عنصر متكتبش في الإعداد (زي عنصر جديد اتضاف بعدين) يفضل ظاهر في الآخر بدل ما يختفي فجأة
+  DEFAULT_SIDEBAR_ORDER.forEach(key => {
+    if (seen.has(key)) return;
+    const el = sidebar.querySelector('[data-menu-key="'+key+'"]');
+    if (el) sidebar.appendChild(el);
+  });
 }
 // ✅ صفحة صيانة كاملة واحترافية
 function applyMaintenanceMode() {
@@ -1927,6 +1969,22 @@ function showPage(id, el) {
     pendingPage={id,el}; openModal('login'); return;
   }
   pendingPage = null;
+  // ✅ FIX: الإيداع/السحب والإحالة بقوا تبويبات جوه الداشبورد (مش صفحات مستقلة) — أي حد
+  // كان بينده showPage('deposit'/'referral', ...) هيتحوّل تلقائيًا للداشبورد وهو مفتوح
+  // على التبويب الصح، عشان العميل يفضل داخل سياق الداشبورد ومحتاجش يرجع "لوحة التحكم" تاني.
+  if(id === 'deposit' || id === 'referral') {
+    showPage('dashboard', el);
+    const targetTab = id === 'deposit' ? 'd-deposit-tab' : 'd-referral-tab';
+    const navItem = document.querySelector('.sidebar-item[onclick*="'+targetTab+'"]') || document.querySelector('.sidebar-item');
+    if(navItem) switchDash(navItem, targetTab);
+    if(id === 'deposit') {
+      try {
+        const savedTab = sessionStorage.getItem('crysanto_dw_tab');
+        if(savedTab === 'dw-wd') { const wdBtn = document.querySelector('.dw-tab:last-child'); if(wdBtn) switchDW(wdBtn,'dw-wd'); }
+      } catch(e) {}
+    }
+    return;
+  }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg = document.getElementById('page-'+id);
   if(pg) pg.classList.add('active');
@@ -1936,16 +1994,6 @@ function showPage(id, el) {
   // ✅ تتبع الصفحة
   if(window._trackPage) window._trackPage(id);
   if(id==='dashboard') { if(userProfile) loadDashboard(); else _pendingDashboardLoad = true; }
-  if(id==='referral')  { if(userProfile) loadReferral();  else _pendingReferralLoad = true; }
-  if(id==='deposit')   {
-    const m=document.getElementById('user-memo'); if(m) m.textContent=userProfile?.memo||userProfile?.ref_code||'---';
-    const pinNote = document.getElementById('wd-pin-not-set-note');
-    if(pinNote) pinNote.style.display = userProfile?.withdrawal_pin_set_at ? 'none' : 'block';
-    try {
-      const savedTab = sessionStorage.getItem('crysanto_dw_tab');
-      if(savedTab === 'dw-wd') { const wdBtn = document.querySelector('.dw-tab:last-child'); if(wdBtn) switchDW(wdBtn,'dw-wd'); }
-    } catch(e) {}
-  }
 }
 
 function lockBodyScroll() {
@@ -2003,7 +2051,7 @@ document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click
 function switchDash(el, id) {
   document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
   el.classList.add('active');
-  ['d-overview','d-wallet','d-history','d-kyc','d-notif','d-invest','d-security','d-profits-log','d-account','d-support'].forEach(d=>{const e=document.getElementById(d);if(e)e.style.display='none';});
+  ['d-overview','d-wallet','d-history','d-kyc','d-notif','d-invest','d-security','d-profits-log','d-account','d-support','d-deposit-tab','d-invest-new-tab','d-referral-tab'].forEach(d=>{const e=document.getElementById(d);if(e)e.style.display='none';});
   const p=document.getElementById(id); if(p) p.style.display='block';
   if(id==='d-history') loadTransactions();
   if(id==='d-notif') loadNotifications();
@@ -2014,6 +2062,28 @@ function switchDash(el, id) {
   if(id==='d-profits-log') loadMyDailyProfits();
   if(id==='d-account') renderMyAccountInfo();
   if(id==='d-support'){ document.getElementById('sup-thread-view').style.display='none'; document.getElementById('sup-list-view').style.display='block'; renderSupportTickets(); }
+  // ✅ FIX: الإيداع/السحب والاستثمار والإحالة بقوا تبويبات جوه الداشبورد بدل ما يكونوا صفحات
+  // منفصلة — عشان العميل يفضل جوه سياق الداشبورد ومحتاجش يدوس "لوحة التحكم" تاني عشان يرجع.
+  if(id==='d-deposit-tab'){
+    const m=document.getElementById('user-memo'); if(m) m.textContent=userProfile?.memo||userProfile?.ref_code||'---';
+    const pinNote = document.getElementById('wd-pin-not-set-note');
+    if(pinNote) pinNote.style.display = userProfile?.withdrawal_pin_set_at ? 'none' : 'block';
+    restorePendingDepositUI();
+  }
+  if(id==='d-invest-new-tab') buildPlans();
+  if(id==='d-referral-tab'){ if(userProfile) loadReferral(); else _pendingReferralLoad = true; }
+}
+// ✅ زرار "سحب" في السايدبار: يودّي لنفس تبويب الإيداع/السحب بس على تبويب السحب الفرعي مباشرة
+function switchToWithdrawTab(el){
+  switchDash(el, 'd-deposit-tab');
+  const wdBtn = document.querySelector('.dw-tab:last-child');
+  if(wdBtn) switchDW(wdBtn, 'dw-wd');
+}
+// ✅ زرار "إيداع": نفس الفكرة بس بيتأكد إن تبويب الإيداع الفرعي هو الظاهر (مش اللي كان متفتح قبل كده)
+function switchToDepositTab(el){
+  switchDash(el, 'd-deposit-tab');
+  const depBtn = document.querySelector('.dw-tab:first-child');
+  if(depBtn) switchDW(depBtn, 'dw-dep');
 }
 
 function switchDW(el, id) {
@@ -2547,6 +2617,10 @@ function afterLogin(isUpdate) {
     if(_pendingReferralLoad)  { loadReferral();  _pendingReferralLoad = false; }
     if(!isUpdate) { db.rpc('update_last_seen').then(()=>{}).catch(()=>{}); trackDeviceLogin(); }
     setupUserRealtimeSync(); // ✅ FIX: مزامنة حية عامة لكل بيانات العميل عبر كل التبويبات
+    // ✅ FIX: لو العميل كان في تبويب الإيداع قبل ما البروفايل يجهز (ريفريش)، نحاول نسترجع
+    // الإيداع المعلّق دلوقتي بعد ما بقى عندنا userProfile فعليًا
+    const depTab = document.getElementById('d-deposit-tab');
+    if(depTab && depTab.style.display !== 'none') restorePendingDepositUI();
   }
 
   // lang buttons
@@ -2686,7 +2760,7 @@ async function loadTransactions(resetPage=true) {
     const [depRes,wdRes,txRes]=await Promise.all([
       db.from('deposits').select('id,amount,credited_amount,coin,status,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(100),
       db.from('withdrawals').select('id,amount,fee,net_amount,coin,status,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(100),
-      db.from('transactions').select('id,amount,type,description,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(200)
+      db.from('transactions').select('id,amount,type,coin,description,description_en,description_tr,plan_name_ar,plan_name_en,plan_name_tr,created_at').eq('user_id',userProfile.id).order('created_at',{ascending:false}).limit(200)
     ]);
     const deps=(depRes.data||[]).map(d=>({...d,txType:'deposit'}));
     const wds=(wdRes.data||[]).map(w=>({...w,txType:'withdrawal'}));
@@ -2735,7 +2809,14 @@ ${paged.map(tx=>{
     <div class="tx-left">
       <span style="font-size:20px">${icons[tx.txType]||'💱'}</span>
       <div>
-        <div class="tx-type">${((typeLabel[tx.txType]||{})[lang])||tx.txType}${tx.coin?' — '+escapeHtml(tx.coin):tx.description?' — '+escapeHtml((tx.description||'').slice(0,45)):''}</div>
+        <div class="tx-type">${((typeLabel[tx.txType]||{})[lang])||tx.txType}${(()=>{
+          if (tx.coin) return ' — '+escapeHtml(tx.coin);
+          // ✅ FIX: اسم الباقة والوصف بيتعرضوا بلغة الواجهة الحالية دايمًا (مش اللغة وقت إنشاء العملية)
+          const planName = (lang==='ar'?tx.plan_name_ar:lang==='tr'?tx.plan_name_tr:tx.plan_name_en) || tx.plan_name_ar || tx.plan_name_en || tx.plan_name_tr;
+          if (planName) return ' — '+escapeHtml(planName.slice(0,45));
+          const desc = (lang==='ar'?tx.description:lang==='tr'?(tx.description_tr||tx.description):(tx.description_en||tx.description));
+          return desc ? ' — '+escapeHtml((desc||'').slice(0,45)) : '';
+        })()}</div>
         <div class="tx-date">${(tx.created_at||'').slice(0,16).replace('T',' ')} · <span style="color:${tx.status==='approved'?'var(--green)':tx.status==='rejected'?'var(--red)':'var(--orange)'}">${((statusLabel[tx.status]||{})[lang])||tx.status||''}</span></div>
       </div>
     </div>
@@ -3167,6 +3248,14 @@ async function createAutoDeposit(){
     const amtDisplay = document.getElementById('dep-auto-amount-display');
     amtDisplay.textContent = data.pay_amount ? `${data.pay_amount} ${(data.pay_currency||'').toUpperCase()}` : `$${amount}`;
     amtDisplay.dataset.raw = data.pay_amount || amount;
+    // ✅ FIX: نحفظ الإيداع المعلّق محليًا عشان لو حصل ريفريش، الصفحة ترجع تعرض نفس العنوان
+    // والعداد الصحيح بدل ما تختفي وتضطر تولّد عنوان جديد من الصفر.
+    try {
+      localStorage.setItem('crysanto_pending_deposit', JSON.stringify({
+        id: data.deposit_id, address: data.pay_address, payAmount: data.pay_amount,
+        payCurrency: data.pay_currency, amount, createdAt: Date.now()
+      }));
+    } catch(e) {}
     const creditNote = document.getElementById('dep-auto-credit-note');
     creditNote.textContent = (lang==='ar'?`سيُضاف المبلغ الكامل $${amount.toFixed(2)} إلى رصيدك (عمولة الشبكة مدفوعة بالفعل ضمن هذا المبلغ)`:lang==='tr'?`Hesabınıza tam $${amount.toFixed(2)} eklenecek (ağ ücreti bu tutara dahil)`:`The full $${amount.toFixed(2)} will be credited to your balance (network fee is already included above)`);
     startDepositCountdown();
@@ -3186,10 +3275,12 @@ async function createAutoDeposit(){
           statusEl.style.background = 'rgba(0,200,120,0.12)'; statusEl.style.borderColor = 'var(--green)'; statusEl.style.color = 'var(--green)';
           const credited = payload.new.credited_amount || payload.new.amount;
           statusEl.textContent = (lang==='ar'?`✅ تم تأكيد الإيداع، تم إضافة $${credited} لرصيدك`:lang==='tr'?`✅ Yatırım onaylandı, hesabınıza $${credited} eklendi`:`✅ Deposit confirmed, $${credited} added to your balance`);
+          try { localStorage.removeItem('crysanto_pending_deposit'); } catch(e) {}
           fetchProfile();
         } else if(payload.new.status === 'rejected'){
           statusEl.style.background = 'rgba(255,77,106,0.12)'; statusEl.style.borderColor = 'var(--red)'; statusEl.style.color = 'var(--red)';
           statusEl.textContent = lang==='ar'?'✗ لم يتم تأكيد التحويل':lang==='tr'?'✗ İşlem onaylanmadı':'✗ Transaction was not confirmed';
+          try { localStorage.removeItem('crysanto_pending_deposit'); } catch(e) {}
         }
       })
       .subscribe();
@@ -3203,15 +3294,15 @@ async function createAutoDeposit(){
 }
 
 let _depCountdownInterval = null;
-function startDepositCountdown(){
+function startDepositCountdown(initialSeconds){
   clearInterval(_depCountdownInterval);
-  let secondsLeft = 10 * 60; // ✅ سعر NOWPayments الثابت بيفضل صالح 10 دقايق بس (fixed-rate window)
+  let secondsLeft = (typeof initialSeconds === 'number') ? initialSeconds : 10 * 60; // ✅ سعر NOWPayments الثابت بيفضل صالح 10 دقايق بس (fixed-rate window)
   const timerEl = document.getElementById('dep-auto-timer');
   const tick = () => {
     if(secondsLeft <= 0){
       clearInterval(_depCountdownInterval);
       timerEl.style.color = 'var(--red)';
-      timerEl.textContent = lang==='ar'?'⚠️ انتهت صلاحية السعر الثابت — لو لسه ما بعتش، السعر ممكن يتغير شوية':lang==='tr'?'⚠️ Sabit fiyat süresi doldu — henüz göndermediyseniz fiyat değişebilir':'⚠️ Fixed rate window expired — if not sent yet, the rate may change slightly';
+      timerEl.textContent = lang==='ar'?'⚠️ انتهت صلاحية السعر الثابت — إذا لم ترسل بعد، فقد يتغير السعر قليلاً':lang==='tr'?'⚠️ Sabit fiyat süresi doldu — henüz göndermediyseniz fiyat değişebilir':'⚠️ Fixed rate window expired — if not sent yet, the rate may change slightly';
       return;
     }
     const m = Math.floor(secondsLeft/60), s = secondsLeft%60;
@@ -3250,12 +3341,14 @@ async function checkAutoDepositStatus(){
       statusEl.style.cssText = 'margin-top:16px;padding:12px;background:rgba(0,200,120,0.12);border:1px solid var(--green);border-radius:10px;font-size:13px;font-weight:700;color:var(--green)';
       const credited = data.credited_amount || data.amount;
       statusEl.textContent = (lang==='ar'?`✅ تم تأكيد الإيداع، تم إضافة $${credited} لرصيدك`:lang==='tr'?`✅ Yatırım onaylandı, hesabınıza $${credited} eklendi`:`✅ Deposit confirmed, $${credited} added to your balance`);
+      try { localStorage.removeItem('crysanto_pending_deposit'); } catch(e) {}
       fetchProfile();
     } else if(data.status === 'rejected'){
       statusEl.style.cssText = 'margin-top:16px;padding:12px;background:rgba(255,77,106,0.12);border:1px solid var(--red);border-radius:10px;font-size:13px;font-weight:700;color:var(--red)';
       statusEl.textContent = lang==='ar'?'✗ لم يتم تأكيد التحويل':lang==='tr'?'✗ İşlem onaylanmadı':'✗ Transaction was not confirmed';
+      try { localStorage.removeItem('crysanto_pending_deposit'); } catch(e) {}
     } else {
-      showToast(lang==='ar'?'⏳ لسه في انتظار التأكيد على البلوكتشين':lang==='tr'?'⏳ Blok zincirinde onay bekleniyor':'⏳ Still waiting for blockchain confirmation');
+      showToast(lang==='ar'?'⏳ لا يزال في انتظار التأكيد على البلوكتشين':lang==='tr'?'⏳ Blok zincirinde onay bekleniyor':'⏳ Still waiting for blockchain confirmation');
     }
   } catch(e){
     console.error('checkAutoDepositStatus error:', e);
@@ -3270,11 +3363,63 @@ function resetAutoDeposit(){
   clearInterval(_depCountdownInterval);
   document.getElementById('dep-auto-timer').textContent = '';
   _autoDepositId = null;
+  try { localStorage.removeItem('crysanto_pending_deposit'); } catch(e) {}
   document.getElementById('dep-auto-result').style.display = 'none';
   document.getElementById('dep-auto-form').style.display = 'block';
   document.getElementById('dep-auto-amount').value = '';
   document.getElementById('dep-auto-estimate').style.display = 'none';
   document.getElementById('dep-auto-err').style.display = 'none';
+}
+
+// ✅ FIX: استرجاع عنوان الإيداع المعلّق بعد الريفريش — بدل ما يختفي ويضطر العميل يولّد
+// عنوان جديد من الصفر، بنرجعله لنفس العنوان والعداد المتبقي طول ما لسه صالح (أقل من 10 دقايق)
+// وحالته لسه pending فعليًا في قاعدة البيانات.
+async function restorePendingDepositUI(){
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem('crysanto_pending_deposit') || 'null'); } catch(e) { saved = null; }
+  if(!saved || !saved.id) return;
+  const elapsedSec = (Date.now() - (saved.createdAt||0)) / 1000;
+  if(elapsedSec >= 600){ try { localStorage.removeItem('crysanto_pending_deposit'); } catch(e) {} return; }
+  if(!userProfile) return; // هننتظر لحد ما البروفايل يجهز
+  try {
+    const { data, error } = await db.from('deposits').select('status,amount,credited_amount').eq('id', saved.id).single();
+    if(error || !data || data.status !== 'pending'){
+      try { localStorage.removeItem('crysanto_pending_deposit'); } catch(e) {}
+      return;
+    }
+    _autoDepositId = saved.id;
+    document.getElementById('dep-auto-form').style.display = 'none';
+    document.getElementById('dep-auto-result').style.display = 'block';
+    document.getElementById('dep-auto-address').textContent = saved.address;
+    const amtDisplay = document.getElementById('dep-auto-amount-display');
+    amtDisplay.textContent = saved.payAmount ? `${saved.payAmount} ${(saved.payCurrency||'').toUpperCase()}` : `$${saved.amount}`;
+    amtDisplay.dataset.raw = saved.payAmount || saved.amount;
+    const creditNote = document.getElementById('dep-auto-credit-note');
+    creditNote.textContent = (lang==='ar'?`سيُضاف المبلغ الكامل $${Number(saved.amount).toFixed(2)} إلى رصيدك (عمولة الشبكة مدفوعة بالفعل ضمن هذا المبلغ)`:lang==='tr'?`Hesabınıza tam $${Number(saved.amount).toFixed(2)} eklenecek (ağ ücreti bu tutara dahil)`:`The full $${Number(saved.amount).toFixed(2)} will be credited to your balance (network fee is already included above)`);
+    startDepositCountdown(Math.max(0, Math.round(600 - elapsedSec)));
+    document.getElementById('dep-auto-status').textContent = '⏳ ' + ({ar:'في انتظار التحويل...',en:'Waiting for transfer...',tr:'Transfer bekleniyor...'}[lang]||'Waiting for transfer...');
+    document.getElementById('dep-auto-status').style.cssText = 'margin-top:16px;padding:12px;background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;font-size:13px;font-weight:700;color:var(--gold)';
+
+    if(_autoDepositChannel) db.removeChannel(_autoDepositChannel);
+    _autoDepositChannel = db.channel('deposit-'+_autoDepositId)
+      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'deposits', filter:'id=eq.'+_autoDepositId}, (payload) => {
+        const statusEl = document.getElementById('dep-auto-status');
+        if(payload.new.status === 'approved'){
+          clearInterval(_depCountdownInterval);
+          document.getElementById('dep-auto-timer').textContent = '';
+          statusEl.style.background = 'rgba(0,200,120,0.12)'; statusEl.style.borderColor = 'var(--green)'; statusEl.style.color = 'var(--green)';
+          const credited = payload.new.credited_amount || payload.new.amount;
+          statusEl.textContent = (lang==='ar'?`✅ تم تأكيد الإيداع، تم إضافة $${credited} لرصيدك`:lang==='tr'?`✅ Yatırım onaylandı, hesabınıza $${credited} eklendi`:`✅ Deposit confirmed, $${credited} added to your balance`);
+          try { localStorage.removeItem('crysanto_pending_deposit'); } catch(e) {}
+          fetchProfile();
+        } else if(payload.new.status === 'rejected'){
+          statusEl.style.background = 'rgba(255,77,106,0.12)'; statusEl.style.borderColor = 'var(--red)'; statusEl.style.color = 'var(--red)';
+          statusEl.textContent = lang==='ar'?'✗ لم يتم تأكيد التحويل':lang==='tr'?'✗ İşlem onaylanmadı':'✗ Transaction was not confirmed';
+          try { localStorage.removeItem('crysanto_pending_deposit'); } catch(e) {}
+        }
+      })
+      .subscribe();
+  } catch(e) { console.error('restorePendingDepositUI error:', e); }
 }
 
 async function submitDeposit() {
@@ -4199,7 +4344,9 @@ function planRowToCard(row, idx) {
 }
 
 async function buildPlans(){
-  const _bp=document.getElementById('plans-grid'); if(!_bp) return;
+  const _bp=document.getElementById('plans-grid');
+  const _bpDash=document.getElementById('dash-plans-grid');
+  if(!_bp && !_bpDash) return;
   if(!__plansCache) __plansCache = await fetchPlansFromDB();
 
   // fallback: لو فشل الاتصال بالداتابيز لأي سبب، نعرض نفس الباقات الافتراضية (تجربة المستخدم متتأثرش)، لكن النسخة الأساسية هي اللي من القاعدة
@@ -4212,7 +4359,9 @@ async function buildPlans(){
   const pl = rows.map(planRowToCard);
   const popL={ar:'الأكثر شعبية',en:'Most Popular',tr:'En Popüler'};
   const invL={ar:'استثمر الآن',en:'Invest Now',tr:'Şimdi Yatır'};
-  document.getElementById('plans-grid').innerHTML=pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>%/day</span></div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\',\''+( p.planId||'')+'\')">'+invL[lang]+'</button></div>').join('');
+  const html = pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>%/day</span></div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\',\''+( p.planId||'')+'\')">'+invL[lang]+'</button></div>').join('');
+  if(_bp) _bp.innerHTML = html;
+  if(_bpDash) _bpDash.innerHTML = html;
 }
 
 function calcProfit(){const a=parseFloat(document.getElementById('calc-amt').value)||0;const [r,d]=document.getElementById('calc-plan').value.split(',').map(Number);const dl=a*r/100,tot=dl*d,ret=a+tot;document.getElementById('c-daily').textContent='$'+dl.toFixed(2);document.getElementById('c-total').textContent='$'+tot.toFixed(0);document.getElementById('c-return').textContent='$'+ret.toFixed(0);}
@@ -4308,6 +4457,17 @@ function buildReferralLink(code) {
 
 // ── INIT ──
 function init(){
+  // ✅ FIX: نقل محتوى صفحتي الإيداع/السحب والإحالة (بكل عناصرهم وأحداثهم زي ما هي) جوه
+  // تبويبات الداشبورد الجديدة — مرة واحدة بس عند تحميل الصفحة، بدل ما يفضلوا صفحات مستقلة
+  // العميل بيضطر يسيبها ويرجع للداشبورد تاني عشان يشوف باقي حاجاته.
+  (function relocateDashboardTabs(){
+    const dwContent = document.getElementById('dw-section-content');
+    const dwTarget = document.getElementById('d-deposit-tab');
+    if(dwContent && dwTarget) dwTarget.appendChild(dwContent);
+    const refContent = document.getElementById('ref-section-content');
+    const refTarget = document.getElementById('d-referral-tab');
+    if(refContent && refTarget) refTarget.appendChild(refContent);
+  })();
   setLang(lang);
   // بناء فوري للمحتوى الثابت (بدون DB) — الباقات بتتبني بالـ fallback الأول فوراً
   buildTicker(); buildMarkets(); buildLivePrices(); buildFaq(); buildFeatures(); calcProfit();
