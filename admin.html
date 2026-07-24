@@ -772,6 +772,16 @@ body.ltr .toast{left:auto;right:24px;}
           </div>
         </div>
       </div>
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-head"><span id="sbmenu-title">📑 ترتيب قائمة العميل (Dashboard)</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px" id="sbmenu-desc">تحكم في ترتيب وظهور عناصر القائمة الجانبية في لوحة تحكم العميل. "نظرة عامة" لازم تفضل ظاهرة دايمًا.</div>
+        <div id="sidebar-menu-list"></div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="act-btn-primary" onclick="saveSidebarMenuConfig()" id="sbmenu-save-btn">💾 حفظ الترتيب</button>
+          <button class="act-btn" onclick="resetSidebarMenuConfig()" id="sbmenu-reset-btn">↺ استعادة الترتيب الافتراضي</button>
+        </div>
+        <div class="err-msg" id="sbmenu-err"></div>
+      </div>
     </div>
 
 
@@ -2457,7 +2467,7 @@ function showToast(msg){
 }
 
 async function renderSettings(){
-  const keys = ['site_name','support_email','min_deposit','min_withdrawal','withdrawal_fee_pct','withdrawal_otp_threshold','referral_rate','maintenance_mode','registration_open'];
+  const keys = ['site_name','support_email','min_deposit','min_withdrawal','withdrawal_fee_pct','withdrawal_otp_threshold','referral_rate','maintenance_mode','registration_open','sidebar_menu_config'];
   const { data, error } = await sdb.from('settings').select('key,value').in('key', keys);
   if (error) { console.error('renderSettings error:', error); showToast((lang==='ar'?'✗ فشل تحميل الإعدادات: ':'✗ Failed to load settings: ')+error.message); return; }
   const byKey = {}; (data||[]).forEach(r => byKey[r.key] = r.value);
@@ -2485,6 +2495,7 @@ async function renderSettings(){
   if (regThumb) { regThumb.style.left = regOn ? '3px' : ''; regThumb.style.right = regOn ? '' : '3px'; }
 
   renderAdmin2FAStatus();
+  renderSidebarMenuConfig(byKey.sidebar_menu_config);
 }
 
 // ── ADMIN 2FA (TOTP) — Supabase Auth MFA ──
@@ -2596,6 +2607,85 @@ async function saveSiteSettings(){
     if (error) { showToast((lang==='ar'?'✗ فشل حفظ الإعدادات: ':'✗ Failed to save settings: ')+error.message); console.error('saveSiteSettings error:', error); return; }
   }
   showToast(lang==='ar'?'✓ تم حفظ الإعدادات':'✓ Settings saved');
+}
+
+// ── ترتيب قائمة السايدبار في داشبورد العميل ──
+const SIDEBAR_MENU_LABELS = {
+  'overview':        {ar:'📊 نظرة عامة',        en:'📊 Overview',         tr:'📊 Genel Bakış'},
+  'deposit':         {ar:'📥 إيداع',            en:'📥 Deposit',          tr:'📥 Yatırım'},
+  'withdraw':        {ar:'📤 سحب',              en:'📤 Withdraw',         tr:'📤 Çekim'},
+  'invest':          {ar:'💹 استثمر',           en:'💹 Invest',           tr:'💹 Yatır'},
+  'history':         {ar:'📋 السجل',            en:'📋 History',          tr:'📋 Geçmiş'},
+  'kyc':             {ar:'🪪 KYC',               en:'🪪 KYC',              tr:'🪪 KYC'},
+  'notifications':   {ar:'🔔 الإشعارات',        en:'🔔 Notifications',    tr:'🔔 Bildirimler'},
+  'my-investments':  {ar:'💹 استثماراتي',       en:'💹 My Investments',   tr:'💹 Yatırımlarım'},
+  'daily-profits':   {ar:'💰 الأرباح اليومية',  en:'💰 Daily Profits',    tr:'💰 Günlük Karlar'},
+  'account':         {ar:'👤 حسابي',            en:'👤 My Account',       tr:'👤 Hesabım'},
+  'referral':        {ar:'🎁 الإحالة',          en:'🎁 Referral',         tr:'🎁 Referans'},
+  'support':         {ar:'🎫 الدعم الفني',      en:'🎫 Support',          tr:'🎫 Destek'},
+  'security':        {ar:'🔒 الأمان',           en:'🔒 Security',         tr:'🔒 Güvenlik'},
+};
+const DEFAULT_SIDEBAR_MENU = ['overview','deposit','withdraw','invest','history','kyc','notifications','my-investments','daily-profits','account','referral','support','security'].map(key=>({key,enabled:true}));
+let _sidebarMenuState = null;
+
+function renderSidebarMenuConfig(rawConfig){
+  let config;
+  try { config = rawConfig ? JSON.parse(rawConfig) : null; } catch(e) { config = null; }
+  if (!Array.isArray(config) || !config.length) config = JSON.parse(JSON.stringify(DEFAULT_SIDEBAR_MENU));
+  // ✅ لو فيه عنصر جديد اتضاف في الكود بعدين ومش موجود في الإعداد المحفوظ، نضيفه في الآخر تلقائيًا
+  const knownKeys = new Set(config.map(c=>c.key));
+  DEFAULT_SIDEBAR_MENU.forEach(d => { if(!knownKeys.has(d.key)) config.push({key:d.key, enabled:true}); });
+  _sidebarMenuState = config;
+  _renderSidebarMenuList();
+}
+
+function _renderSidebarMenuList(){
+  const wrap = document.getElementById('sidebar-menu-list');
+  if (!wrap || !_sidebarMenuState) return;
+  wrap.innerHTML = _sidebarMenuState.map((item, i) => {
+    const label = (SIDEBAR_MENU_LABELS[item.key] && SIDEBAR_MENU_LABELS[item.key][lang]) || item.key;
+    const isOverview = item.key === 'overview';
+    const enabled = isOverview ? true : (item.enabled !== false);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--dark);border-radius:8px;margin-bottom:6px;${enabled?'':'opacity:.5'}">
+      <span style="font-size:11px;color:var(--muted);width:20px;text-align:center">${i+1}</span>
+      <span style="flex:1;font-size:13px">${escapeHtml(label)}</span>
+      <button onclick="_sbMoveItem(${i},-1)" ${i===0?'disabled':''} style="background:none;border:1px solid var(--border2);border-radius:6px;color:var(--text);width:26px;height:26px;cursor:pointer;${i===0?'opacity:.3':''}">↑</button>
+      <button onclick="_sbMoveItem(${i},1)" ${i===_sidebarMenuState.length-1?'disabled':''} style="background:none;border:1px solid var(--border2);border-radius:6px;color:var(--text);width:26px;height:26px;cursor:pointer;${i===_sidebarMenuState.length-1?'opacity:.3':''}">↓</button>
+      <label style="position:relative;width:38px;height:20px;cursor:${isOverview?'not-allowed':'pointer'};flex-shrink:0">
+        <input type="checkbox" ${enabled?'checked':''} ${isOverview?'disabled':''} onchange="_sbToggleItem(${i})" style="opacity:0;width:0;height:0">
+        <span style="position:absolute;inset:0;background:${enabled?'var(--green)':'var(--border2)'};border-radius:10px;transition:.2s"></span>
+        <span style="position:absolute;top:2px;${enabled?'right:2px':'left:2px'};width:16px;height:16px;background:#fff;border-radius:50%;transition:.2s"></span>
+      </label>
+    </div>`;
+  }).join('');
+}
+
+function _sbMoveItem(index, dir){
+  const j = index + dir;
+  if (j < 0 || j >= _sidebarMenuState.length) return;
+  [_sidebarMenuState[index], _sidebarMenuState[j]] = [_sidebarMenuState[j], _sidebarMenuState[index]];
+  _renderSidebarMenuList();
+}
+function _sbToggleItem(index){
+  if (_sidebarMenuState[index].key === 'overview') return; // نظرة عامة لازم تفضل ظاهرة دايمًا
+  _sidebarMenuState[index].enabled = !(_sidebarMenuState[index].enabled !== false);
+  _renderSidebarMenuList();
+}
+async function saveSidebarMenuConfig(){
+  const errEl = document.getElementById('sbmenu-err');
+  if (errEl) errEl.textContent = '';
+  try {
+    const { error } = await sdb.from('settings').update({ value: JSON.stringify(_sidebarMenuState), updated_at: new Date().toISOString() }).eq('key','sidebar_menu_config');
+    if (error) throw error;
+    showToast(lang==='ar'?'✓ اتحفظ ترتيب القائمة — هيبان للعملاء أول ما يفتحوا/يحدّثوا الصفحة':'✓ Menu order saved — clients will see it on next page load');
+  } catch(e) {
+    console.error('saveSidebarMenuConfig error:', e);
+    if (errEl) errEl.textContent = (lang==='ar'?'✗ فشل الحفظ: ':'✗ Save failed: ')+(e.message||e);
+  }
+}
+function resetSidebarMenuConfig(){
+  _sidebarMenuState = JSON.parse(JSON.stringify(DEFAULT_SIDEBAR_MENU));
+  _renderSidebarMenuList();
 }
 
 async function toggleMaint(){
