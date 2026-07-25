@@ -222,13 +222,13 @@ body.ltr .markets-table th{text-align:left;}
 .m-coin{display:flex;align-items:center;gap:10px;}
 .m-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;font-family:var(--mono);}
 
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:200;align-items:center;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:24px 0;box-sizing:border-box;}
 /* ✅ FIX: قفل تمرير الصفحة اللي تحت لما مودال يبقى مفتوح — من غيرها Safari على iOS
    بيحرّك العنصر الـ fixed لما الكيبورد يفتح (حقل Subject/Message) فتبان الصفحة "طالعة لفوق"
    ومحتوى الفوتر/الهيدر باين من تحت المودال. */
 body.modal-open{position:fixed;top:var(--modal-scroll-lock-top,0);left:0;right:0;width:100%;overflow:hidden;}
 .modal-overlay.open{display:flex;}
-.modal{background:var(--dark2);border:1px solid var(--border);border-radius:20px;padding:36px;max-width:430px;width:92%;position:relative;max-height:90vh;overflow-y:auto;}
+.modal{background:var(--dark2);border:1px solid var(--border);border-radius:20px;padding:36px;max-width:430px;width:92%;position:relative;max-height:90vh;max-height:90dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:auto;flex-shrink:0;}
 .modal-close{position:absolute;top:14px;right:14px;background:var(--dark3);border:1px solid var(--border);color:var(--muted);border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;}
 body.ltr .modal-close{right:auto;left:14px;}
 .modal-close:hover{color:var(--text);}
@@ -711,13 +711,6 @@ body:not(.ltr) .footer-grid{text-align:right;}
       </div>
       <div class="dash-main">
         <div id="d-overview">
-          <!-- Quick Actions -->
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
-            <button onclick="switchToDepositTab(document.querySelector('.sidebar-item[onclick*=&quot;d-deposit-tab&quot;]'))" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--gold);background:var(--gold-dim);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.background='var(--gold)';this.style.color='#000'" onmouseout="this.style.background='var(--gold-dim)';this.style.color='var(--gold)'" id="qa1" data-ar="📥 إيداع" data-en="📥 Deposit" data-tr="📥 Yatırım">📥 Deposit</button>
-            <button onclick="switchToWithdrawTab(document.querySelector('.sidebar-item[onclick*=&quot;d-deposit-tab&quot;]'))" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" id="qa2" data-ar="📤 سحب" data-en="📤 Withdraw" data-tr="📤 Çekim">📤 Withdraw</button>
-            <button onclick="switchDash(document.querySelector('.sidebar-item[onclick*=&quot;d-invest-new-tab&quot;]'),'d-invest-new-tab')" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" id="qa3" data-ar="💹 استثمر" data-en="💹 Invest" data-tr="💹 Yatır">💹 Invest</button>
-            <button onclick="switchDash(document.querySelector('.sidebar-item[onclick*=&quot;d-referral-tab&quot;]'),'d-referral-tab')" style="flex:1;min-width:120px;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'" id="qa4" data-ar="🎁 الإحالة" data-en="🎁 Referral" data-tr="🎁 Referans">🎁 Referral</button>
-          </div>
           <div class="stat-cards">
             <div class="stat-card"><div class="sc-label" id="dc1" data-ar="الرصيد الكلي" data-en="Total Balance" data-tr="Toplam Bakiye">الرصيد الكلي</div><div class="sc-val" id="d-bal">$0</div></div>
             <div class="stat-card"><div class="sc-label" id="dc2" data-ar="ربح اليوم" data-en="Daily Profit" data-tr="Günlük Kar">ربح اليوم</div><div class="sc-val" id="d-profit">$0</div></div>
@@ -954,7 +947,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
           <input type="password" id="wd-pin" maxlength="6" inputmode="numeric" style="text-align:center;font-size:20px;letter-spacing:6px;font-family:var(--mono)" placeholder="------">
           <div id="wd-pin-not-set-note" style="display:none;font-size:11px;color:var(--gold);margin-top:6px">
             <span data-ar="لم تقم بتعيين رقم سري للسحب بعد — " data-en="You haven't set a withdrawal PIN yet — " data-tr="Henüz çekim PIN'i belirlemediniz — ">لم تقم بتعيين رقم سري للسحب بعد — </span>
-            <a onclick="switchDash(document.querySelector('[onclick*=\'d-account\']'),'d-account')" style="color:var(--gold);text-decoration:underline;cursor:pointer" data-ar="اضبطه من هنا" data-en="Set it here" data-tr="Buradan ayarlayın">اضبطه من هنا</a>
+            <a onclick="switchDash(document.querySelector('[data-menu-key=\'account\']'),'d-account')" style="color:var(--gold);text-decoration:underline;cursor:pointer" data-ar="اضبطه من هنا" data-en="Set it here" data-tr="Buradan ayarlayın">اضبطه من هنا</a>
           </div>
         </div>
         <button class="btn-primary" style="width:100%" onclick="submitWithdrawal()" id="wd-submit-btn" data-ar="تأكيد طلب السحب" data-en="Confirm Withdrawal" data-tr="Çekimi Onayla">تأكيد طلب السحب</button>
@@ -1975,7 +1968,8 @@ function showPage(id, el) {
   if(id === 'deposit' || id === 'referral') {
     showPage('dashboard', el);
     const targetTab = id === 'deposit' ? 'd-deposit-tab' : 'd-referral-tab';
-    const navItem = document.querySelector('.sidebar-item[onclick*="'+targetTab+'"]') || document.querySelector('.sidebar-item');
+    const menuKey = id === 'deposit' ? 'deposit' : 'referral';
+    const navItem = document.querySelector('.sidebar-item[data-menu-key="'+menuKey+'"]') || document.querySelector('.sidebar-item');
     if(navItem) switchDash(navItem, targetTab);
     if(id === 'deposit') {
       try {
@@ -2689,12 +2683,15 @@ async function loadDashboard() {
 
     const invs = invRes.data || [];
     const activeInvs = invs.filter(i=>i.status==='active');
-    window.__lockedAmount = activeInvs.reduce((s,i)=>s+parseFloat(i.amount||0),0); // فلوس مقفولة في استثمارات نشطة، مينفعش تُسحب لحد ما يتم إلغاء الاستثمار
+    // ✅ FIX: الرصيد (balance) بقى دايمًا صافي ومبيشملش أي مبلغ مقفول في استثمار نشط —
+    // فمفيش داعي نطرح المبلغ المقفول تاني هنا (كان بيتطرح مرتين وده كان بيخلي "المتاح للسحب"
+    // يظهر أقل من الحقيقي، والعميل يحاول يسحب مبلغ متاح فعلاً ويتفاجئ برفض الطلب).
+    window.__lockedAmount = activeInvs.reduce((s,i)=>s+parseFloat(i.amount||0),0); // للعرض فقط (توضيح للعميل)، مش للطرح
     const availBox = document.getElementById('wd-available-box');
     if (availBox) {
-      const avail = (parseFloat(userProfile.balance)||0) - window.__lockedAmount;
+      const avail = parseFloat(userProfile.balance)||0;
       const _availLabel = {ar:'💰 المتاح للسحب: $', en:'💰 Available to withdraw: $', tr:'💰 Çekilebilir: $'}[lang] || '💰 Available to withdraw: $';
-      const _lockLabel  = {ar:` (مقفول في استثمار: $${window.__lockedAmount.toLocaleString('en-US')})`, en:` (locked in investment: $${window.__lockedAmount.toLocaleString('en-US')})`, tr:` (yatırımda kilitli: $${window.__lockedAmount.toLocaleString('en-US')})`}[lang] || '';
+      const _lockLabel  = {ar:` (بالإضافة لـ $${window.__lockedAmount.toLocaleString('en-US')} مقفولة في استثمار نشط حاليًا)`, en:` (plus $${window.__lockedAmount.toLocaleString('en-US')} currently locked in an active investment)`, tr:` (ayrıca $${window.__lockedAmount.toLocaleString('en-US')} aktif yatırımda kilitli)`}[lang] || '';
       availBox.textContent = _availLabel + avail.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) +
         (window.__lockedAmount > 0 ? _lockLabel : '');
     }
@@ -2764,7 +2761,7 @@ async function loadTransactions(resetPage=true) {
     ]);
     const deps=(depRes.data||[]).map(d=>({...d,txType:'deposit'}));
     const wds=(wdRes.data||[]).map(w=>({...w,txType:'withdrawal'}));
-    const txs=(txRes.data||[]).filter(t=>['profit','referral','bonus'].includes(t.type)).map(t=>({...t,txType:t.type,status:'approved'}));
+    const txs=(txRes.data||[]).filter(t=>['profit','referral','bonus','refund'].includes(t.type)).map(t=>({...t,txType:t.type,status:'approved'}));
     txAllData=[...deps,...wds,...txs].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
     renderTransactionsList();
   } catch(e){
@@ -2774,22 +2771,23 @@ async function loadTransactions(resetPage=true) {
 
 function renderTransactionsList(){
   const el=document.getElementById('tx-list');
-  const icons={deposit:'📥',withdrawal:'📤',profit:'💰',referral:'👥',bonus:'🎁'};
-  const colors={deposit:'var(--green)',withdrawal:'var(--red)',profit:'var(--gold)',referral:'var(--blue)',bonus:'var(--orange)'};
+  const icons={deposit:'📥',withdrawal:'📤',profit:'💰',referral:'👥',bonus:'🎁',refund:'🔄'};
+  const colors={deposit:'var(--green)',withdrawal:'var(--red)',profit:'var(--gold)',referral:'var(--blue)',bonus:'var(--orange)',refund:'var(--green)'};
   const typeLabel={
     deposit:{ar:'إيداع',en:'Deposit',tr:'Yatırım'},
     withdrawal:{ar:'سحب',en:'Withdrawal',tr:'Çekim'},
     profit:{ar:'ربح يومي',en:'Daily Profit',tr:'Günlük Kâr'},
     referral:{ar:'إحالة',en:'Referral',tr:'Referans'},
     bonus:{ar:'مكافأة',en:'Bonus',tr:'Bonus'},
+    refund:{ar:'استرداد رأس مال',en:'Principal Refund',tr:'Anapara İadesi'},
   };
   const statusLabel={
     pending:{ar:'معلق',en:'Pending',tr:'Beklemede'},
     approved:{ar:'مقبول',en:'Approved',tr:'Onaylandı'},
     rejected:{ar:'مرفوض',en:'Rejected',tr:'Reddedildi'},
   };
-  const filters=['all','deposit','withdrawal','profit','referral','bonus'];
-  const fLabels={all:{ar:'الكل',en:'All',tr:'Tümü'},deposit:{ar:'إيداع',en:'Deposits',tr:'Yatırım'},withdrawal:{ar:'سحب',en:'Withdrawals',tr:'Çekim'},profit:{ar:'أرباح',en:'Profits',tr:'Kâr'},referral:{ar:'إحالات',en:'Referrals',tr:'Referans'},bonus:{ar:'مكافآت',en:'Bonuses',tr:'Bonuslar'}};
+  const filters=['all','deposit','withdrawal','profit','referral','bonus','refund'];
+  const fLabels={all:{ar:'الكل',en:'All',tr:'Tümü'},deposit:{ar:'إيداع',en:'Deposits',tr:'Yatırım'},withdrawal:{ar:'سحب',en:'Withdrawals',tr:'Çekim'},profit:{ar:'أرباح',en:'Profits',tr:'Kâr'},referral:{ar:'إحالات',en:'Referrals',tr:'Referans'},bonus:{ar:'مكافآت',en:'Bonuses',tr:'Bonuslar'},refund:{ar:'استرداد',en:'Refunds',tr:'İadeler'}};
   const filtered=txFilter==='all'?txAllData:txAllData.filter(t=>t.txType===txFilter);
   const total=filtered.length;
   const totalPages=Math.ceil(total/txPageSize)||1;
@@ -2986,9 +2984,13 @@ async function loadInvestments() {
         const msUntilNextProfit = Math.max(0, new Date(inv.next_profit_at) - now);
         const h = Math.floor(msUntilNextProfit / 3600000);
         const m = Math.floor((msUntilNextProfit % 3600000) / 60000);
+        const isEndMode = inv.payout_mode === 'end';
+        const timerLabel = isEndMode
+          ? (dayNum >= totalDays ? {ar:'الربح والمبلغ القادم بعد ',en:'Profit + principal in ',tr:'Kâr + anapara '}[lang] : {ar:'المدة تنتهي بعد ',en:'Plan ends in ',tr:'Plan bitişine '}[lang])
+          : (lang==='ar'?'الربح القادم بعد ':lang==='tr'?'Sonraki kâr ':'Next profit in ');
         nextProfitHtml = '<div style="font-size:11px;color:var(--gold);margin-top:6px;display:flex;justify-content:space-between">' +
           '<span>📅 '+({ar:'اليوم ',en:'Day ',tr:'Gün '}[lang]||'Day ')+dayNum+({ar:' من ',en:' of ',tr:'/'}[lang]||' of ')+totalDays+'</span>' +
-          '<span>⏱ '+(lang==='ar'?'الربح القادم بعد ':lang==='tr'?'Sonraki kâr ':'Next profit in ')+h+'h '+m+'m</span>' +
+          '<span>⏱ '+timerLabel+h+'h '+m+'m</span>' +
         '</div>';
       }
 
@@ -3523,7 +3525,7 @@ async function submitWithdrawal() {
     if(!wdResult || !wdResult.success) {
       const msg = wdResult?.message;
       if(msg === 'PIN_NOT_SET'){
-        showToast(lang==='ar'?'⚠️ لازم تعمل رقم سري للسحب الأول من "حسابي"':lang==='tr'?'⚠️ Önce "Hesabım" bölümünden bir çekim PIN\'i oluşturmalısınız':'⚠️ You need to set a withdrawal PIN first from "My Account"', 'err');
+        showToast(lang==='ar'?'⚠️ يجب تعيين رقم سري للسحب أولاً من "حسابي"':lang==='tr'?'⚠️ Önce "Hesabım" bölümünden bir çekim PIN\'i oluşturmalısınız':'⚠️ You need to set a withdrawal PIN first from "My Account"', 'err');
       } else if(msg === 'PIN_REQUIRED'){
         showToast(lang==='ar'?'أدخل الرقم السري':lang==='tr'?'PIN\'i girin':'Enter your PIN', 'err');
       } else if(msg === 'PIN_LOCKED'){
@@ -3531,7 +3533,7 @@ async function submitWithdrawal() {
       } else if(msg === 'Incorrect PIN'){
         showToast(lang==='ar'?'❌ الرقم السري غلط':lang==='tr'?'❌ Yanlış PIN':'❌ Incorrect PIN', 'err');
       } else if((msg||'').includes('KYC verification required')) {
-        showToast(lang==='ar'?'⚠️ لازم توثّق هويتك (KYC) الأول عشان تقدر تسحب هذا المبلغ':lang==='tr'?'⚠️ Bu tutarı çekmek için önce kimliğinizi doğrulamanız (KYC) gerekiyor':'⚠️ Please verify your identity (KYC) first to withdraw this amount', 'err');
+        showToast(lang==='ar'?'⚠️ يجب توثيق هويتك (KYC) أولاً حتى تتمكن من سحب هذا المبلغ':lang==='tr'?'⚠️ Bu tutarı çekmek için önce kimliğinizi doğrulamanız (KYC) gerekiyor':'⚠️ Please verify your identity (KYC) first to withdraw this amount', 'err');
       } else {
         showToast(msg || (lang==='ar'?'تعذر إرسال طلب السحب':lang==='tr'?'Çekim talebi gönderilemedi':'Could not submit withdrawal request'), 'err');
       }
@@ -3845,7 +3847,7 @@ async function saveMyAccountInfo(){
   const newName = (nameInput.value || '').trim();
   if(!newName){ showErr(errEl, {ar:'اكتب اسمك', en:'Please enter your name', tr:'Lütfen adınızı girin'}); return; }
   if(newName.length > 100){ showErr(errEl, {ar:'الاسم طويل جداً', en:'Name is too long', tr:'İsim çok uzun'}); return; }
-  if(!userProfile?.id){ showErr(errEl, {ar:'لازم تسجل دخول الأول', en:'You must be logged in', tr:'Önce giriş yapmalısınız'}); return; }
+  if(!userProfile?.id){ showErr(errEl, {ar:'يجب تسجيل الدخول أولاً', en:'You must be logged in', tr:'Önce giriş yapmalısınız'}); return; }
   const btn = document.getElementById('acc-save-btn');
   if(btn) btn.disabled = true;
   try {
@@ -3867,7 +3869,7 @@ async function changeMyPassword(){
   const newPass = document.getElementById('sec-new-pass').value;
   if (!curPass || !newPass) { showErr(errEl, {ar:'املأ كل الحقول', en:'Fill all fields', tr:'Tüm alanları doldurun'}); return; }
   if (newPass.length < 8) { showErr(errEl, {ar:'كلمة المرور الجديدة 8 أحرف على الأقل', en:'New password must be at least 8 characters', tr:'Yeni şifre en az 8 karakter olmalı'}); return; }
-  if (!userProfile || !currentUser?.email) { showErr(errEl, {ar:'لازم تسجل دخول الأول', en:'You must be logged in', tr:'Önce giriş yapmalısınız'}); return; }
+  if (!userProfile || !currentUser?.email) { showErr(errEl, {ar:'يجب تسجيل الدخول أولاً', en:'You must be logged in', tr:'Önce giriş yapmalısınız'}); return; }
   const btn = document.getElementById('sec-save-btn');
   if (btn) btn.disabled = true;
   try {
