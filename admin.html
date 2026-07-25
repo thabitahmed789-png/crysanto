@@ -774,7 +774,7 @@ body.ltr .toast{left:auto;right:24px;}
       </div>
       <div class="panel" style="margin-top:20px">
         <div class="panel-head"><span id="sbmenu-title">📑 ترتيب قائمة العميل (Dashboard)</span></div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:14px" id="sbmenu-desc">تحكم في ترتيب وظهور عناصر القائمة الجانبية في لوحة تحكم العميل. "نظرة عامة" لازم تفضل ظاهرة دايمًا.</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px" id="sbmenu-desc">تحكم في ترتيب وظهور عناصر القائمة الجانبية في لوحة تحكم العميل. يجب أن تبقى "نظرة عامة" ظاهرة دائمًا.</div>
         <div id="sidebar-menu-list"></div>
         <div style="display:flex;gap:10px;margin-top:14px">
           <button class="act-btn-primary" onclick="saveSidebarMenuConfig()" id="sbmenu-save-btn">💾 حفظ الترتيب</button>
@@ -2062,6 +2062,14 @@ async function renderPackages(){
         ${editRow(lang==='ar'?'المدة (يوم)':'Duration (days)',p.duration_days,'d',`rpe-days-${p.id}`)}
         ${editRow(lang==='ar'?'الحد الأدنى $':'Min Deposit $',p.min_amount,'$',`rpe-min-${p.id}`)}
         ${editRow(lang==='ar'?'الحد الأقصى $':'Max Deposit $',p.max_amount,'$',`rpe-max-${p.id}`)}
+        <div style="background:var(--dark);border-radius:8px;padding:10px 12px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${lang==='ar'?'طريقة صرف الربح':'Payout Mode'}</div>
+          <select id="rpe-mode-${p.id}" style="width:100%;background:var(--dark2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:6px 8px">
+            <option value="daily" ${p.payout_mode!=='end'?'selected':''}>${lang==='ar'?'يومي — يُدفع الربح كل يوم طوال مدة الباقة':'Daily — profit paid every day'}</option>
+            <option value="end" ${p.payout_mode==='end'?'selected':''}>${lang==='ar'?'مرة واحدة عند الاكتمال — يُدفع الربح مرة واحدة على أصل المبلغ عند انتهاء المدة':'Lump sum at completion — paid once when the plan ends'}</option>
+          </select>
+          <div style="font-size:10px;color:var(--muted);margin-top:5px">${lang==='ar'?'هذا التغيير يؤثر على الاستثمارات الجديدة فقط — الاستثمارات النشطة حاليًا تبقى بالطريقة التي أُنشئت بها':'This only affects new investments — active ones keep the mode they were created with'}</div>
+        </div>
       </div>
       <div style="margin-top:16px;padding:10px;background:var(--dark);border-radius:8px;font-size:12px;color:var(--muted)">
         ${lang==='ar'?'المستثمرون النشطون:':'Active investors:'} <strong style="color:var(--gold)">${active.toLocaleString('en-US')}</strong>
@@ -2075,11 +2083,12 @@ async function savePlanRow(planId){
   const days = parseInt(document.getElementById(`rpe-days-${planId}`)?.value, 10);
   const min = parseFloat(document.getElementById(`rpe-min-${planId}`)?.value);
   const max = parseFloat(document.getElementById(`rpe-max-${planId}`)?.value);
+  const payoutMode = document.getElementById(`rpe-mode-${planId}`)?.value === 'end' ? 'end' : 'daily';
   if ([roi,days,min,max].some(v => v===undefined || isNaN(v) || v<0)) {
     showToast(lang==='ar'?'قيم غير صحيحة':'Invalid values'); return;
   }
-  if (max < min) { showToast(lang==='ar'?'الحد الأقصى لازم يكون أكبر من الأدنى':'Max must be greater than min'); return; }
-  const { error } = await sdb.from('plans').update({ daily_rate: roi, duration_days: days, min_amount: min, max_amount: max }).eq('id', planId);
+  if (max < min) { showToast(lang==='ar'?'يجب أن يكون الحد الأقصى أكبر من الحد الأدنى':'Max must be greater than min'); return; }
+  const { error } = await sdb.from('plans').update({ daily_rate: roi, duration_days: days, min_amount: min, max_amount: max, payout_mode: payoutMode }).eq('id', planId);
   if (error) { showToast((lang==='ar'?'✗ فشل حفظ الباقة: ':'✗ Failed to save package: ')+error.message); console.error('savePlanRow error:', error); return; }
   showToast(lang==='ar'?'✓ تم حفظ الباقة':'✓ Package saved');
 }
@@ -2677,7 +2686,7 @@ async function saveSidebarMenuConfig(){
   try {
     const { error } = await sdb.from('settings').update({ value: JSON.stringify(_sidebarMenuState), updated_at: new Date().toISOString() }).eq('key','sidebar_menu_config');
     if (error) throw error;
-    showToast(lang==='ar'?'✓ اتحفظ ترتيب القائمة — هيبان للعملاء أول ما يفتحوا/يحدّثوا الصفحة':'✓ Menu order saved — clients will see it on next page load');
+    showToast(lang==='ar'?'✓ تم حفظ ترتيب القائمة — سيظهر للعملاء عند فتح الصفحة أو تحديثها':'✓ Menu order saved — clients will see it on next page load');
   } catch(e) {
     console.error('saveSidebarMenuConfig error:', e);
     if (errEl) errEl.textContent = (lang==='ar'?'✗ فشل الحفظ: ':'✗ Save failed: ')+(e.message||e);
@@ -2697,7 +2706,7 @@ async function toggleMaint(){
   thumb.style.left=on?'':'3px';
   const { error } = await sdb.from('settings').update({ value: on?'true':'false', updated_at: new Date().toISOString() }).eq('key','maintenance_mode');
   if (error) { showToast((lang==='ar'?'✗ فشل التحديث: ':'✗ Failed to update: ')+error.message); console.error('toggleMaint error:', error); return; }
-  showToast(on?(lang==='ar'?'⚠️ وضع الصيانة نشط — العملاء هيشوفوا صفحة الصيانة':'⚠️ Maintenance mode ON — clients will see the maintenance page'):(lang==='ar'?'✓ الموقع يعمل بشكل طبيعي':'✓ Site is live'));
+  showToast(on?(lang==='ar'?'⚠️ وضع الصيانة نشط — سيرى العملاء صفحة الصيانة':'⚠️ Maintenance mode ON — clients will see the maintenance page'):(lang==='ar'?'✓ الموقع يعمل بشكل طبيعي':'✓ Site is live'));
 }
 
 async function toggleRegistration(){
@@ -2716,10 +2725,10 @@ async function saveAdminPassword(){
   const curPass = document.getElementById('set-pass-cur').value;
   const newPass = document.getElementById('set-pass-new').value;
   if (!curPass || !newPass) { showToast(lang==='ar'?'املأ كلمة المرور الحالية والجديدة':'Fill in current and new password'); return; }
-  if (newPass.length < 8) { showToast(lang==='ar'?'كلمة المرور الجديدة لازم تكون 8 حروف على الأقل':'New password must be at least 8 characters'); return; }
+  if (newPass.length < 8) { showToast(lang==='ar'?'يجب أن تتكون كلمة المرور الجديدة من 8 أحرف على الأقل':'New password must be at least 8 characters'); return; }
   const { data: sessionData } = await sdb.auth.getSession();
   const email = sessionData?.session?.user?.email;
-  if (!email) { showToast(lang==='ar'?'لازم تسجل دخول الأول':'You must be logged in'); return; }
+  if (!email) { showToast(lang==='ar'?'يجب تسجيل الدخول أولاً':'You must be logged in'); return; }
   // نتأكد من كلمة المرور الحالية الأول قبل أي تغيير (إعادة تسجيل دخول بنفس الإيميل)
   const { error: verifyError } = await sdb.auth.signInWithPassword({ email, password: curPass });
   if (verifyError) { showToast(lang==='ar'?'✗ كلمة المرور الحالية غلط':'✗ Current password is incorrect'); return; }
@@ -3337,7 +3346,7 @@ async function toggleWithdrawalLock(userId, lock){
   const { data, error } = await sdb.rpc('admin_toggle_withdrawal_lock', { p_user_id: userId, p_locked: lock, p_reason: reason });
   const result = Array.isArray(data) ? data[0] : data;
   if(error || !result?.success){ showToast((lang==='ar'?'✗ فشل: ':'✗ Failed: ')+(result?.message||error?.message||'')); return; }
-  showToast(lock ? (lang==='ar'?'🔒 تم قفل السحب لهذا العميل (الإيداع لسه شغال)':'🔒 Withdrawals locked for this user (deposits still work)')
+  showToast(lock ? (lang==='ar'?'🔒 تم قفل السحب لهذا العميل (الإيداع لا يزال متاحًا)':'🔒 Withdrawals locked for this user (deposits still work)')
                  : (lang==='ar'?'🔓 تم فتح السحب لهذا العميل':'🔓 Withdrawals unlocked for this user'));
   await loadRealUsers();
 }
