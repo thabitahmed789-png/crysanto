@@ -336,7 +336,7 @@ body.ltr .toast{left:auto;right:24px;}
       <label id="ll-pass">كلمة المرور</label>
       <input type="password" id="li-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
       <div class="err-msg" id="li-err">❌ بيانات خاطئة، حاول مجدداً</div>
-      <div class="err-msg" id="li-lock-msg" style="display:none">⛔ محاولات كتير غلط — حاول تاني بعد <span id="li-lock-secs">60</span> ثانية</div>
+      <div class="err-msg" id="li-lock-msg" style="display:none">⛔ محاولات خاطئة كثيرة — حاول مرة أخرى بعد <span id="li-lock-secs">60</span> ثانية</div>
     </div>
     <button class="btn-login-main" onclick="doLogin()" id="ll-btn"><span id="ll-btn-el">دخول لوحة الإدارة</span></button>
     <div style="margin-top:16px;text-align:center">
@@ -1359,7 +1359,7 @@ async function verifyAdminMfa(){
   if(btn){ btn.textContent='⏳'; document.getElementById('admin-mfa-btn').disabled=true; }
   try {
     const { data: ch, error: chErr } = await sdb.auth.mfa.challenge({ factorId: _pendingAdminMfaFactorId });
-    if(chErr){ errEl.style.display='block'; errEl.textContent='حصل خطأ، حاول تاني'; return; }
+    if(chErr){ errEl.style.display='block'; errEl.textContent='حدث خطأ، حاول مرة أخرى'; return; }
     const { error: vErr } = await sdb.auth.mfa.verify({ factorId: _pendingAdminMfaFactorId, challengeId: ch.id, code });
     if(vErr){
       errEl.style.display='block'; errEl.textContent='الكود غير صحيح، حاول مرة أخرى';
@@ -1372,7 +1372,7 @@ async function verifyAdminMfa(){
     completeAdminLogin(freshSession);
   } catch(e){
     console.error('verifyAdminMfa exception:', e);
-    errEl.style.display='block'; errEl.textContent='حصل خطأ، حاول تاني';
+    errEl.style.display='block'; errEl.textContent='حدث خطأ، حاول مرة أخرى';
   } finally {
     if(btn){ btn.textContent='تأكيد'; document.getElementById('admin-mfa-btn').disabled=false; }
   }
@@ -2573,7 +2573,7 @@ async function confirmAdminMfaEnroll(){
     const { data: ch, error: chErr } = await sdb.auth.mfa.challenge({ factorId: _pendingAdminEnrollFactorId });
     if (chErr) { err.style.display='block'; err.textContent = chErr.message; return; }
     const { error: vErr } = await sdb.auth.mfa.verify({ factorId: _pendingAdminEnrollFactorId, challengeId: ch.id, code });
-    if (vErr) { err.style.display='block'; err.textContent = 'الكود غير صحيح، حاول تاني'; return; }
+    if (vErr) { err.style.display='block'; err.textContent = 'الكود غير صحيح، حاول مرة أخرى'; return; }
     document.getElementById('admin-2fa-enroll-wrap').style.display = 'none';
     document.getElementById('admin-2fa-confirm-code').value = '';
     _pendingAdminEnrollFactorId = null;
@@ -2599,7 +2599,7 @@ async function disableAdminMfa(){
   const btn = document.getElementById('admin-2fa-disable-btn');
   const factorId = btn?.dataset.factorId;
   if (!factorId) return;
-  if (!confirm('متأكد إنك عايز تعطّل 2FA؟ ده هيقلل حماية حسابك.')) return;
+  if (!confirm('هل أنت متأكد من رغبتك في تعطيل التحقق بخطوتين؟ هذا سيقلل من حماية حسابك.')) return;
   try {
     const { error } = await sdb.auth.mfa.unenroll({ factorId });
     if (error) { showToast('✗ فشل التعطيل: ' + error.message); return; }
@@ -2741,7 +2741,7 @@ async function saveAdminPassword(){
   if (!email) { showToast(lang==='ar'?'يجب تسجيل الدخول أولاً':'You must be logged in'); return; }
   // نتأكد من كلمة المرور الحالية الأول قبل أي تغيير (إعادة تسجيل دخول بنفس الإيميل)
   const { error: verifyError } = await sdb.auth.signInWithPassword({ email, password: curPass });
-  if (verifyError) { showToast(lang==='ar'?'✗ كلمة المرور الحالية غلط':'✗ Current password is incorrect'); return; }
+  if (verifyError) { showToast(lang==='ar'?'✗ كلمة المرور الحالية غير صحيحة':'✗ Current password is incorrect'); return; }
   const { error } = await sdb.auth.updateUser({ password: newPass });
   if (error) { showToast((lang==='ar'?'✗ فشل تغيير كلمة المرور: ':'✗ Failed to change password: ')+error.message); console.error('saveAdminPassword error:', error); return; }
   document.getElementById('set-pass-cur').value = '';
@@ -3342,7 +3342,7 @@ async function triggerPasswordResetEmail(email){
   try {
     const { error } = await sdb.auth.resetPasswordForEmail(email);
     if(error){ showToast((lang==='ar'?'✗ فشل الإرسال: ':'✗ Failed to send: ')+error.message); return; }
-    showToast(lang==='ar'?'✓ تم إرسال إيميل الاسترجاع (لو الإيميل ده مسجل فعلاً)':'✓ Reset email sent (if that email is registered)');
+    showToast(lang==='ar'?'✓ تم إرسال إيميل الاسترجاع (إذا كان هذا البريد الإلكتروني مسجلاً بالفعل)':'✓ Reset email sent (if that email is registered)');
   } catch(e){
     showToast((lang==='ar'?'✗ خطأ: ':'✗ Error: ')+e.message);
   }
@@ -3899,7 +3899,7 @@ async function updateAdminRoleUI(adminId, newRole){
 }
 
 async function removeAdminUI(adminId, email){
-  if(!confirm(`متأكد إنك عايز تشيل ${email} من الأدمنز؟`)) return;
+  if(!confirm(`هل أنت متأكد من رغبتك في إزالة ${email} من قائمة المشرفين؟`)) return;
   const { data, error } = await sdb.rpc('admin_remove_admin', { p_admin_id: adminId });
   const result = Array.isArray(data) ? data[0] : data;
   if(error || !result?.success){
