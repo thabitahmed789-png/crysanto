@@ -2223,11 +2223,10 @@ async function doLogin() {
         return;
       }
       userProfile = newP;
+      // ✅ FIX: إيميل الترحيب لازم يتبعت بس هنا، لما بروفايل جديد فعلاً اتعمل —
+      // مش لكل تسجيل دخول لعميل قديم (كان بيتبعت غلط لكل الناس في كل مرة تسجيل دخول)
+      db.functions.invoke('send-email', { body: { template: 'welcome', lang } }).catch(e => console.error('welcome email error:', e));
     }
-
-    // ✅ FIX: إيميل ترحيب حقيقي عند إنشاء بروفايل جديد (تسجيل مباشر أو أول دخول عبر OAuth)
-    // — قالب ثابت آمن، السيرفر بيحدد إيميل المستخدم من جلسته مش من المتصفح، ومابيبلوكش لو فشل.
-    db.functions.invoke('send-email', { body: { template: 'welcome', lang } }).catch(e => console.error('welcome email error:', e));
 
     _authHandled = false;
     if (_sessionGen !== myLoginGen) { return; } // ✅ FIX: لو حصل logout/login تاني في نفس اللحظة، متكملش بهوية قديمة
@@ -2282,11 +2281,10 @@ async function verifyMfaAndContinueLogin() {
       }).select().single());
       if (insErr) { console.error('mfa/profile insert error:', insErr); showToast(genericErrMsg()[lang]||genericErrMsg().en,'err'); return; }
       userProfile = newP;
+      // ✅ FIX: نفس الإصلاح هنا — الإيميل بس لو بروفايل جديد اتعمل فعلاً
+      db.functions.invoke('send-email', { body: { template: 'welcome', lang } }).catch(e => console.error('welcome email error:', e));
     }
 
-    // ✅ FIX: إيميل ترحيب حقيقي عند إنشاء بروفايل جديد (تسجيل مباشر أو أول دخول عبر OAuth)
-    // — قالب ثابت آمن، السيرفر بيحدد إيميل المستخدم من جلسته مش من المتصفح، ومابيبلوكش لو فشل.
-    db.functions.invoke('send-email', { body: { template: 'welcome', lang } }).catch(e => console.error('welcome email error:', e));
     afterLogin();
   } catch (e) {
     console.error('verifyMfaAndContinueLogin exception:', e);
@@ -2403,11 +2401,9 @@ async function doRegister() {
         return;
       }
       userProfile = newP;
+      // ✅ FIX: نفس الإصلاح هنا كمان للاتساق — الإيميل بس لو بروفايل جديد اتعمل فعلاً
+      db.functions.invoke('send-email', { body: { template: 'welcome', lang } }).catch(e => console.error('welcome email error:', e));
     }
-
-    // ✅ FIX: إيميل ترحيب حقيقي عند إنشاء بروفايل جديد (تسجيل مباشر أو أول دخول عبر OAuth)
-    // — قالب ثابت آمن، السيرفر بيحدد إيميل المستخدم من جلسته مش من المتصفح، ومابيبلوكش لو فشل.
-    db.functions.invoke('send-email', { body: { template: 'welcome', lang } }).catch(e => console.error('welcome email error:', e));
 
     _authHandled = false;
     if (_sessionGen !== myRegGen) { return; } // ✅ FIX: لو حصل logout/login تاني في نفس اللحظة، متكملش بهوية قديمة
