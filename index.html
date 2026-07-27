@@ -2927,7 +2927,7 @@ async function loadNotifications() {
     let html = '';
     if(unread.length) {
       html += `<div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-        <span>${lang==='ar'?'غير مقروءة':'Unread'} (${unread.length})</span>
+        <span>${lang==='ar'?'غير مقروءة':lang==='tr'?'Okunmamış':'Unread'} (${unread.length})</span>
         <button onclick="markAllNotifsRead()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px">
           ${lang==='ar'?'✓ تعليم الكل مقروء':lang==='tr'?'✓ Tümünü okundu say':'✓ Mark all read'}
         </button>
@@ -2935,7 +2935,7 @@ async function loadNotifications() {
       html += unread.map(renderNotif).join('');
     }
     if(read.length) {
-      if(unread.length) html += `<div style="font-size:11px;color:var(--muted);margin:12px 0 8px">${lang==='ar'?'المقروءة':'Read'}</div>`;
+      if(unread.length) html += `<div style="font-size:11px;color:var(--muted);margin:12px 0 8px">${lang==='ar'?'المقروءة':lang==='tr'?'Okunmuş':'Read'}</div>`;
       html += read.map(renderNotif).join('');
     }
     el.innerHTML = html;
@@ -3396,7 +3396,7 @@ async function checkAutoDepositStatus(){
     }
   } catch(e){
     console.error('checkAutoDepositStatus error:', e);
-    showToast(lang==='ar'?'تعذر التحقق من الحالة':'Could not check status');
+    showToast(lang==='ar'?'تعذر التحقق من الحالة':lang==='tr'?'Durum kontrol edilemedi':'Could not check status');
   } finally {
     if(btn) btn.disabled = false;
   }
@@ -3666,7 +3666,7 @@ function handleNewTicketFileSelect(){
   const file = input.files?.[0];
   if(!file){ _pendingNewTicketFile = null; preview.style.display = 'none'; return; }
   if(file.size > 10 * 1024 * 1024){
-    showToast(lang==='ar'?'الملف كبير جدًا (الحد الأقصى 10MB)':'File too large (max 10MB)');
+    showToast(lang==='ar'?'الملف كبير جدًا (الحد الأقصى 10MB)':lang==='tr'?'Dosya çok büyük (maks. 10MB)':'File too large (max 10MB)');
     input.value = ''; _pendingNewTicketFile = null; preview.style.display = 'none';
     return;
   }
@@ -3780,7 +3780,7 @@ function handleTicketFileSelect(){
   const file = input.files?.[0];
   if(!file){ _pendingTicketFile = null; preview.style.display = 'none'; return; }
   if(file.size > 10 * 1024 * 1024){
-    showToast(lang==='ar'?'الملف كبير جدًا (الحد الأقصى 10MB)':'File too large (max 10MB)');
+    showToast(lang==='ar'?'الملف كبير جدًا (الحد الأقصى 10MB)':lang==='tr'?'Dosya çok büyük (maks. 10MB)':'File too large (max 10MB)');
     input.value = ''; _pendingTicketFile = null; preview.style.display = 'none';
     return;
   }
@@ -3802,7 +3802,7 @@ async function sendTicketReply(){
     const { error: upErr } = await db.storage.from('support-attachments').upload(path, file);
     if(upErr){
       console.error('ticket attachment upload error:', upErr);
-      showToast(lang==='ar'?'تعذر رفع الملف':'Could not upload file');
+      showToast(lang==='ar'?'تعذر رفع الملف':lang==='tr'?'Dosya yüklenemedi':'Could not upload file');
       return;
     }
     attachment_url = path; attachment_name = file.name; attachment_type = file.type;
@@ -4696,7 +4696,7 @@ async function loadMyDailyProfits() {
       .limit(60);
     if(error) throw error;
     if(!data || !data.length) {
-      listEl.innerHTML='<div style="color:var(--muted);text-align:center;padding:30px;font-size:13px">'+(lang==='ar'?'لا توجد أرباح مسجلة بعد':'No profit records yet')+'</div>';
+      listEl.innerHTML='<div style="color:var(--muted);text-align:center;padding:30px;font-size:13px">'+(lang==='ar'?'لا توجد أرباح مسجلة بعد':lang==='tr'?'Henüz kâr kaydı yok':'No profit records yet')+'</div>';
       ['my-dp-today','my-dp-week','my-dp-month'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='$0';});
       return;
     }
