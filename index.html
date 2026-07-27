@@ -443,7 +443,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
     <h1><span id="h1" data-ar="استثمر في" data-en="Invest in" data-tr="Yatırım Yap">استثمر في</span><br><span class="gold" id="h2" data-ar="مستقبلك الرقمي" data-en="Your Digital Future" data-tr="Dijital Geleceğine">مستقبلك الرقمي</span><br><span class="outline">Crysanto</span></h1>
     <p id="h-sub" data-ar="منصة استثمار رقمي آمنة وموثوقة. حقق عوائد يومية على استثماراتك." data-en="A secure digital investment platform. Earn daily returns on your crypto investments." data-tr="Güvenli dijital yatırım platformu. Günlük gelir elde edin.">منصة استثمار رقمي آمنة وموثوقة. حقق عوائد يومية على استثماراتك.</p>
     <div class="hero-cta">
-      <button class="btn-primary" onclick="ctaGetStarted()" id="h-btn1" data-ar="ابدأ الآن مجاناً" data-en="Get Started Free" data-tr="Ücretsiz Başla">ابدأ الآن مجاناً</button>
+      <button class="btn-primary" onclick="ctaGetStarted()" id="h-btn1" data-ar="ابدأ الآن" data-en="Get Started Now" data-tr="Şimdi Başla">ابدأ الآن</button>
       <button class="btn-outline" onclick="showPage('plans',null)" id="h-btn2" data-ar="استعرض الباقات" data-en="View Plans" data-tr="Planları Gör">استعرض الباقات</button>
     </div>
   </div>
@@ -536,7 +536,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
       </div>
     </div>
     <div style="text-align:center;margin-top:40px">
-      <button class="btn-primary" onclick="ctaGetStarted()" id="how-cta" data-ar="ابدأ الآن مجاناً" data-en="Start Now for Free" data-tr="Şimdi Ücretsiz Başla">Start Now for Free</button>
+      <button class="btn-primary" onclick="ctaGetStarted()" id="how-cta" data-ar="ابدأ الآن" data-en="Start Now" data-tr="Şimdi Başla">Start Now</button>
     </div>
   </div>
 </div>
@@ -1579,22 +1579,38 @@ let authReady = false; // false لحد ما نتأكد فعليًا فيه جل�
 // ✅ FIX: لو التاب فضل مفتوح في الخلفية فترة طويلة (زي الموبايل)، أول ما يرجع يبقى ظاهر
 // نجبر الواجهة (زرايرSign In/Register مقابل قائمة الحساب) تتزامن مع حالة الدخول الحقيقية،
 // عشان نمنع ظهور الاتنين مع بعض بسبب حالة قديمة متجمدة من قبل الدخول
-document.addEventListener('visibilitychange', () => {
+document.addEventListener('visibilitychange', async () => {
   if(document.visibilityState === 'visible') {
-    const btnL = document.getElementById('btnLogin');
-    const btnR = document.getElementById('btnRegister');
-    const uMenu = document.getElementById('user-menu');
-    if(isLoggedIn) {
-      if(btnL) btnL.style.display = 'none';
-      if(btnR) btnR.style.display = 'none';
-      if(uMenu) uMenu.style.display = 'flex';
-    } else {
-      if(btnL) btnL.style.display = '';
-      if(btnR) btnR.style.display = '';
-      if(uMenu) uMenu.style.display = 'none';
-    }
+    await _resyncAuthUiWithRealSession();
   }
 });
+
+// ✅ FIX: لو المتصفح استرجع الصفحة من الـ bfcache (زرار "رجوع" مثلاً)، برضو
+// لازم نتأكد من الجلسة الحقيقية بدل ما نعرض حالة قديمة مخزّنة
+window.addEventListener('pageshow', async (e) => {
+  if (e.persisted) { await _resyncAuthUiWithRealSession(); }
+});
+
+async function _resyncAuthUiWithRealSession() {
+  const btnL = document.getElementById('btnLogin');
+  const btnR = document.getElementById('btnRegister');
+  const uMenu = document.getElementById('user-menu');
+  const { data: { session } } = await db.auth.getSession();
+  const reallyLoggedIn = !!session;
+  if(reallyLoggedIn !== isLoggedIn) {
+    isLoggedIn = reallyLoggedIn;
+    if(!reallyLoggedIn) { currentUser = null; userProfile = null; document.body.classList.remove('logged-in'); }
+  }
+  if(isLoggedIn) {
+    if(btnL) btnL.style.display = 'none';
+    if(btnR) btnR.style.display = 'none';
+    if(uMenu) uMenu.style.display = 'flex';
+  } else {
+    if(btnL) btnL.style.display = '';
+    if(btnR) btnR.style.display = '';
+    if(uMenu) uMenu.style.display = 'none';
+  }
+}
 
 db.auth.onAuthStateChange(async (event, session) => {
   if(_authHandled) return; // doLogin / doRegister شغّالين
@@ -4686,7 +4702,7 @@ async function loadMyDailyProfits() {
   try {
     const { data, error } = await db
       .from('daily_profits')
-      .select('*, investments(plan_name, daily_rate)')
+      .select('*, investments(plan_name, plan_name_en, plan_name_tr, daily_rate)')
       .eq('user_id', userProfile.id)
       .order('profit_date', { ascending: false })
       .limit(60);
@@ -4705,7 +4721,7 @@ async function loadMyDailyProfits() {
     const setEl=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
     setEl('my-dp-today',fmt(td)); setEl('my-dp-week',fmt(wk)); setEl('my-dp-month',fmt(mo));
     listEl.innerHTML=data.map(dp=>{
-      const plan=dp.investments?.plan_name||'—';
+      const plan=(lang==='ar'?dp.investments?.plan_name:lang==='tr'?dp.investments?.plan_name_tr:dp.investments?.plan_name_en) || dp.investments?.plan_name || '—';
       const rate=dp.investments?.daily_rate;
       const amt=parseFloat(dp.amount||0);
       const isToday=dp.profit_date===today;
