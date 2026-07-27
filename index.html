@@ -1465,7 +1465,7 @@ function withTimeout(promise, ms = 15000) {
   ]);
 }
 function timeoutMsg(l) {
-  return {ar:'انتهت مهلة الاتصال — تحقق من الإنترنت وحاول تاني', en:'Connection timed out — check your internet and try again', tr:'Bağlantı zaman aşımına uğradı — internetinizi kontrol edin'}[l] || 'Connection timed out — try again';
+  return {ar:'انتهت مهلة الاتصال — تحقق من الإنترنت وحاول مرة أخرى', en:'Connection timed out — check your internet and try again', tr:'Bağlantı zaman aşımına uğradı — internetinizi kontrol edin'}[l] || 'Connection timed out — try again';
 }
 
 // ── SECURITY: تنظيف أي نص قبل حقنه في innerHTML — يمنع XSS ──
@@ -1544,6 +1544,12 @@ setTimeout(() => {
   }
 }, 3000);
 let isLoggedIn = false, currentUser = null, userProfile = null, pendingPage = null;
+// ✅ FIX: لو المستخدم دخل عن طريق رابط "نسيت كلمة السر" وقفل نافذة تعيين كلمة المرور
+// من غير ما يخلّص، لازم نسجّل خروجه تلقائيًا بدل ما يفضل داخل على الحساب بالغلط
+let _pendingRecoverySignOut = false;
+// ✅ FIX: طول ما الجلسة دي جاية من رابط استرجاع كلمة السر، منورّيش الداشبورد أو حالة
+// "تسجيل دخول" خالص — الجلسة موجودة تقنيًا بس عشان نقدر نغيّر كلمة السر بس، مش أكتر
+let _isRecoveryFlow = false;
 // ✅ FIX: عدّاد "جيل الجلسة" — بيتزوّد كل مرة الهوية بتتغيّر (دخول/خروج/تسجيل). أي طلب بيانات
 // غير متزامن (زي fetchProfile) بيتم تجاهل رده لو الجيل اتغيّر قبل ما يوصل، عشان رد متأخر من
 // حساب قديم مايكتبش فوق بيانات الحساب الحالي (ده كان سبب "رجوع تلقائي للحساب القديم").
@@ -1608,6 +1614,9 @@ db.auth.onAuthStateChange(async (event, session) => {
   // INITIAL_SESSION = عند تحميل الصفحة لو في جلسة محفوظة
   // SIGNED_IN = بعد login جديد (عبر onAuthStateChange مش doLogin)
   if((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session && !isLoggedIn) {
+    // ✅ FIX: جلسة استرجاع كلمة السر — منورّيش داشبورد أو أي حالة "مسجّل دخول" خالص،
+    // نسيب النافذة بس تفتح وتخلّص عملها (اتفتحت من مكان تاني عند استقبال هذه الجلسة)
+    if(_isRecoveryFlow) { currentUser = session.user; return; }
     currentUser = session.user;
     _sessionGen++; // ✅ FIX: جلسة جديدة — أي رد قديم لسه شغال في الخلفية هيتجاهل
     const myGen = _sessionGen;
@@ -1643,6 +1652,7 @@ db.auth.onAuthStateChange(async (event, session) => {
     showPage('home', null);
   } else if(event === 'PASSWORD_RECOVERY') {
     // المستخدم ضغط على رابط إعادة تعيين كلمة المرور من الإيميل
+    _pendingRecoverySignOut = true;
     openModal('reset-password');
   }
 
@@ -1693,8 +1703,10 @@ async function checkPasswordRecoveryLink(){
   if(!access_token || !refresh_token) return;
   // ننظّف الهاش من الرابط فورًا عشان مايتكررش لو حصل ريفريش للصفحة
   history.replaceState(null, '', window.location.pathname + window.location.search);
+  _isRecoveryFlow = true; // ✅ FIX: لازم يتظبط قبل setSession عشان الـ auth listener يشوفه فورًا
   const { error } = await db.auth.setSession({ access_token, refresh_token });
-  if(!error) openModal('reset-password');
+  if(!error) { _pendingRecoverySignOut = true; openModal('reset-password'); }
+  else { _isRecoveryFlow = false; }
 }
 checkPasswordRecoveryLink();
 
@@ -2061,8 +2073,16 @@ function closeModal(type) {
   if(e) e.style.display='none';
   if (type === 'register') resetTurnstileWidget('turnstile-register');
   if (type === 'login') resetTurnstileWidget('turnstile-login');
+  // ✅ FIX: لو قفل نافذة "تعيين كلمة مرور جديدة" من غير ما يحفظ كلمة مرور فعلية،
+  // يبقى لازم نسجّل خروجه فورًا — عشان الجلسة دي جاية من رابط استرجاع بس، مش تسجيل دخول حقيقي،
+  // ولازم محدش يفضل داخل على الحساب بالغلط بمجرد ما يفتح رابط الإيميل.
+  if (type === 'reset-password' && _pendingRecoverySignOut) {
+    _pendingRecoverySignOut = false;
+    _isRecoveryFlow = false;
+    db.auth.signOut().catch(()=>{});
+  }
 }
-document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m){m.classList.remove('open');unlockBodyScroll();}}));
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m){const t=m.id.replace('modal-','');closeModal(t);}}));
 
 function switchDash(el, id) {
   document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
@@ -3553,7 +3573,7 @@ async function submitWithdrawal() {
       } else if(msg === 'PIN_LOCKED'){
         showToast(lang==='ar'?'⛔ تم قفل السحب مؤقتًا بسبب محاولات خاطئة متكررة، حاول بعد 30 دقيقة أو تواصل مع الدعم':lang==='tr'?'⛔ Çok sayıda hatalı deneme nedeniyle çekim geçici olarak kilitlendi, 30 dakika sonra tekrar deneyin':'⛔ Withdrawals temporarily locked due to repeated wrong PIN attempts. Try again in 30 minutes or contact support', 'err');
       } else if(msg === 'Incorrect PIN'){
-        showToast(lang==='ar'?'❌ الرقم السري غلط':lang==='tr'?'❌ Yanlış PIN':'❌ Incorrect PIN', 'err');
+        showToast(lang==='ar'?'❌ الرقم السري غير صحيح':lang==='tr'?'❌ Yanlış PIN':'❌ Incorrect PIN', 'err');
       } else if((msg||'').includes('KYC verification required')) {
         showToast(lang==='ar'?'⚠️ يجب توثيق هويتك (KYC) أولاً حتى تتمكن من سحب هذا المبلغ':lang==='tr'?'⚠️ Bu tutarı çekmek için önce kimliğinizi doğrulamanız (KYC) gerekiyor':'⚠️ Please verify your identity (KYC) first to withdraw this amount', 'err');
       } else {
@@ -3836,7 +3856,7 @@ async function saveWithdrawalPin(){
     errEl.style.display = 'block'; return;
   }
   if(newPin !== confirmPin){
-    errEl.textContent = {ar:'الرقمين مش متطابقين',en:'PINs do not match',tr:'PIN\'ler eşleşmiyor'}[lang]||'PINs do not match';
+    errEl.textContent = {ar:'الرقمان غير متطابقين',en:'PINs do not match',tr:'PIN\'ler eşleşmiyor'}[lang]||'PINs do not match';
     errEl.style.display = 'block'; return;
   }
 
@@ -3897,7 +3917,7 @@ async function changeMyPassword(){
   try {
     // نتأكد من كلمة المرور الحالية الأول قبل أي تغيير
     const { error: verifyError } = await db.auth.signInWithPassword({ email: currentUser.email, password: curPass });
-    if (verifyError) { showErr(errEl, {ar:'كلمة المرور الحالية غلط', en:'Current password is incorrect', tr:'Mevcut şifre yanlış'}); return; }
+    if (verifyError) { showErr(errEl, {ar:'كلمة المرور الحالية غير صحيحة', en:'Current password is incorrect', tr:'Mevcut şifre yanlış'}); return; }
     const { error } = await db.auth.updateUser({ password: newPass });
     if (error) { console.error('changeMyPassword error:', error); showErr(errEl, genericErrMsg()); return; }
     document.getElementById('sec-cur-pass').value = '';
@@ -4015,8 +4035,14 @@ async function confirmPasswordReset(){
   if (p1 !== p2) { showErr(errEl, {ar:'كلمتا المرور غير متطابقتين', en:'Passwords do not match', tr:'Şifreler eşleşmiyor'}); return; }
   const { error } = await db.auth.updateUser({ password: p1 });
   if (error) { console.error('confirmPasswordReset error:', error); showErr(errEl, genericErrMsg()); return; }
+  // ✅ FIX: نجح تغيير كلمة السر — نسجّل خروج فورًا ونطلب منه يدخل بكلمة السر الجديدة
+  // بدل ما يفضل داخل تلقائيًا على الحساب من نفس جلسة رابط الاسترجاع
+  _pendingRecoverySignOut = false;
+  _isRecoveryFlow = false;
   closeModal('reset-password');
-  showToast(lang==='ar'?'✓ تم تعيين كلمة المرور الجديدة بنجاح':lang==='tr'?'✓ Yeni şifre başarıyla ayarlandı':'✓ New password set successfully');
+  await db.auth.signOut().catch(()=>{});
+  showToast(lang==='ar'?'✓ تم تغيير كلمة المرور، سجّل الدخول بكلمة المرور الجديدة':lang==='tr'?'✓ Şifre değiştirildi, yeni şifrenizle giriş yapın':'✓ Password changed — please log in with your new password');
+  setTimeout(()=>openModal('login'), 400);
 }
 
 function copyRef() {
@@ -4287,7 +4313,10 @@ function setLang(l) {
   document.querySelectorAll('[data-' + l + ']').forEach(el => {
     const v = el.getAttribute('data-' + l);
     if (!v) return;
-    if (el.tagName === 'INPUT') el.placeholder = v;
+    // ✅ FIX: عناصر textarea (زي خانة الرسالة في صفحة تواصل معنا) كانت بتاخد النص
+    // كمحتوى حقيقي قابل للتعديل بدل placeholder — يعني الكلام بيتكتب جوه النص
+    // التوضيحي مش بيمسحه. دلوقتي بنعامل textarea زي input بالظبط.
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = v;
     else el.textContent = v;
   });
 
