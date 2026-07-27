@@ -2,6 +2,18 @@
 <html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
+<script>
+// ✅ FIX: تطبيق اللغة فورًا وبشكل متزامن قبل أي رسم للصفحة، عشان مفيش أي فلاش
+// (وميض) للعربي قبل ما يرجع إنجليزي. بنستخدم sessionStorage بدل localStorage
+// عشان أي اختيار قديم من جلسة تجربة سابقة (زي اختبار العربي وانت بتطور) ميفضلش
+// عالق ويظهر تلقائي في زيارات تانية بعد كده — كل جلسة/تبويب بتبدأ إنجليزي افتراضيًا
+// إلا لو المستخدم اختار لغة تانية بنفسه في نفس الجلسة دي.
+(function(){
+  var l = sessionStorage.getItem('crysanto_lang') || 'en';
+  document.documentElement.setAttribute('lang', l);
+  document.documentElement.setAttribute('dir', l === 'ar' ? 'rtl' : 'ltr');
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Crysanto — Digital Investment Platform</title>
 <meta name="description" content="Crysanto is a digital crypto investment platform offering secure deposits, withdrawals, referral rewards, and daily profit plans in Arabic, English, and Turkish.">
@@ -19,7 +31,17 @@
 <meta name="twitter:title" content="Crysanto — Digital Investment Platform">
 <meta name="twitter:description" content="Secure crypto deposits, withdrawals, referral rewards, and daily profit plans.">
 <!-- Basic CSP hardening -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.coingecko.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://browser.sentry-cdn.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.coingecko.com https://challenges.cloudflare.com https://*.ingest.us.sentry.io; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
+<script src="https://browser.sentry-cdn.com/8.55.0/bundle.min.js" crossorigin="anonymous"></script>
+<script>
+  if (window.Sentry) {
+    Sentry.init({
+      dsn: "https://ef77f091951eb8371d290a7625b2eda2@o4511803962687488.ingest.us.sentry.io/4511804023111680",
+      environment: "production-client",
+      tracesSampleRate: 0,
+    });
+  }
+</script>
 <script>
 // ✅ FIX: ضبط meta tags ديناميكياً من الدومين الفعلي بدل hardcoded crysanto.io
 ;(function(){
@@ -54,7 +76,7 @@
   --green:#22D3A0;--red:#FF4D6A;--blue:#3B82F6;--orange:#F97316;
   --font:'Cairo',sans-serif;--en:'Syne',sans-serif;--mono:'IBM Plex Mono',monospace;
 }
-*{margin:0;padding:0;box-sizing:border-box;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 body{background:var(--dark);color:var(--text);font-family:var(--font);overflow-x:hidden;min-height:100vh;direction:rtl;}
 body.ltr{direction:ltr;font-family:var(--en);}
 body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(201,168,76,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,0.04) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0;}
@@ -1475,7 +1497,7 @@ document.addEventListener('input', function(e){
   }
 }, true);
 
-let lang = localStorage.getItem('crysanto_lang') || "en";
+let lang = sessionStorage.getItem('crysanto_lang') || "en";
 let _optimisticAuth = false; // ✅ FIX: true مؤقتًا لو فيه كاش محلي، لحد ما Supabase يتأكد فعليًا
 
 // ✅ FIX: استرجاع فوري للحالة (optimistic UI) — نعرض الواجهة logged-in فورًا
@@ -4238,7 +4260,7 @@ async function goToDeposit(rate) {
 // ── LANG ──
 function setLang(l) {
   lang = l;
-  localStorage.setItem('crysanto_lang', l);
+  sessionStorage.setItem('crysanto_lang', l);
 
   // ✅ FIX: نخزّن اللغة في بروفايل المستخدم (لو مسجّل دخول) عشان إيميلات الأدمن
   // (موافقة/رفض الإيداع والسحب وKYC) تتبعت بلغته الحقيقية مش بلغة لوحة الأدمن
