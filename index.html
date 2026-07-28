@@ -4444,8 +4444,8 @@ async function buildPlans(){
   const pl = rows.map(planRowToCard);
   const popL={ar:'الأكثر شعبية',en:'Most Popular',tr:'En Popüler'};
   const invL={ar:'استثمر الآن',en:'Invest Now',tr:'Şimdi Yatır'};
-  const estL={ar:'تقديري وغير مضمون',en:'Estimated, not guaranteed',tr:'Tahmini, garanti değil'};
-  const html = pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>%/day</span></div><div style="font-size:10px;color:var(--muted);margin-top:-8px;margin-bottom:8px">⚠️ '+estL[lang]+'</div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\',\''+( p.planId||'')+'\')">'+invL[lang]+'</button></div>').join('');
+  const estL={ar:'تقديري',en:'Estimated',tr:'Tahmini'};
+  const html = pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>%/day</span></div><div style="font-size:10px;color:var(--muted);margin-top:-8px;margin-bottom:8px">'+estL[lang]+'</div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\',\''+( p.planId||'')+'\')">'+invL[lang]+'</button></div>').join('');
   if(_bp) _bp.innerHTML = html;
   if(_bpDash) _bpDash.innerHTML = html;
 }
@@ -4743,7 +4743,8 @@ async function loadMyDailyProfits() {
     setEl('my-dp-today',fmt(td)); setEl('my-dp-week',fmt(wk)); setEl('my-dp-month',fmt(mo));
     listEl.innerHTML=data.map(dp=>{
       const plan=(lang==='ar'?dp.investments?.plan_name:lang==='tr'?dp.investments?.plan_name_tr:dp.investments?.plan_name_en) || dp.investments?.plan_name || '—';
-      const rate=dp.investments?.daily_rate;
+      // ✅ نعرض الرقم الفعلي اللي اتوزع بيه (effective_rate) بدل الرقم الثابت الأصلي، لأنه بقى متراوح يوم عن يوم
+      const rate=dp.effective_rate!=null ? dp.effective_rate : dp.investments?.daily_rate;
       const amt=parseFloat(dp.amount||0);
       const isToday=dp.profit_date===today;
       return`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--dark3);border-radius:8px;border:1px solid ${isToday?'var(--gold)':'var(--border)'};margin-bottom:8px">
