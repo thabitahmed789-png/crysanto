@@ -1249,9 +1249,13 @@ body:not(.ltr) .footer-grid{text-align:right;}
       <div id="pass-strength-txt" style="font-size:11px;color:var(--muted);margin-top:3px"></div>
     </div>
     <div class="form-group"><label id="rl4" data-ar="كود الإحالة (اختياري)" data-en="Referral Code (optional)" data-tr="Referans Kodu">Referral Code (optional)</label><input type="text" id="reg-ref" placeholder="CRY-XXXXX" style="font-family:var(--mono)"></div>
-    <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:14px;font-size:12px;color:var(--muted)">
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;font-size:12px;color:var(--muted)">
       <input type="checkbox" id="reg-terms" style="margin-top:2px;accent-color:var(--gold)">
       <label for="reg-terms" id="terms-lbl" data-ar="أوافق على شروط الاستخدام وسياسة الخصوصية" data-en="I agree to Terms of Service & Privacy Policy" data-tr="Kullanım Şartlarını kabul ediyorum">I agree to Terms of Service & Privacy Policy</label>
+    </div>
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:14px;font-size:12px;color:var(--muted)">
+      <input type="checkbox" id="reg-risk" style="margin-top:2px;accent-color:var(--gold)">
+      <label for="reg-risk" id="risk-lbl" data-ar="أقر بأنني اطلعت على إفصاح المخاطر، وأن العائد المعروض تقديري وغير مضمون وقابل للزيادة أو النقصان، وأن الاستثمار قد ينطوي على مخاطر تشمل احتمال خسارة رأس المال." data-en="I acknowledge the Risk Disclosure — displayed returns are estimated, not guaranteed, and may increase or decrease, and investing may involve risk of capital loss." data-tr="Risk Bildirimini okudum — gösterilen getiriler tahminidir, garanti edilmez, artabilir veya azalabilir ve yatırım sermaye kaybı riski içerebilir.">I acknowledge the Risk Disclosure — displayed returns are estimated, not guaranteed, and may increase or decrease, and investing may involve risk of capital loss.</label>
     </div>
     <div id="turnstile-register" style="display:none;margin-bottom:14px"></div>
     <button class="btn-primary" style="width:100%;margin-bottom:14px" onclick="doRegister()" id="reg-btn-txt" data-ar="إنشاء الحساب" data-en="Create Account" data-tr="Hesap Oluştur">Create Account</button>
@@ -1391,6 +1395,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <p style="margin-bottom:14px"><strong style="color:var(--text)">3. المخاطر التقنية</strong><br>قد تتأثر الخدمة بمخاطر تقنية تشمل أعطال الشبكة، مشاكل في البنية التحتية للبلوكتشين، أو هجمات إلكترونية، رغم الإجراءات الأمنية المطبقة لتقليل هذه المخاطر.</p>
         <p style="margin-bottom:14px"><strong style="color:var(--text)">4. المخاطر التنظيمية</strong><br>قد تتغير اللوائح والقوانين المتعلقة بالعملات الرقمية في مختلف الدول، وقد يؤثر ذلك على إمكانية الوصول للخدمة أو على وضعها القانوني.</p>
         <p style="margin-bottom:14px"><strong style="color:var(--text)">5. مسؤولية المستخدم</strong><br>يجب على كل مستخدم تقييم وضعه المالي وقدرته على تحمل المخاطر قبل الاستثمار، والاستثمار فقط بالمبالغ التي يمكنه تحمل خسارتها. يُنصح بطلب استشارة مالية مستقلة عند الحاجة.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">6. الإقرار والموافقة</strong><br>بإنشائك حسابًا على المنصة وتفعيلك لخانة الإقرار عند التسجيل، فإنك تؤكد قراءتك وفهمك الكامل لهذا الإفصاح، وأنك اتخذت قرار الاستثمار بإرادتك الحرة وعلى مسؤوليتك الشخصية.</p>
       </div>
       <div class="legal-en" style="display:none">
         <p style="margin-bottom:14px"><strong style="color:var(--text)">1. Market Volatility Risk</strong><br>Cryptocurrency prices are subject to sharp and unpredictable fluctuations. The market value of digital assets can rise or fall significantly within a short period, potentially resulting in partial or total loss of invested capital.</p>
@@ -1398,6 +1403,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <p style="margin-bottom:14px"><strong style="color:var(--text)">3. Technical Risk</strong><br>The service may be affected by technical risks including network outages, blockchain infrastructure issues, or cyberattacks, despite security measures in place to mitigate these risks.</p>
         <p style="margin-bottom:14px"><strong style="color:var(--text)">4. Regulatory Risk</strong><br>Regulations and laws related to cryptocurrencies may change across different countries, which may affect access to the service or its legal status.</p>
         <p style="margin-bottom:14px"><strong style="color:var(--text)">5. User Responsibility</strong><br>Each user should assess their financial situation and risk tolerance before investing, and only invest amounts they can afford to lose. Independent financial advice is recommended where needed.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">6. Acknowledgment & Consent</strong><br>By creating an account and checking the acknowledgment box during registration, you confirm that you have read and fully understood this disclosure, and that your decision to invest is made freely and at your own responsibility.</p>
       </div>
       <div class="legal-tr" style="display:none">
         <p style="margin-bottom:14px"><strong style="color:var(--text)">1. Piyasa Oynaklığı Riski</strong><br>Kripto para fiyatları keskin ve öngörülemez dalgalanmalara tabidir. Dijital varlıkların piyasa değeri kısa bir süre içinde önemli ölçüde artabilir veya azalabilir, bu da yatırılan sermayenin kısmen veya tamamen kaybedilmesine yol açabilir.</p>
@@ -1405,6 +1411,8 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <p style="margin-bottom:14px"><strong style="color:var(--text)">3. Teknik Risk</strong><br>Hizmet, bu riskleri azaltmak için uygulanan güvenlik önlemlerine rağmen, ağ kesintileri, blok zinciri altyapı sorunları veya siber saldırılar dahil teknik risklerden etkilenebilir.</p>
         <p style="margin-bottom:14px"><strong style="color:var(--text)">4. Düzenleyici Risk</strong><br>Kripto paralarla ilgili düzenlemeler ve yasalar farklı ülkelerde değişebilir, bu da hizmete erişimi veya yasal durumunu etkileyebilir.</p>
         <p style="margin-bottom:14px"><strong style="color:var(--text)">5. Kullanıcı Sorumluluğu</strong><br>Her kullanıcı, yatırım yapmadan önce finansal durumunu ve risk toleransını değerlendirmeli ve yalnızca kaybetmeyi göze alabileceği miktarları yatırmalıdır. Gerektiğinde bağımsız finansal danışmanlık alınması önerilir.</p>
+        <p style="margin-bottom:14px"><strong style="color:var(--text)">6. Onay ve Rıza</strong><br>Bir hesap oluşturarak ve kayıt sırasında onay kutusunu işaretleyerek, bu bildirimi okuduğunuzu ve tam olarak anladığınızı, yatırım kararınızı özgür iradenizle ve kendi sorumluluğunuzda aldığınızı teyit edersiniz.</p>
+      </div>
       </div>
     </div>
   </div>
@@ -1550,6 +1558,9 @@ let _pendingRecoverySignOut = false;
 // ✅ FIX: طول ما الجلسة دي جاية من رابط استرجاع كلمة السر، منورّيش الداشبورد أو حالة
 // "تسجيل دخول" خالص — الجلسة موجودة تقنيًا بس عشان نقدر نغيّر كلمة السر بس، مش أكتر
 let _isRecoveryFlow = false;
+// ✅ إفصاح المخاطر: رقم نسخة النص القانوني — لو النص اتغيّر مستقبلًا، غيّر الرقم ده
+// عشان تفرّق بين اللي وافقوا على النسخة القديمة واللي وافقوا على الجديدة
+const RISK_DISCLOSURE_VERSION = 'v1-2026-07-27';
 // ✅ FIX: عدّاد "جيل الجلسة" — بيتزوّد كل مرة الهوية بتتغيّر (دخول/خروج/تسجيل). أي طلب بيانات
 // غير متزامن (زي fetchProfile) بيتم تجاهل رده لو الجيل اتغيّر قبل ما يوصل، عشان رد متأخر من
 // حساب قديم مايكتبش فوق بيانات الحساب الحالي (ده كان سبب "رجوع تلقائي للحساب القديم").
@@ -2317,6 +2328,7 @@ async function doRegister() {
   const pass  = document.getElementById('reg-pass').value;
   const ref   = document.getElementById('reg-ref').value.trim().toUpperCase();
   const terms = document.getElementById('reg-terms').checked;
+  const riskAck = document.getElementById('reg-risk').checked;
   const errEl = document.getElementById('reg-err');
   const btn   = document.getElementById('reg-btn-txt');
   errEl.style.display = 'none';
@@ -2332,6 +2344,10 @@ async function doRegister() {
   }
   if(!terms) {
     showErr(errEl,{ar:'يجب الموافقة على الشروط',en:'Must agree to terms',tr:'Şartları kabul edin'}); return;
+  }
+  // ✅ إفصاح المخاطر: موافقة إجبارية منفصلة عن شروط الاستخدام
+  if(!riskAck) {
+    showErr(errEl,{ar:'يجب الإقرار بإفصاح المخاطر',en:'You must acknowledge the Risk Disclosure',tr:'Risk Bildirimini kabul etmelisiniz'}); return;
   }
   if(!siteSettings.registration_open) {
     showErr(errEl,{ar:'التسجيل مغلق مؤقتًا، حاول لاحقًا',en:'Registration is temporarily closed',tr:'Kayıt geçici olarak kapalı'}); return;
@@ -2417,6 +2433,10 @@ async function doRegister() {
         return;
       }
       userProfile = newP;
+      // ✅ إفصاح المخاطر: تسجيل الموافقة فعليًا في القاعدة (وقت + نسخة النص) — دليل قانوني موثّق
+      db.from('risk_disclosure_consents').insert({
+        user_id: newP.id, disclosure_version: RISK_DISCLOSURE_VERSION, lang
+      }).then(({error}) => { if(error) console.error('risk consent log error:', error); });
       // ✅ FIX: نفس الإصلاح هنا كمان للاتساق — الإيميل بس لو بروفايل جديد اتعمل فعلاً
       db.functions.invoke('send-email', { body: { template: 'welcome', lang } }).catch(e => console.error('welcome email error:', e));
     }
@@ -4424,7 +4444,8 @@ async function buildPlans(){
   const pl = rows.map(planRowToCard);
   const popL={ar:'الأكثر شعبية',en:'Most Popular',tr:'En Popüler'};
   const invL={ar:'استثمر الآن',en:'Invest Now',tr:'Şimdi Yatır'};
-  const html = pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>%/day</span></div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\',\''+( p.planId||'')+'\')">'+invL[lang]+'</button></div>').join('');
+  const estL={ar:'تقديري وغير مضمون',en:'Estimated, not guaranteed',tr:'Tahmini, garanti değil'};
+  const html = pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>%/day</span></div><div style="font-size:10px;color:var(--muted);margin-top:-8px;margin-bottom:8px">⚠️ '+estL[lang]+'</div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\',\''+( p.planId||'')+'\')">'+invL[lang]+'</button></div>').join('');
   if(_bp) _bp.innerHTML = html;
   if(_bpDash) _bpDash.innerHTML = html;
 }
