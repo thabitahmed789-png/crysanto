@@ -4260,7 +4260,7 @@ function showInvestConfirmModal(planId, planName, rate, durationDays, amount){
       <div style="background:var(--dark3);border-radius:10px;padding:14px;margin-bottom:20px;font-size:13px;display:flex;flex-direction:column;gap:8px">
         <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">${lang==='ar'?'الباقة':lang==='tr'?'Plan':'Plan'}</span><span style="font-weight:700">${escapeHtml(planName)}</span></div>
         <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">${lang==='ar'?'المبلغ':lang==='tr'?'Tutar':'Amount'}</span><span style="font-weight:700">$${amount.toLocaleString('en-US')}</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">${lang==='ar'?'العائد اليومي':lang==='tr'?'Günlük kâr':'Daily profit'}</span><span style="font-weight:700;color:var(--green)">${rate}% ($${dailyProfit})</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">${lang==='ar'?'العائد اليومي':lang==='tr'?'Günlük kâr':'Daily profit'}</span><span style="font-weight:700;color:var(--green)">${rate}% <span style="color:var(--muted);font-weight:400">(±5%)</span></span></div>
         <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">${lang==='ar'?'المدة':lang==='tr'?'Süre':'Duration'}</span><span style="font-weight:700">${durationDays} ${lang==='ar'?'يوم':lang==='tr'?'gün':'days'}</span></div>
       </div>
       <div style="display:flex;gap:10px">
@@ -4479,12 +4479,8 @@ async function submitContact() {
 
   try {
     // ✅ FIX: escapeHtml قبل الحفظ
-    // فحص rate limiting (RPC موجود في DB)
-    const { data: rlCheck, error: rlErr } = await db.rpc('check_contact_rate_limit');
-    if(rlErr || rlCheck === false) {
-      showToast(lang==='ar'?'✗ أرسلت رسالة مؤخراً، انتظر قليلاً قبل الإرسال مرة أخرى':lang==='tr'?'✗ Az önce bir mesaj gönderdiniz, lütfen tekrar göndermeden önce bekleyin':'✗ You sent a message recently, please wait before sending again','err');
-      return;
-    }
+    // ملحوظة: التحقق من rate limiting بيتم فعليًا عبر trigger على الجدول (check_contact_rate_limit)
+    // بيشتغل تلقائي عند الـ insert، مفيش داعي لاستدعائه كـ RPC منفصل (وده كان بيفشل دايمًا لأنه trigger function)
     const { error } = await db.from('contact_messages').insert({
       name: name.slice(0,100),
       email: email.slice(0,200),
@@ -4492,7 +4488,13 @@ async function submitContact() {
       lang,
       user_id: currentUser?.id || null
     });
-    if(error) throw error;
+    if(error) {
+      if(/تجاوز|rate/i.test(error.message||'')) {
+        showToast(lang==='ar'?'✗ أرسلت رسائل كثيرة، انتظر ساعة قبل الإرسال مرة أخرى':lang==='tr'?'✗ Çok fazla mesaj gönderdiniz, lütfen bir saat sonra tekrar deneyin':'✗ Too many messages sent, please wait an hour before trying again','err');
+        return;
+      }
+      throw error;
+    }
     _contactLastSent = Date.now();
     showToast(lang==='ar'?'✓ تم إرسال رسالتك، سنرد قريباً':lang==='tr'?'✓ Mesajınız gönderildi, yakında yanıtlayacağız':'✓ Message sent, we will reply soon');
     document.getElementById('cf-name').value='';
