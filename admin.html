@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1448,7 +1448,6 @@ function setLang(l){
   document.body.direction = isRtl?'rtl':'ltr';
   document.body.classList.toggle('ltr',!isRtl);
   document.documentElement.setAttribute('dir',isRtl?'rtl':'ltr');
-  document.documentElement.setAttribute('lang',l);
   applyTranslations();
   renderCurrentSection();
 }
