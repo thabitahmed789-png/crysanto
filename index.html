@@ -922,6 +922,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
             <div class="form-group">
               <label data-ar="المبلغ ($)" data-en="Amount ($)" data-tr="Miktar ($)">المبلغ ($)</label>
               <input type="number" id="dep-auto-amount" placeholder="100" oninput="updateDepositEstimate()">
+              <div style="font-size:11px;color:var(--muted);margin-top:5px" id="dep-min-note"></div>
               <div id="dep-auto-estimate" style="display:none;margin-top:8px;padding:10px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--gold);font-weight:700;font-family:var(--mono)"></div>
             </div>
             <div id="dep-auto-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px"></div>
@@ -961,7 +962,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
         </div>
         <div class="form-group"><label id="wdl2" data-ar="عنوان محفظتك" data-en="Your Wallet Address" data-tr="Cüzdan Adresiniz">عنوان محفظتك</label><input type="text" id="wd-addr" placeholder="T... or 0x..."></div>
         <div class="form-group"><label id="wdl3" data-ar="المبلغ ($)" data-en="Amount ($)" data-tr="Miktar ($)">المبلغ ($)</label><input type="number" id="wd-amount" placeholder="50" oninput="updateWithdrawFeePreview()">
-          <div style="font-size:11px;color:var(--muted);margin-top:5px" id="wd-min-note" data-ar="الحد الأدنى $50" data-en="Minimum $50" data-tr="Minimum $50">الحد الأدنى $50</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px" id="wd-min-note"></div>
           <div id="wd-fee-preview" style="display:none;margin-top:8px;padding:10px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;font-size:12px"></div>
         </div>
         <div class="form-group" id="wd-pin-group">
@@ -1827,7 +1828,17 @@ async function fetchSiteSettingsFromDB() {
       if(c) c.textContent = email;
       if(f) f.textContent = email;
     }
+    updateMinNotes();
   } catch(e) { console.error('fetchSiteSettingsFromDB exception:', e.message || e); }
+}
+// ✅ نص "الحد الأدنى $X" تحت خانتي الإيداع والسحب — بيتحدّث فعليًا من siteSettings الحقيقية
+// (مش نص ثابت زي الأول)، وبيفضل ظاهر أثناء الكتابة (على عكس الـ placeholder اللي بيختفي)
+function updateMinNotes() {
+  const label = lang==='ar'?'الحد الأدنى $':lang==='tr'?'Minimum $':'Minimum $';
+  const dep = document.getElementById('dep-min-note');
+  if (dep) dep.textContent = label + siteSettings.min_deposit;
+  const wd = document.getElementById('wd-min-note');
+  if (wd) wd.textContent = label + siteSettings.min_withdrawal;
 }
 // ✅ FIX: ترتيب/إظهار عناصر السايدبار حسب إعدادات الأدمن (sidebar_menu_config في جدول settings)
 // لو مفيش إعداد محفوظ أو فيه خطأ في القراءة، بيفضل الترتيب الافتراضي في HTML زي ما هو (fail-safe).
@@ -4356,6 +4367,7 @@ function setLang(l) {
   // بنستبدل أي سنة 4 أرقام فيها بالسنة الحالية تلقائيًا، عشان الفوتر ميبقاش قديم أبدًا.
   const footerTxt = document.getElementById('footer-txt');
   if (footerTxt) footerTxt.textContent = footerTxt.textContent.replace(/\b20\d{2}\b/, new Date().getFullYear());
+  updateMinNotes();
 
   // إعادة بناء المحتوى الديناميكي (JS-generated) باللغة الجديدة
   buildFaq(); buildFeatures(); buildPlans();
