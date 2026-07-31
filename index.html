@@ -266,6 +266,14 @@ body.ltr .toast{right:auto;left:24px;}
 
 #pass-strength-bar{height:4px;border-radius:2px;margin-top:5px;background:var(--border);overflow:hidden;}
 #pass-strength-fill{height:100%;width:0;transition:.3s;border-radius:2px;}
+.pw-wrap{position:relative;}
+.pw-wrap input{padding-inline-end:42px;}
+.pw-eye{position:absolute;top:50%;inset-inline-end:10px;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:4px;display:flex;align-items:center;}
+.pw-eye:hover{color:var(--text);}
+.pass-reqs{margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:11px;}
+.pass-req{color:var(--muted);transition:color .2s;}
+.pass-req .req-bullet{display:inline-block;width:14px;}
+.pass-req.ok{color:var(--green);}
 
 footer{background:var(--dark2);border-top:1px solid var(--border);padding:36px;text-align:center;position:relative;z-index:1;}
 .footer-logo{font-family:var(--en);font-size:26px;font-weight:800;color:var(--gold);margin-bottom:8px;}
@@ -857,8 +865,8 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <div id="d-security" style="display:none">
           <div class="panel" style="max-width:420px">
             <div class="panel-head" id="sec-h" data-ar="تغيير كلمة المرور" data-en="Change Password" data-tr="Şifre Değiştir">تغيير كلمة المرور</div>
-            <div class="form-group"><label id="sec-cur-l" data-ar="كلمة المرور الحالية" data-en="Current Password" data-tr="Mevcut Şifre">كلمة المرور الحالية</label><input type="password" id="sec-cur-pass" placeholder="••••••••"></div>
-            <div class="form-group"><label id="sec-new-l" data-ar="كلمة المرور الجديدة" data-en="New Password" data-tr="Yeni Şifre">كلمة المرور الجديدة</label><input type="password" id="sec-new-pass" placeholder="••••••••"></div>
+            <div class="form-group"><label id="sec-cur-l" data-ar="كلمة المرور الحالية" data-en="Current Password" data-tr="Mevcut Şifre">كلمة المرور الحالية</label><div class="pw-wrap"><input type="password" id="sec-cur-pass" placeholder="••••••••"><button type="button" class="pw-eye" onclick="togglePwVisibility('sec-cur-pass',this)" aria-label="Show password"><svg class="pw-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div>
+            <div class="form-group"><label id="sec-new-l" data-ar="كلمة المرور الجديدة" data-en="New Password" data-tr="Yeni Şifre">كلمة المرور الجديدة</label><div class="pw-wrap"><input type="password" id="sec-new-pass" placeholder="••••••••"><button type="button" class="pw-eye" onclick="togglePwVisibility('sec-new-pass',this)" aria-label="Show password"><svg class="pw-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div>
             <div id="sec-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px"></div>
             <button class="btn-primary" id="sec-save-btn" onclick="changeMyPassword()" data-ar="💾 حفظ كلمة المرور الجديدة" data-en="💾 Save New Password" data-tr="💾 Yeni Şifreyi Kaydet">💾 حفظ كلمة المرور الجديدة</button>
           </div>
@@ -1147,7 +1155,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
     </div>
     <div class="err-msg" id="login-err"></div>
     <div class="form-group"><label id="ll1" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">Email</label><input type="email" id="login-email" placeholder="example@mail.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <div class="form-group"><label id="ll2" data-ar="كلمة المرور" data-en="Password" data-tr="Şifre">Password</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="form-group"><label id="ll2" data-ar="كلمة المرور" data-en="Password" data-tr="Şifre">Password</label><div class="pw-wrap"><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"><button type="button" class="pw-eye" onclick="togglePwVisibility('login-pass',this)" aria-label="Show password"><svg class="pw-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div>
     <p style="text-align:left;margin-bottom:14px"><a href="#" style="color:var(--muted);font-size:12px" onclick="closeModal('login');openModal('forgot')" id="lgo-forgot" data-ar="نسيت كلمة المرور؟" data-en="Forgot password?" data-tr="Şifrenizi mi unuttunuz?">Forgot password?</a></p>
     <div id="turnstile-login" style="display:none;margin-bottom:14px"></div>
     <button class="btn-primary" style="width:100%;margin-bottom:14px" onclick="doLogin()" id="login-btn-txt" data-ar="دخول" data-en="Sign In" data-tr="Giriş">Sign In</button>
@@ -1206,8 +1214,8 @@ body:not(.ltr) .footer-grid{text-align:right;}
       <h3 style="font-size:17px;font-weight:700;margin-top:4px" id="reset-title" data-ar="تعيين كلمة مرور جديدة" data-en="Set New Password" data-tr="Yeni Şifre Belirle">Set New Password</h3>
     </div>
     <div class="err-msg" id="reset-err"></div>
-    <div class="form-group"><label id="rpl1" data-ar="كلمة المرور الجديدة" data-en="New Password" data-tr="Yeni Şifre">New Password</label><input type="password" id="reset-pass1" placeholder="••••••••"></div>
-    <div class="form-group"><label id="rpl2" data-ar="تأكيد كلمة المرور" data-en="Confirm Password" data-tr="Şifreyi Onayla">Confirm Password</label><input type="password" id="reset-pass2" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmPasswordReset()"></div>
+    <div class="form-group"><label id="rpl1" data-ar="كلمة المرور الجديدة" data-en="New Password" data-tr="Yeni Şifre">New Password</label><div class="pw-wrap"><input type="password" id="reset-pass1" placeholder="••••••••"><button type="button" class="pw-eye" onclick="togglePwVisibility('reset-pass1',this)" aria-label="Show password"><svg class="pw-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div>
+    <div class="form-group"><label id="rpl2" data-ar="تأكيد كلمة المرور" data-en="Confirm Password" data-tr="Şifreyi Onayla">Confirm Password</label><div class="pw-wrap"><input type="password" id="reset-pass2" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmPasswordReset()"><button type="button" class="pw-eye" onclick="togglePwVisibility('reset-pass2',this)" aria-label="Show password"><svg class="pw-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div>
     <button class="btn-primary" style="width:100%" onclick="confirmPasswordReset()" id="reset-btn-txt" data-ar="حفظ كلمة المرور" data-en="Save Password" data-tr="Şifreyi Kaydet">Save Password</button>
   </div>
 </div>
@@ -1245,9 +1253,15 @@ body:not(.ltr) .footer-grid{text-align:right;}
     <div class="form-group"><label id="rl2" data-ar="البريد الإلكتروني" data-en="Email" data-tr="E-posta">Email</label><input type="email" id="reg-email" placeholder="example@mail.com"></div>
     <div class="form-group">
       <label id="rl3" data-ar="كلمة المرور" data-en="Password" data-tr="Şifre">Password</label>
-      <input type="password" id="reg-pass" placeholder="8+ characters" oninput="checkPassStrength(this.value)">
+      <div class="pw-wrap"><input type="password" id="reg-pass" placeholder="8+ characters" oninput="checkPassStrength(this.value)"><button type="button" class="pw-eye" onclick="togglePwVisibility('reg-pass',this)" aria-label="Show password"><svg class="pw-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div>
       <div id="pass-strength-bar"><div id="pass-strength-fill"></div></div>
       <div id="pass-strength-txt" style="font-size:11px;color:var(--muted);margin-top:3px"></div>
+      <div class="pass-reqs">
+        <div class="pass-req" id="req-len"><span class="req-bullet">○</span><span data-ar="8 أحرف على الأقل" data-en="At least 8 characters" data-tr="En az 8 karakter">At least 8 characters</span></div>
+        <div class="pass-req" id="req-upper"><span class="req-bullet">○</span><span data-ar="حرف كبير واحد على الأقل (A-Z)" data-en="At least one uppercase letter (A-Z)" data-tr="En az bir büyük harf (A-Z)">At least one uppercase letter (A-Z)</span></div>
+        <div class="pass-req" id="req-num"><span class="req-bullet">○</span><span data-ar="رقم واحد على الأقل (0-9)" data-en="At least one number (0-9)" data-tr="En az bir rakam (0-9)">At least one number (0-9)</span></div>
+        <div class="pass-req" id="req-sym"><span class="req-bullet">○</span><span data-ar="رمز خاص واحد على الأقل (!@#...)" data-en="At least one special character (!@#...)" data-tr="En az bir özel karakter (!@#...)">At least one special character (!@#...)</span></div>
+      </div>
     </div>
     <div class="form-group"><label id="rl4" data-ar="كود الإحالة (اختياري)" data-en="Referral Code (optional)" data-tr="Referans Kodu">Referral Code (optional)</label><input type="text" id="reg-ref" placeholder="CRY-XXXXX" style="font-family:var(--mono)"></div>
     <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;font-size:12px;color:var(--muted)">
@@ -2425,6 +2439,8 @@ async function doRegister() {
 
     if(prof) {
       userProfile = prof;
+      // ✅ FIX: الـ trigger هو اللي عمل البروفايل (الحالة الطبيعية) — كان الإيميل مش بيتبعت هنا خالص قبل كده
+      db.functions.invoke('send-email', { body: { template: 'welcome', lang } }).catch(e => console.error('welcome email error:', e));
     } else {
       // ── STEP 3: Fallback insert ──
       if(btn) btn.textContent = '3/3 Creating profile...';
@@ -4526,7 +4542,18 @@ function showErr(el,msgs){el.textContent='❌ '+(msgs[lang]||msgs.ar);el.style.d
 function genericErrMsg() {
   return {ar:'حدث خطأ غير متوقع، حاول مرة أخرى أو تواصل مع الدعم', en:'Something went wrong, please try again or contact support', tr:'Beklenmeyen bir hata oluştu, lütfen tekrar deneyin'};
 }
-function checkPassStrength(v){const fill=document.getElementById('pass-strength-fill');const txt=document.getElementById('pass-strength-txt');const sc=[v.length>=8,/[A-Z]/.test(v),/[0-9]/.test(v),/[^A-Za-z0-9]/.test(v)].filter(Boolean).length;const cfg=[{w:'25%',c:'var(--red)',t:{ar:'ضعيفة',en:'Weak',tr:'Zayıf'}},{w:'50%',c:'var(--orange)',t:{ar:'متوسطة',en:'Fair',tr:'Orta'}},{w:'75%',c:'var(--gold)',t:{ar:'جيدة',en:'Good',tr:'İyi'}},{w:'100%',c:'var(--green)',t:{ar:'قوية',en:'Strong',tr:'Güçlü'}}];if(!v){if(fill)fill.style.width='0';if(txt)txt.textContent='';return;}const c=cfg[sc-1]||cfg[0];if(fill){fill.style.width=c.w;fill.style.background=c.c;}if(txt){txt.textContent=c.t[lang];txt.style.color=c.c;}}
+function checkPassStrength(v){const fill=document.getElementById('pass-strength-fill');const txt=document.getElementById('pass-strength-txt');const reqChecks=[{id:'req-len',ok:v.length>=8},{id:'req-upper',ok:/[A-Z]/.test(v)},{id:'req-num',ok:/[0-9]/.test(v)},{id:'req-sym',ok:/[^A-Za-z0-9]/.test(v)}];reqChecks.forEach(r=>{const el=document.getElementById(r.id);if(!el)return;el.classList.toggle('ok',r.ok);const b=el.querySelector('.req-bullet');if(b)b.textContent=r.ok?'✓':'○';});const sc=reqChecks.filter(r=>r.ok).length;const cfg=[{w:'25%',c:'var(--red)',t:{ar:'ضعيفة',en:'Weak',tr:'Zayıf'}},{w:'50%',c:'var(--orange)',t:{ar:'متوسطة',en:'Fair',tr:'Orta'}},{w:'75%',c:'var(--gold)',t:{ar:'جيدة',en:'Good',tr:'İyi'}},{w:'100%',c:'var(--green)',t:{ar:'قوية',en:'Strong',tr:'Güçlü'}}];if(!v){if(fill)fill.style.width='0';if(txt)txt.textContent='';return;}const c=cfg[sc-1]||cfg[0];if(fill){fill.style.width=c.w;fill.style.background=c.c;}if(txt){txt.textContent=c.t[lang];txt.style.color=c.c;}}
+// ✅ إظهار/إخفاء كلمة المرور (زر العين) — بيشتغل على أي حقل باسورد في الموقع
+const PW_EYE_OPEN = '<svg class="pw-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+const PW_EYE_OFF = '<svg class="pw-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a18.5 18.5 0 0 1 5.06-5.94"></path><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.53 18.53 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><path d="M1 1l22 22"></path></svg>';
+function togglePwVisibility(inputId, btn){
+  const inp = document.getElementById(inputId);
+  if(!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.innerHTML = show ? PW_EYE_OFF : PW_EYE_OPEN;
+  btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+}
 function updatePrices(){coins.forEach(c=>{c.price=Math.max(0.001,c.price*(1+(Math.random()-.49)*.003));c.change=parseFloat((c.change+(Math.random()-.5)*.15).toFixed(2));});buildTicker();buildLivePrices();buildMarkets();}
 
 // ── MOBILE MENU ──
