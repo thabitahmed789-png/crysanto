@@ -2857,28 +2857,7 @@ document.addEventListener('keydown', e => {
 
 // ✅ toggleBlock الـ confirmation متضمن فيها فوق (مش محتاجين patch تاني)
 
-// ── EXPORT TABLE AS CSV ──
-function exportCSV(section){
-  const tables = {
-    users: { data: (window.realUsers||[]).map(u=>({name:u.name,email:u.email,balance:u.balance,plan:u.plan,status:u.status,country:u.country})),
-      keys: ['name','email','balance','plan','status','country'], headers_ar: ['الاسم','البريد','الرصيد','الباقة','الحالة','الدولة'], headers_en: ['Name','Email','Balance','Plan','Status','Country'] },
-    deposits: { data: (window.realDeposits||[]).map(d=>({id:d.id,user:d.users?.name||'',amount:d.amount,coin:d.coin,hash:d.tx_hash,date:d.created_at,status:d.status})),
-      keys: ['id','user','amount','coin','hash','date','status'], headers_ar: ['رقم','المستخدم','المبلغ','العملة','Hash','التاريخ','الحالة'], headers_en: ['ID','User','Amount','Coin','Hash','Date','Status'] },
-    withdrawals: { data: (window.realWithdrawals||[]).map(w=>({id:w.id,user:w.users?.name||'',amount:w.amount,coin:w.coin,wallet:w.wallet_address,date:w.created_at,status:w.status})),
-      keys: ['id','user','amount','coin','wallet','date','status'], headers_ar: ['رقم','المستخدم','المبلغ','العملة','المحفظة','التاريخ','الحالة'], headers_en: ['ID','User','Amount','Coin','Wallet','Date','Status'] },
-  };
-  const cfg = tables[section];
-  if(!cfg || !cfg.data.length){ showToast(lang==='ar'?'لا توجد بيانات للتصدير — افتح القسم أولاً':'No data to export — open the section first'); return; }
-  const headers = lang==='ar' ? cfg.headers_ar : cfg.headers_en;
-  const rows = cfg.data.map(row => cfg.keys.map(k => `"${(row[k]??'').toString().replace(/"/g,'""')}"`).join(','));
-  const csv = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `crysanto-${section}-${Date.now()}.csv`;
-  a.click(); URL.revokeObjectURL(url);
-  showToast(lang==='ar' ? '✓ تم تصدير البيانات' : '✓ Data exported');
-}
+// ✅ exportCSV الفعلية (نسخة RPC) موجودة لاحقًا في الملف — دي كانت نسخة قديمة اتشالت لتفادي التكرار
 
 // Inject export buttons into panels after section switch
 const origSwitch = window.switchSection;
@@ -3114,7 +3093,7 @@ async function approveDeposit(depositId, userId, amount, email, name, userLang) 
     return;
   }
 
-  await sendEmailNotification(email, name, amount, 'approved', '', userLang); // ✅ FIX: بلغة العميل مش لغة لوحة الأدمن
+  await sendEmailNotification(email, name, amount, 'approved', '', userLang, 'deposit'); // ✅ FIX: بلغة العميل مش لغة لوحة الأدمن
   showToast(lang==='ar' ? `✓ تم قبول إيداع $${amount} وإضافته لحساب ${name}` : `✓ $${amount} deposit approved for ${name}`);
   await loadRealDeposits();
 }
@@ -3125,7 +3104,7 @@ async function rejectDeposit(depositId, email, name, userLang) {
   const { data, error } = await sdb.rpc('admin_reject_deposit', { p_deposit_id: depositId, p_reason: reason });
   const result = Array.isArray(data) ? data[0] : data;
   if (error || !result?.success) { showToast((lang==='ar'?'✗ فشل رفض الإيداع: ':'✗ Failed to reject deposit: ')+(result?.message||error?.message||'')); console.error('rejectDeposit RPC error:', error||result); return; }
-  await sendEmailNotification(email, name, 0, 'rejected', reason, userLang); // ✅ FIX: بلغة العميل مش لغة لوحة الأدمن
+  await sendEmailNotification(email, name, 0, 'rejected', reason, userLang, 'deposit'); // ✅ FIX: بلغة العميل مش لغة لوحة الأدمن
   showToast(lang==='ar' ? `✗ تم رفض الإيداع` : `✗ Deposit rejected`);
   await loadRealDeposits();
 }
@@ -3134,28 +3113,40 @@ async function rejectDeposit(depositId, email, name, userLang) {
 // لو الإيميل فشل (مثلاً RESEND_API_KEY لسه مش مضاف) العملية الأساسية (قبول/رفض) متعملة بالفعل وما تفشلش بسبب الإيميل
 // ✅ FIX: بتاخد لغة العميل نفسه (userLang) مش لغة لوحة تحكم الأدمن — كانت الرسايل بتتبعت
 // دايماً بلغة الأدمن (وكان الـ body أصلاً عربي ثابت في كل الأحوال حتى لو subject كان بالإنجليزي)
-async function sendEmailNotification(email, name, amount, status, reason='', userLang='ar') {
+async function sendEmailNotification(email, name, amount, status, reason='', userLang='ar', type='deposit') {
   if (!email) return;
   const L = 'en'; // ✅ FIX: كل الرسايل بقت إنجليزي بس دايماً بناءً على طلب المستخدم
   const n = escapeHtml(name);
+  const isWd = type === 'withdrawal';
   const copy = {
     ar: {
-      approvedSubject: '✅ تم قبول طلبك بنجاح — Crysanto', rejectedSubject: '❌ تم رفض طلبك — Crysanto',
+      approvedSubject: isWd ? '✅ تم قبول طلب السحب — Crysanto' : '✅ تم قبول طلب الإيداع — Crysanto',
+      rejectedSubject: isWd ? '❌ تم رفض طلب السحب — Crysanto' : '❌ تم رفض طلب الإيداع — Crysanto',
       hi: `مرحبًا ${n}،`,
-      approvedBody: `تم قبول طلبك بمبلغ <b>$${amount}</b> وإضافته/تنفيذه على حسابك في Crysanto.`,
-      rejectedBody: `تم رفض طلبك${reason ? ' — السبب: '+escapeHtml(reason) : ''}.`,
+      // ✅ FIX: نص مختلف للسحب — قبول السحب معناه تحويل الفلوس *برا* الحساب، مش إضافتها زي الإيداع
+      approvedBody: isWd
+        ? `تم قبول طلب سحبك بمبلغ <b>$${amount}</b> وجاري تحويله إلى محفظتك.`
+        : `تم قبول طلب إيداعك بمبلغ <b>$${amount}</b> وإضافته لرصيدك في Crysanto.`,
+      rejectedBody: `${isWd ? 'تم رفض طلب سحبك' : 'تم رفض طلب إيداعك'}${reason ? ' — السبب: '+escapeHtml(reason) : ''}.`,
     },
     en: {
-      approvedSubject: '✅ Your request was approved — Crysanto', rejectedSubject: '❌ Your request was rejected — Crysanto',
+      approvedSubject: isWd ? '✅ Your withdrawal was approved — Crysanto' : '✅ Your deposit was approved — Crysanto',
+      rejectedSubject: isWd ? '❌ Your withdrawal request was rejected — Crysanto' : '❌ Your deposit request was rejected — Crysanto',
       hi: `Hi ${n},`,
-      approvedBody: `Your request of <b>$${amount}</b> has been approved and applied to your Crysanto account.`,
-      rejectedBody: `Your request was rejected${reason ? ' — reason: '+escapeHtml(reason) : ''}.`,
+      // ✅ FIX: separate wording for withdrawals — approval means funds leave the account, not get added like a deposit
+      approvedBody: isWd
+        ? `Your withdrawal of <b>$${amount}</b> has been approved and is being processed to your wallet.`
+        : `Your deposit of <b>$${amount}</b> has been approved and added to your Crysanto balance.`,
+      rejectedBody: `${isWd ? 'Your withdrawal request was rejected' : 'Your deposit request was rejected'}${reason ? ' — reason: '+escapeHtml(reason) : ''}.`,
     },
     tr: {
-      approvedSubject: '✅ Talebiniz onaylandı — Crysanto', rejectedSubject: '❌ Talebiniz reddedildi — Crysanto',
+      approvedSubject: isWd ? '✅ Çekim talebiniz onaylandı — Crysanto' : '✅ Yatırma talebiniz onaylandı — Crysanto',
+      rejectedSubject: isWd ? '❌ Çekim talebiniz reddedildi — Crysanto' : '❌ Yatırma talebiniz reddedildi — Crysanto',
       hi: `Merhaba ${n},`,
-      approvedBody: `<b>$${amount}</b> tutarındaki talebiniz onaylandı ve Crysanto hesabınıza uygulandı.`,
-      rejectedBody: `Talebiniz reddedildi${reason ? ' — sebep: '+escapeHtml(reason) : ''}.`,
+      approvedBody: isWd
+        ? `<b>$${amount}</b> tutarındaki çekim talebiniz onaylandı ve cüzdanınıza gönderiliyor.`
+        : `<b>$${amount}</b> tutarındaki yatırma talebiniz onaylandı ve Crysanto bakiyenize eklendi.`,
+      rejectedBody: `${isWd ? 'Çekim talebiniz' : 'Yatırma talebiniz'} reddedildi${reason ? ' — sebep: '+escapeHtml(reason) : ''}.`,
     },
   }[L];
   const subject = status === 'approved' ? copy.approvedSubject : copy.rejectedSubject;
@@ -3243,7 +3234,7 @@ async function approveWithdrawal(wdId, userId, amount, name, email, userLang) {
     await loadRealWithdrawals();
     return;
   }
-  await sendEmailNotification(email, name, amount, 'approved', '', userLang); // ✅ FIX: بلغة العميل مش لغة لوحة الأدمن
+  await sendEmailNotification(email, name, amount, 'approved', '', userLang, 'withdrawal'); // ✅ FIX: بلغة العميل مش لغة لوحة الأدمن
   showToast(lang==='ar'?`✓ تم قبول سحب $${amount} لـ ${name}`:`✓ $${amount} withdrawal approved for ${name}`);
   await loadRealWithdrawals();
 }
@@ -3257,7 +3248,7 @@ async function rejectWithdrawal(wdId, userId, amount, name, email, userLang) {
     await loadRealWithdrawals();
     return;
   }
-  await sendEmailNotification(email, name, amount, 'rejected', '', userLang); // ✅ FIX: بلغة العميل مش لغة لوحة الأدمن
+  await sendEmailNotification(email, name, amount, 'rejected', '', userLang, 'withdrawal'); // ✅ FIX: بلغة العميل مش لغة لوحة الأدمن
   showToast(lang==='ar'?`✗ تم رفض السحب`:`✗ Withdrawal rejected`);
   await loadRealWithdrawals();
 }
@@ -3408,12 +3399,12 @@ async function bulkApprove(table){
         const { data, error } = await sdb.rpc('admin_approve_deposit', { p_deposit_id: id });
         result = Array.isArray(data) ? data[0] : data;
         if(error || !result?.success){ failCount++; failMessages.push(`${row.users?.name||id}: ${result?.message||error?.message||''}`); continue; }
-        await sendEmailNotification(row.users?.email, row.users?.name, row.amount, 'approved', '', row.users?.preferred_lang||'ar');
+        await sendEmailNotification(row.users?.email, row.users?.name, row.amount, 'approved', '', row.users?.preferred_lang||'ar', 'deposit');
       } else {
         const { data, error } = await sdb.rpc('admin_approve_withdrawal', { p_withdrawal_id: id });
         result = Array.isArray(data) ? data[0] : data;
         if(error || !result?.success){ failCount++; failMessages.push(`${row.users?.name||id}: ${result?.message||error?.message||''}`); continue; }
-        await sendEmailNotification(row.users?.email, row.users?.name, row.amount, 'approved', '', row.users?.preferred_lang||'ar');
+        await sendEmailNotification(row.users?.email, row.users?.name, row.amount, 'approved', '', row.users?.preferred_lang||'ar', 'withdrawal');
       }
       successCount++;
     } catch(e){
