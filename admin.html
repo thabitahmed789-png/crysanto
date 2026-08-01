@@ -1734,7 +1734,7 @@ async function renderInvestments(){
     .select('*, users(name, email, preferred_lang)')
     .order('created_at', { ascending: false });
   if (error) {
-    wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل الاستثمارات':'Error loading investments'}: ${error.message}</div>`;
+    wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل الاستثمارات':'Error loading investments'}: ${escapeHtml(error.message)}</div>`;
     return;
   }
 
@@ -1955,7 +1955,7 @@ async function renderReferrals(){
     .order('created_at', { ascending: false });
   if (error) {
     console.error('renderReferrals error:', error);
-    wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل الإحالات':'Error loading referrals'}: ${error.message}</div>`;
+    wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل الإحالات':'Error loading referrals'}: ${escapeHtml(error.message)}</div>`;
     return;
   }
   if (!data || !data.length) {
@@ -2054,7 +2054,7 @@ async function renderProfitLog(){
 async function renderPackages(){
   const wrap = document.getElementById('pkg-cards');
   const { data: plans, error } = await sdb.from('plans').select('*').order('min_amount', { ascending: true });
-  if (error) { console.error('renderPackages error:', error); wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${error.message}</div>`; return; }
+  if (error) { console.error('renderPackages error:', error); wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${escapeHtml(error.message)}</div>`; return; }
   const { data: activeInv } = await sdb.from('investments').select('plan_name').eq('status','active');
   const countByPlan = {};
   (activeInv||[]).forEach(inv => { countByPlan[inv.plan_name] = (countByPlan[inv.plan_name]||0) + 1; });
@@ -2191,7 +2191,7 @@ async function renderWallets(){
   const grid = document.getElementById('wallets-grid');
   const keys = walletMeta.map(w=>w.key);
   const { data, error } = await sdb.from('settings').select('key,value').in('key', keys);
-  if (error) { console.error('renderWallets error:', error); grid.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${error.message}</div>`; return; }
+  if (error) { console.error('renderWallets error:', error); grid.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${escapeHtml(error.message)}</div>`; return; }
   const valByKey = {}; (data||[]).forEach(r => valByKey[r.key] = r.value);
   walletAddrs = walletMeta.map(w => ({ ...w, addr: valByKey[w.key] || '' }));
 
@@ -3017,7 +3017,7 @@ async function loadRealDeposits() {
     console.error('loadRealDeposits error:', error);
     showToast((lang==='ar'?'✗ فشل تحميل الإيداعات: ':'✗ Failed to load deposits: ')+error.message);
     const wrap = document.getElementById('dep-table-wrap');
-    if (wrap) wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل الإيداعات':'Error loading deposits'}: ${error.message}</div>`;
+    if (wrap) wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل الإيداعات':'Error loading deposits'}: ${escapeHtml(error.message)}</div>`;
     return;
   }
   if (data) {
@@ -3172,7 +3172,7 @@ async function loadRealWithdrawals() {
     console.error('loadRealWithdrawals error:', error);
     showToast((lang==='ar'?'✗ فشل تحميل السحوبات: ':'✗ Failed to load withdrawals: ')+error.message);
     const wrap = document.getElementById('wd-table-wrap');
-    if (wrap) wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل السحوبات':'Error loading withdrawals'}: ${error.message}</div>`;
+    if (wrap) wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل السحوبات':'Error loading withdrawals'}: ${escapeHtml(error.message)}</div>`;
     return;
   }
   if (data) {
@@ -3261,7 +3261,7 @@ async function loadRealUsers() {
     console.error('loadRealUsers error:', error);
     showToast((lang==='ar'?'✗ فشل تحميل المستخدمين: ':'✗ Failed to load users: ')+error.message);
     const wrap = document.getElementById('users-table-wrap');
-    if (wrap) wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل المستخدمين':'Error loading users'}: ${error.message}</div>`;
+    if (wrap) wrap.innerHTML = `<div style="padding:24px;color:var(--red,#e44)">${lang==='ar'?'خطأ في تحميل المستخدمين':'Error loading users'}: ${escapeHtml(error.message)}</div>`;
     return;
   }
   console.log('loadRealUsers: loaded', count, 'users, latest:', data?.[0]?.email, data?.[0]?.created_at);
