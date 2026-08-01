@@ -3600,7 +3600,9 @@ async function submitWithdrawal() {
 
   const { data: activeInvData } = await db.from('investments').select('amount').eq('user_id',userProfile.id).eq('status','active');
   const lockedAmount = (activeInvData||[]).reduce((s,i)=>s+parseFloat(i.amount||0),0);
-  const availableBalance = (parseFloat(userProfile.balance)||0) - lockedAmount;
+  // ✅ FIX: balance أصلًا صافي ومبيشملش المبلغ المقفول في استثمار نشط — مفيش داعي نطرحه تاني هنا
+  // (كان بيتطرح مرتين وده كان بيخلي availableBalance يطلع رقم سالب، ويمنع أي سحب حتى لو الرصيد كافي فعلًا)
+  const availableBalance = parseFloat(userProfile.balance)||0;
 
   if(amount > availableBalance) {
     if(lockedAmount > 0) {
@@ -4728,13 +4730,25 @@ async function trackDeviceLogin() {
     let hash = 0;
     const fp = [ua, navigator.language, screen.width+'x'+screen.height, new Date().getTimezoneOffset()].join('|');
     for(let i=0;i<fp.length;i++){hash=((hash<<5)-hash)+fp.charCodeAt(i);hash=hash&hash;}
-    await db.rpc('track_user_device', {
-      p_user_id: userProfile.id,
-      p_fingerprint: 'fp_'+Math.abs(hash).toString(36),
-      p_ip: 'client',
-      p_device_name: (/Mobi/i.test(ua)?'mobile':'desktop')+' — '+browser,
-      p_browser: browser, p_os: os
+    const deviceName = (/Mobi/i.test(ua)?'mobile':'desktop')+' — '+browser;
+    // ✅ FIX: الـ IP الحقيقي بيتجاب من جوه الـ Edge Function (من الـ request headers) مش من المتصفح
+    const { data: res } = await db.functions.invoke('track-device-v2', {
+      body: {
+        fingerprint: 'fp_'+Math.abs(hash).toString(36),
+        device_name: deviceName,
+        browser, os
+      }
     });
+    // ✅ لو ده جهاز جديد فعلاً (مش أول جهاز على الإطلاق وقت التسجيل) — نبعت تنبيه أمني بالإيميل
+    const row = res?.data?.[0];
+    if (row?.is_new_device && row?.device_count > 1) {
+      db.functions.invoke('send-email', {
+        body: { template: 'new_device_login', lang, params: {
+          device_name: deviceName, browser, os,
+          when: new Date().toLocaleString(lang==='ar'?'ar-EG':lang==='tr'?'tr-TR':'en-US', { dateStyle:'medium', timeStyle:'short' })
+        } }
+      }).catch(e => console.error('new device email error:', e));
+    }
   } catch(e) {}
 }
 
