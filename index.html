@@ -743,7 +743,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <div id="d-overview">
           <div class="stat-cards">
             <div class="stat-card"><div class="sc-label" id="dc1" data-ar="الرصيد الكلي" data-en="Total Balance" data-tr="Toplam Bakiye">الرصيد الكلي</div><div class="sc-val" id="d-bal">$0</div></div>
-            <div class="stat-card"><div class="sc-label" id="dc2" data-ar="ربح اليوم" data-en="Daily Profit" data-tr="Günlük Kar">ربح اليوم</div><div class="sc-val" id="d-profit">$0</div></div>
+            <div class="stat-card"><div class="sc-label" id="dc2" data-ar="إجمالي الأرباح" data-en="Total Profit" data-tr="Toplam Kâr">إجمالي الأرباح</div><div class="sc-val" id="d-profit">$0</div></div>
             <div class="stat-card"><div class="sc-label" id="dc3" data-ar="إجمالي المستثمر" data-en="Total Invested" data-tr="Toplam Yatırım">إجمالي المستثمر</div><div class="sc-val" id="d-invested">$0</div></div>
             <div class="stat-card"><div class="sc-label" id="dc4" data-ar="أرباح الإحالة" data-en="Referral Earnings" data-tr="Referans Kazancı">أرباح الإحالة</div><div class="sc-val" id="d-ref-earn">$0</div></div>
           </div>
@@ -1098,8 +1098,8 @@ body:not(.ltr) .footer-grid{text-align:right;}
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><svg width="38" height="38" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg"><rect width="34" height="34" rx="8" fill="#0F1520" stroke="#C9A84C" stroke-width="1.2"/><path d="M20 8.5 A8.5 8.5 0 1 0 20 25.5 L18.6 23.3 A6.5 6.5 0 1 1 18.6 10.7 Z" fill="#C9A84C"/><rect x="20.5" y="8.5" width="2.2" height="17" rx="1" fill="#C9A84C"/><path d="M22.7 8.5 Q29 8.5 29 13.5 Q29 18.5 22.7 18.5 L22.7 16.5 Q27 16.5 27 13.5 Q27 10.5 22.7 10.5 Z" fill="#C9A84C"/><path d="M22.7 17.5 L30 25.5 L27.5 25.5 L20.5 17.8 Z" fill="#C9A84C"/></svg><span style="font-family:Georgia,serif;font-size:20px;font-weight:700;color:#C9A84C;letter-spacing:2px">Crysanto</span></div>
       <p style="font-size:12px;color:var(--muted);line-height:1.9;max-width:280px" id="footer-desc" data-ar="منصة استثمار رقمي رائدة توفر عوائد يومية محتملة لعملاء في أكثر من 50 دولة." data-en="A leading digital investment platform providing potential daily returns for clients in 50+ countries." data-tr="50'den fazla ülkede müşterilere potansiyel günlük getiri sunan önde gelen dijital yatırım platformu.">A leading digital investment platform providing potential daily returns for clients in 50+ countries.</p>
       <div style="display:flex;gap:10px;margin-top:16px">
-        <a href="#" style="width:34px;height:34px;border-radius:8px;background:var(--dark3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;text-decoration:none">💬</a>
-        <a href="#" style="width:34px;height:34px;border-radius:8px;background:var(--dark3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;text-decoration:none">📧</a>
+        <a href="https://t.me/crysantoinvest" target="_blank" rel="noopener" style="width:34px;height:34px;border-radius:8px;background:var(--dark3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;text-decoration:none">💬</a>
+        <a href="mailto:support@crysanto.com" style="width:34px;height:34px;border-radius:8px;background:var(--dark3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;text-decoration:none">📧</a>
       </div>
     </div>
     <div>
@@ -3082,10 +3082,16 @@ async function loadInvestments() {
       const statusLabel = {active:lang==='ar'?'نشط':lang==='tr'?'Aktif':'Active', completed:lang==='ar'?'منتهي':lang==='tr'?'Tamamlandı':'Completed', cancelled:lang==='ar'?'ملغي':lang==='tr'?'İptal Edildi':'Cancelled'};
       let nextProfitHtml = '';
       if (inv.status === 'active' && inv.next_profit_at) {
-        const msUntilNextProfit = Math.max(0, new Date(inv.next_profit_at) - now);
-        const h = Math.floor(msUntilNextProfit / 3600000);
-        const m = Math.floor((msUntilNextProfit % 3600000) / 60000);
         const isEndMode = inv.payout_mode === 'end';
+        // ✅ FIX: وضع "end" (توزيع مرة واحدة عند الانتهاء) كان بيعرض وقت الـ tick الداخلي
+        // (next_profit_at، أقصاه 24 ساعة) بدل وقت انتهاء الباقة الحقيقي — فكان دايماً بيوري
+        // "هتخلص بعد 24 ساعة" حتى لو الباقة 3 أو 7 أيام. دلوقتي بيتحسب من created_at + المدة كاملة.
+        const targetTime = isEndMode
+          ? new Date(inv.created_at).getTime() + totalDays * 24 * 3600000
+          : new Date(inv.next_profit_at).getTime();
+        const msUntilTarget = Math.max(0, targetTime - now.getTime());
+        const h = Math.floor(msUntilTarget / 3600000);
+        const m = Math.floor((msUntilTarget % 3600000) / 60000);
         const timerLabel = isEndMode
           ? (dayNum >= totalDays ? {ar:'الربح والمبلغ القادم بعد ',en:'Profit + principal in ',tr:'Kâr + anapara '}[lang] : {ar:'المدة تنتهي بعد ',en:'Plan ends in ',tr:'Plan bitişine '}[lang])
           : (lang==='ar'?'الربح القادم بعد ':lang==='tr'?'Sonraki kâr ':'Next profit in ');
