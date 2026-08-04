@@ -4151,7 +4151,7 @@ async function showInvestmentChoiceModal(rate, planId) {
       <div style="text-align:center;margin-bottom:20px">
         <div style="font-size:28px;margin-bottom:8px">💹</div>
         <h3 style="font-size:17px;font-weight:800;color:var(--gold);margin-bottom:4px">${escapeHtml(planName)}</h3>
-        <div style="font-size:13px;color:var(--muted)">${rate}%/day · ${row.duration_days} ${lang==='ar'?'يوم':lang==='tr'?'gün':'days'}</div>
+        <div style="font-size:13px;color:var(--muted)">${rate}${row.payout_mode==='end'?({ar:'% إجمالي',en:'% total',tr:'% toplam'}[lang]||'% total'):({ar:'%/يوم',en:'%/day',tr:'%/gün'}[lang]||'%/day')} · ${row.duration_days} ${lang==='ar'?'يوم':lang==='tr'?'gün':'days'}</div>
       </div>
 
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">
@@ -4160,7 +4160,7 @@ async function showInvestmentChoiceModal(rate, planId) {
 
       <!-- الخيار 1: من الرصيد -->
       <div id="invest-from-balance-box" style="border:2px solid ${canUseBalance?'var(--border)':'rgba(255,255,255,.08)'};border-radius:12px;padding:16px;margin-bottom:10px;cursor:${canUseBalance?'pointer':'not-allowed'};opacity:${canUseBalance?'1':'.45'};transition:.2s"
-        ${canUseBalance?`onclick="investFromBalance('${row.id}','${escapeHtml(planName)}',${rate},${row.duration_days},${minAmt})"
+        ${canUseBalance?`onclick="investFromBalance('${row.id}','${escapeHtml(planName)}',${rate},${row.duration_days},${minAmt},'${row.payout_mode||'daily'}')"
         onmouseover="this.style.borderColor='var(--gold)'"
         onmouseout="this.style.borderColor='var(--border)'"`:''}>
         <div style="display:flex;align-items:center;gap:12px">
@@ -4202,7 +4202,7 @@ async function showInvestmentChoiceModal(rate, planId) {
   document.body.appendChild(modal);
 }
 
-async function investFromBalance(planId, planName, rate, durationDays, minAmount) {
+async function investFromBalance(planId, planName, rate, durationDays, minAmount, payoutMode) {
   const balance = parseFloat(userProfile?.balance || 0);
 
   // إغلاق الـ modal
@@ -4230,12 +4230,12 @@ async function investFromBalance(planId, planName, rate, durationDays, minAmount
   } catch(e) { /* لو فشل الـ check، كمّل — مش نوقف العملية كلها */ }
 
   const maxAmt = Math.min(balance, parseFloat(((__plansCache||[]).find(p=>p.id===planId)||{}).max_amount || 999999));
-  showInvestAmountModal(planId, planName, rate, durationDays, minAmount, maxAmt, balance);
+  showInvestAmountModal(planId, planName, rate, durationDays, minAmount, maxAmt, balance, payoutMode);
 }
 
 // ✅ FIX: مودال إدخال مبلغ الاستثمار — بدل prompt() اللي كان بيظهر بلغة نظام تشغيل الجهاز
 // مش لغة الموقع (السبب في ظهور "Tamam/İptal" التركي حتى لو الموقع إنجليزي)
-function showInvestAmountModal(planId, planName, rate, durationDays, minAmount, maxAmt, balance) {
+function showInvestAmountModal(planId, planName, rate, durationDays, minAmount, maxAmt, balance, payoutMode) {
   document.getElementById('invest-amount-modal')?.remove();
   const modal = document.createElement('div');
   modal.id = 'invest-amount-modal';
@@ -4255,7 +4255,7 @@ function showInvestAmountModal(planId, planName, rate, durationDays, minAmount, 
       <div id="invest-amount-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:10px"></div>
       <div style="display:flex;gap:10px">
         <button onclick="document.getElementById('invest-amount-modal').remove()" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:13px;cursor:pointer">${lang==='ar'?'إلغاء':lang==='tr'?'İptal':'Cancel'}</button>
-        <button onclick="submitInvestAmount('${planId}','${escapeHtml(planName)}',${rate},${durationDays},${minAmount},${maxAmt},${balance})" class="btn-primary" style="flex:1">${lang==='ar'?'متابعة':lang==='tr'?'Devam':'Continue'}</button>
+        <button onclick="submitInvestAmount('${planId}','${escapeHtml(planName)}',${rate},${durationDays},${minAmount},${maxAmt},${balance},'${payoutMode||'daily'}')" class="btn-primary" style="flex:1">${lang==='ar'?'متابعة':lang==='tr'?'Devam':'Continue'}</button>
       </div>
     </div>`;
   modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
@@ -4263,7 +4263,7 @@ function showInvestAmountModal(planId, planName, rate, durationDays, minAmount, 
   setTimeout(()=>document.getElementById('invest-amount-input')?.focus(), 50);
 }
 
-function submitInvestAmount(planId, planName, rate, durationDays, minAmount, maxAmt, balance){
+function submitInvestAmount(planId, planName, rate, durationDays, minAmount, maxAmt, balance, payoutMode){
   const errEl = document.getElementById('invest-amount-err');
   const amount = parseFloat(document.getElementById('invest-amount-input').value);
   if(isNaN(amount) || amount < minAmount) {
@@ -4279,11 +4279,11 @@ function submitInvestAmount(planId, planName, rate, durationDays, minAmount, max
     errEl.style.display = 'block'; return;
   }
   document.getElementById('invest-amount-modal')?.remove();
-  showInvestConfirmModal(planId, planName, rate, durationDays, amount);
+  showInvestConfirmModal(planId, planName, rate, durationDays, amount, payoutMode);
 }
 
 // ✅ FIX: مودال تأكيد الاستثمار — بدل confirm() الأصلي
-function showInvestConfirmModal(planId, planName, rate, durationDays, amount){
+function showInvestConfirmModal(planId, planName, rate, durationDays, amount, payoutMode){
   document.getElementById('invest-confirm-modal')?.remove();
   const modal = document.createElement('div');
   modal.id = 'invest-confirm-modal';
@@ -4295,7 +4295,8 @@ function showInvestConfirmModal(planId, planName, rate, durationDays, amount){
       <div style="background:var(--dark3);border-radius:10px;padding:14px;margin-bottom:20px;font-size:13px;display:flex;flex-direction:column;gap:8px">
         <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">${lang==='ar'?'الباقة':lang==='tr'?'Plan':'Plan'}</span><span style="font-weight:700">${escapeHtml(planName)}</span></div>
         <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">${lang==='ar'?'المبلغ':lang==='tr'?'Tutar':'Amount'}</span><span style="font-weight:700">$${amount.toLocaleString('en-US')}</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">${lang==='ar'?'العائد اليومي':lang==='tr'?'Günlük kâr':'Daily profit'}</span><span style="font-weight:700;color:var(--green)">${rate}% <span style="color:var(--muted);font-weight:400">(±5%)</span></span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">${payoutMode==='end'?({ar:'نسبة الربح (مرة واحدة)',en:'Profit rate (one-time)',tr:'Kâr oranı (tek seferlik)'}[lang]):({ar:'العائد اليومي',en:'Daily profit',tr:'Günlük kâr'}[lang])}</span><span style="font-weight:700;color:var(--green)">${rate}% <span style="color:var(--muted);font-weight:400">(±5%)</span></span></div>
+        ${payoutMode==='end'?`<div style="font-size:11px;color:var(--muted);background:rgba(212,175,55,.08);padding:8px 10px;border-radius:8px">${{ar:'هيتم دفع الربح والمبلغ الأصلي مرة واحدة عند اكتمال الباقة، مش يوميًا.',en:'Profit and principal are paid once, when the plan completes — not daily.',tr:'Kâr ve anapara plan tamamlandığında tek seferde ödenir, günlük değil.'}[lang]}</div>`:''}
         <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">${lang==='ar'?'المدة':lang==='tr'?'Süre':'Duration'}</span><span style="font-weight:700">${durationDays} ${lang==='ar'?'يوم':lang==='tr'?'gün':'days'}</span></div>
       </div>
       <div style="display:flex;gap:10px">
@@ -4461,7 +4462,18 @@ function planRowToCard(row, idx) {
     en: row.duration_days+' days · Min '+fmtMoney(row.min_amount),
     tr: row.duration_days+' gün · Min '+fmtMoney(row.min_amount)
   };
-  return { name, roi: String(parseFloat(row.daily_rate)), dur: durTxt, feats: meta.feats, featured: meta.featured, planId: row.id };
+  // ✅ FIX: وضع "end" بيدّي نسبة الربح دي مرة واحدة بس (يوم واحد) عند الاكتمال — مش يوم × مدة الباقة
+  // فلازم العرض يوضح كده صراحة، عشان العميل مايفتكرش إنها بتتراكم يوميًا على مدار الأيام كلها
+  const isEndMode = row.payout_mode === 'end';
+  const roiSuffix = isEndMode
+    ? {ar:'% إجمالي', en:'% total', tr:'% toplam'}
+    : {ar:'%/يوم', en:'%/day', tr:'%/gün'};
+  const feats = isEndMode
+    ? { ar: ['ربح لمرة واحدة عند الاكتمال', ...meta.feats.ar.slice(1)],
+        en: ['One-time profit at completion', ...meta.feats.en.slice(1)],
+        tr: ['Tamamlanınca tek seferlik kâr', ...meta.feats.tr.slice(1)] }
+    : meta.feats;
+  return { name, roi: String(parseFloat(row.daily_rate)), roiSuffix, dur: durTxt, feats, featured: meta.featured, planId: row.id };
 }
 
 async function buildPlans(){
@@ -4481,7 +4493,7 @@ async function buildPlans(){
   const popL={ar:'الأكثر شعبية',en:'Most Popular',tr:'En Popüler'};
   const invL={ar:'استثمر الآن',en:'Invest Now',tr:'Şimdi Yatır'};
   const estL={ar:'تقديري',en:'Estimated',tr:'Tahmini'};
-  const html = pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>%/day</span></div><div style="font-size:10px;color:var(--muted);margin-top:-8px;margin-bottom:8px">'+estL[lang]+'</div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\',\''+( p.planId||'')+'\')">'+invL[lang]+'</button></div>').join('');
+  const html = pl.map(p=>'<div class="plan-card'+(p.featured?' featured':'')+'">'+( p.featured?'<div class="plan-badge-tag">'+popL[lang]+'</div>':''  )+'<div class="plan-name">'+escapeHtml(p.name[lang]||p.name.en)+'</div><div class="plan-roi">'+escapeHtml(p.roi)+'<span>'+escapeHtml(p.roiSuffix[lang]||p.roiSuffix.en)+'</span></div><div style="font-size:10px;color:var(--muted);margin-top:-8px;margin-bottom:8px">'+estL[lang]+'</div><div class="plan-dur">'+escapeHtml(p.dur[lang]||p.dur.en)+'</div><ul class="plan-features">'+(p.feats[lang]||p.feats.en).map(f=>'<li>'+escapeHtml(f)+'</li>').join('')+'</ul><button class="btn-primary" style="width:100%" onclick="handlePlanClick(\''+p.roi+'\',\''+( p.planId||'')+'\')">'+invL[lang]+'</button></div>').join('');
   if(_bp) _bp.innerHTML = html;
   if(_bpDash) _bpDash.innerHTML = html;
 }
