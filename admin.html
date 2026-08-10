@@ -427,6 +427,22 @@ body.ltr .toast{left:auto;right:24px;}
     <button class="btn-login-main" onclick="verifyAdminMfa()" id="admin-mfa-btn"><span id="admin-mfa-btn-txt">تأكيد</span></button>
     <button class="act-btn" style="width:100%;margin-top:8px" onclick="cancelAdminMfa()">إلغاء والرجوع لتسجيل الدخول</button>
   </div>
+
+  <!-- ACCEPT INVITE — يبان للأدمن المدعو الجديد لما يدوس على لينك الإيميل -->
+  <div class="login-card" id="accept-invite-card" style="display:none;margin-top:16px">
+    <div class="login-sub" style="margin-bottom:4px">أهلاً بيك في فريق Crysanto 👋</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="ai-email-lbl"></div>
+    <div class="form-g">
+      <label>كلمة مرور جديدة (8 أحرف على الأقل)</label>
+      <input type="password" id="ai-pass1" placeholder="••••••••">
+    </div>
+    <div class="form-g">
+      <label>تأكيد كلمة المرور</label>
+      <input type="password" id="ai-pass2" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitAcceptInvite()">
+      <div class="err-msg" id="ai-err"></div>
+    </div>
+    <button class="btn-login-main" onclick="submitAcceptInvite()" id="ai-btn"><span id="ai-btn-el">تأكيد والدخول للوحة</span></button>
+  </div>
 </div>
 
 <!-- APP -->
@@ -898,25 +914,37 @@ body.ltr .toast{left:auto;right:24px;}
     <!-- ══ ADMIN MANAGEMENT (superadmin only) ══ -->
     <div id="s-admins" class="section-wrap" style="display:none">
       <div class="section-title">إدارة الأدمنز والموظفين</div>
-      <div class="alert-bar">🔐 <span>super admin بس هو اللي يقدر يضيف/يشيل أدمن أو يغيّر صلاحيات حد</span></div>
+      <div class="alert-bar">🔐 <span>super admin بس هو اللي يقدر يبعت دعوة أدمن جديد أو يغيّر صلاحيات حد</span></div>
       <div class="panel" style="margin-bottom:20px">
-        <div class="panel-head"><span>➕ إضافة أدمن جديد</span></div>
+        <div class="panel-head"><span>✉️ دعوة أدمن جديد بالإيميل</span></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
           <div class="form-g" style="flex:2;min-width:220px;margin-bottom:0">
-            <label>البريد الإلكتروني (لازم يكون له حساب فعلاً)</label>
+            <label>البريد الإلكتروني</label>
             <input type="email" id="new-admin-email" placeholder="employee@crysanto.io" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px">
           </div>
-          <div class="form-g" style="flex:1;min-width:160px;margin-bottom:0">
+          <div class="form-g" style="flex:1;min-width:180px;margin-bottom:0">
             <label>الصلاحية</label>
             <select id="new-admin-role" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px">
               <option value="viewer">👁️ Viewer — عرض بس</option>
               <option value="admin">🛠️ Admin — تنفيذ العمليات</option>
+              <option value="finance">💰 Finance — الإيداعات والسحوبات بس</option>
+              <option value="kyc_reviewer">📋 KYC Reviewer — مراجعة الهوية بس</option>
+              <option value="support_agent">🎫 Support Agent — الدعم بس</option>
+              <option value="marketing">📣 Marketing — الإشعارات بس</option>
               <option value="superadmin">👑 Superadmin — صلاحيات كاملة</option>
             </select>
           </div>
-          <button class="act-btn-primary" onclick="addNewAdmin()">إضافة</button>
+          <button class="act-btn-primary" onclick="addNewAdmin()" id="invite-admin-btn">📨 إرسال الدعوة</button>
         </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">هيتبعتله إيميل دعوة رسمي — بيدوس عليه، يحط باسورد، ويبقى جاهز يدخل. مش محتاج يكون عنده حساب أصلاً.</div>
         <div class="err-msg" id="new-admin-err"></div>
+      </div>
+      <div class="panel" style="margin-bottom:20px">
+        <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between">
+          <span>⏳ دعوات معلّقة (لسه محدش قبلها)</span>
+          <button class="act-btn" onclick="renderPendingInvites()" style="font-size:12px">🔄 تحديث</button>
+        </div>
+        <div class="tbl-wrap" id="pending-invites-wrap"></div>
       </div>
       <div class="panel">
         <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between">
@@ -1418,6 +1446,44 @@ function completeAdminLogin(session){
   initApp();
 }
 
+function showAcceptInviteScreen(email){
+  document.querySelectorAll('#login-screen .login-card').forEach(c => { if(c.id!=='accept-invite-card') c.style.display='none'; });
+  document.getElementById('accept-invite-card').style.display='block';
+  document.getElementById('ai-email-lbl').textContent = email;
+}
+
+async function submitAcceptInvite(){
+  const p1 = document.getElementById('ai-pass1').value;
+  const p2 = document.getElementById('ai-pass2').value;
+  const err = document.getElementById('ai-err');
+  const btn = document.getElementById('ai-btn');
+  err.style.display='none';
+  if(p1.length < 8){ err.style.display='block'; err.textContent='الباسورد لازم يكون 8 أحرف على الأقل'; return; }
+  if(p1 !== p2){ err.style.display='block'; err.textContent='كلمتا المرور مش متطابقتين'; return; }
+  btn.disabled = true; document.getElementById('ai-btn-el').textContent = 'جاري التأكيد...';
+  try {
+    const { error: pwErr } = await sdb.auth.updateUser({ password: p1 });
+    if(pwErr){ err.style.display='block'; err.textContent = pwErr.message || 'تعذّر ضبط الباسورد'; return; }
+
+    const { data, error: rpcErr } = await sdb.rpc('admin_accept_invite');
+    const result = Array.isArray(data) ? data[0] : data;
+    if(rpcErr || !result?.success){
+      err.style.display='block'; err.textContent = result?.message || rpcErr?.message || 'تعذّر تفعيل حساب الأدمن';
+      return;
+    }
+
+    document.getElementById('accept-invite-card').style.display='none';
+    currentAdminRole = result.role;
+    const { data: { session } } = await sdb.auth.getSession();
+    completeAdminLogin(session);
+  } catch(e){
+    console.error('submitAcceptInvite exception:', e);
+    err.style.display='block'; err.textContent='حدث خطأ، حاول مرة أخرى';
+  } finally {
+    btn.disabled = false; document.getElementById('ai-btn-el').textContent = 'تأكيد والدخول للوحة';
+  }
+}
+
 async function verifyAdminMfa(){
   const code = document.getElementById('admin-mfa-code').value.trim();
   const errEl = document.getElementById('admin-mfa-err');
@@ -1484,6 +1550,11 @@ async function doLogout(){
     .single();
 
   if(!adminData){
+    // ✅ FIX: لو ده حساب دعوة أدمن لسه محتاج يحط باسورد ويأكد (مش حساب غلط لازم يتسجل خروج منه)
+    if (session.user?.user_metadata?.admin_invite === true) {
+      showAcceptInviteScreen(session.user?.email || '');
+      return;
+    }
     await sdb.auth.signOut();
     return;
   }
@@ -1589,7 +1660,7 @@ function renderCurrentSection(){
     's-packages':renderPackages,'s-notifs':renderNotifs,
     's-stats':renderStats,'s-settings':renderSettings,'s-audit':renderAuditLog,
     's-contact':renderContactMessages,'s-security':loadSecurityAlerts,
-    's-daily-profits':loadDailyProfits,'s-admins':renderAdminsList
+    's-daily-profits':loadDailyProfits,'s-admins':()=>{renderAdminsList();renderPendingInvites();}
   };
   if(renders[currentSection]) renders[currentSection]();
 }
@@ -1605,11 +1676,30 @@ function initApp(){
   applyRoleVisibility();
 }
 
-// ── ROLE-BASED UI (superadmin / admin / viewer) ──
+// ── ROLE-BASED UI (superadmin / admin / viewer / finance / kyc_reviewer / support_agent / marketing) ──
 // currentAdminRole اتحمّل وقت اللوجين من جدول admins
+// ✅ ملحوظة: الإخفاء هنا تحسين للواجهة بس (UX) — الحماية الحقيقية شغالة من جوه القاعدة
+// (RLS + الدوال) بغض النظر عن إخفاء الزرار، يعني حتى لو حد لقى طريقة يوصل للزرار، الفحص السيرفر هيرفضه برضه
+const ROLE_HIDDEN_SECTIONS = {
+  finance: ['sb-kyc','sb-notifs','sb-packages','sb-settings','sb-audit','sb-admins','sb-security','sb-analytics','sb-support','sb-contact'],
+  kyc_reviewer: ['sb-deposits','sb-withdrawals','sb-investments','sb-referrals','sb-profits','sb-notifs','sb-packages','sb-settings','sb-audit','sb-admins','sb-security','sb-analytics','sb-support','sb-contact','sb-daily-profits'],
+  support_agent: ['sb-deposits','sb-withdrawals','sb-investments','sb-referrals','sb-profits','sb-notifs','sb-packages','sb-settings','sb-audit','sb-admins','sb-security','sb-analytics','sb-kyc','sb-daily-profits'],
+  marketing: ['sb-deposits','sb-withdrawals','sb-investments','sb-referrals','sb-profits','sb-packages','sb-settings','sb-audit','sb-admins','sb-security','sb-analytics','sb-kyc','sb-support','sb-contact','sb-daily-profits'],
+};
 function applyRoleVisibility(){
   const sbAdmins = document.getElementById('sb-admins');
   if (sbAdmins) sbAdmins.style.display = (currentAdminRole === 'superadmin') ? '' : 'none';
+
+  const hideList = ROLE_HIDDEN_SECTIONS[currentAdminRole];
+  if (hideList) {
+    hideList.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  }
+}
+// ✅ طبقة حماية إضافية في الواجهة — الفحص الحقيقي دايمًا من جوه القاعدة، ده بس تجربة استخدام أوضح
+function requireRole(allowedRoles){
+  if (allowedRoles.includes(currentAdminRole)) return true;
+  showToast(lang==='ar' ? '✗ دورك الحالي ما يسمحش بالعملية دي' : '✗ Your role does not allow this action');
+  return false;
 }
 
 // ── OVERVIEW ──
@@ -1991,6 +2081,7 @@ async function viewKycDocs(userId, userName){
   body.innerHTML = cards.join('') || `<div style="color:var(--muted)">${lang==='ar'?'لا توجد صور':'No images'}</div>`;
 }
 async function approveKyc(userId){
+  if(!requireRole(['superadmin','kyc_reviewer'])) return;
   const { data, error } = await sdb.rpc('admin_review_kyc', { p_user_id: userId, p_decision: 'verified' });
   const result = Array.isArray(data) ? data[0] : data;
   if (error || !result?.success) { showToast((lang==='ar'?'✗ فشل قبول KYC: ':'✗ Failed to approve KYC: ')+(result?.message||error?.message||'')); return; }
@@ -1999,6 +2090,7 @@ async function approveKyc(userId){
   renderKYC();
 }
 async function rejectKyc(userId){
+  if(!requireRole(['superadmin','kyc_reviewer'])) return;
   const { data, error } = await sdb.rpc('admin_review_kyc', { p_user_id: userId, p_decision: 'rejected' });
   const result = Array.isArray(data) ? data[0] : data;
   if (error || !result?.success) { showToast((lang==='ar'?'✗ فشل رفض KYC: ':'✗ Failed to reject KYC: ')+(result?.message||error?.message||'')); return; }
@@ -2225,6 +2317,7 @@ function renderNotifs(){
   }
 }
 async function sendNotif(){
+  if(!requireRole(['superadmin','marketing'])) return;
   const title=(document.getElementById('notif-title-in')||{}).value||'';
   const body=(document.getElementById('notif-body-in')||{}).value||'';
   if(!title) { showToast(lang==='ar'?'أدخل عنوان الإشعار':'Enter notification title'); return; }
@@ -3162,6 +3255,7 @@ function renderRealDeposits(data) {
 //   - كل الخطوات (تحديث الإيداع + الرصيد + الاستثمار + عمولة الإحالة) بتتم في transaction واحدة atomic
 //   - مفيش race condition ممكن يحصل لو ضغط الأدمن "موافقة" مرتين بسرعة
 async function approveDeposit(depositId, userId, amount, email, name, userLang) {
+  if(!requireRole(['superadmin','finance'])) return;
   const confirmed = confirm(lang==='ar' ? `موافقة على إيداع $${amount} لـ ${name}؟` : `Approve $${amount} deposit for ${name}?`);
   if (!confirmed) return;
 
@@ -3183,6 +3277,7 @@ async function approveDeposit(depositId, userId, amount, email, name, userLang) 
 
 // ── رفض إيداع ──
 async function rejectDeposit(depositId, email, name, userLang) {
+  if(!requireRole(['superadmin','finance'])) return;
   const reason = prompt(lang==='ar' ? 'سبب الرفض (اختياري):' : 'Rejection reason (optional):') || '';
   const { data, error } = await sdb.rpc('admin_reject_deposit', { p_deposit_id: depositId, p_reason: reason });
   const result = Array.isArray(data) ? data[0] : data;
@@ -3307,6 +3402,7 @@ function renderRealWithdrawals(data) {
 }
 
 async function approveWithdrawal(wdId, userId, amount, name, email, userLang) {
+  if(!requireRole(['superadmin','finance'])) return;
   const confirmed = confirm(lang==='ar' ? `موافقة على سحب $${amount} لـ ${name}؟` : `Approve $${amount} withdrawal for ${name}?`);
   if (!confirmed) return;
   const { data, error } = await sdb.rpc('admin_approve_withdrawal', { p_withdrawal_id: wdId });
@@ -3323,6 +3419,7 @@ async function approveWithdrawal(wdId, userId, amount, name, email, userLang) {
 }
 
 async function rejectWithdrawal(wdId, userId, amount, name, email, userLang) {
+  if(!requireRole(['superadmin','finance'])) return;
   const { data, error } = await sdb.rpc('admin_reject_withdrawal', { p_withdrawal_id: wdId, p_reason: '' });
   const result = Array.isArray(data) ? data[0] : data;
   if (error || !result?.success) {
@@ -3930,6 +4027,10 @@ async function renderAdminsList(){
           <select onchange="updateAdminRoleUI('${a.id}', this.value)" style="background:var(--dark);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px" ${a.user_id===myUserId?'disabled title="مينفعش تغيّر صلاحيتك انت"':''}>
             <option value="viewer" ${a.role==='viewer'?'selected':''}>👁️ Viewer</option>
             <option value="admin" ${a.role==='admin'?'selected':''}>🛠️ Admin</option>
+            <option value="finance" ${a.role==='finance'?'selected':''}>💰 Finance</option>
+            <option value="kyc_reviewer" ${a.role==='kyc_reviewer'?'selected':''}>📋 KYC Reviewer</option>
+            <option value="support_agent" ${a.role==='support_agent'?'selected':''}>🎫 Support Agent</option>
+            <option value="marketing" ${a.role==='marketing'?'selected':''}>📣 Marketing</option>
             <option value="superadmin" ${a.role==='superadmin'?'selected':''}>👑 Superadmin</option>
           </select>
         </td>
@@ -3943,20 +4044,51 @@ async function addNewAdmin(){
   const emailEl = document.getElementById('new-admin-email');
   const roleEl = document.getElementById('new-admin-role');
   const err = document.getElementById('new-admin-err');
+  const btn = document.getElementById('invite-admin-btn');
   err.style.display = 'none';
   const email = emailEl.value.trim();
   const role = roleEl.value;
   if(!email){ err.style.display='block'; err.textContent='أدخل البريد الإلكتروني'; return; }
-  const { data, error } = await sdb.rpc('admin_add_admin', { p_email: email, p_role: role });
-  const result = Array.isArray(data) ? data[0] : data;
-  if(error || !result?.success){
-    err.style.display='block';
-    err.textContent = result?.message || error?.message || 'فشلت العملية';
-    return;
+  btn.disabled = true; btn.textContent = 'جاري الإرسال...';
+  try {
+    const { data, error } = await sdb.functions.invoke('invite-admin', { body: { email, role } });
+    if(error || data?.error){
+      err.style.display='block';
+      err.textContent = data?.error || error?.message || 'فشلت العملية';
+      return;
+    }
+    emailEl.value = '';
+    showToast('✓ اتبعتت الدعوة على ' + email);
+    renderPendingInvites();
+  } finally {
+    btn.disabled = false; btn.textContent = '📨 إرسال الدعوة';
   }
-  emailEl.value = '';
-  showToast('✓ ' + (result.message || 'تمت الإضافة'));
-  renderAdminsList();
+}
+
+async function renderPendingInvites(){
+  const wrap = document.getElementById('pending-invites-wrap');
+  if(!wrap) return;
+  const { data, error } = await sdb.from('admin_invitations').select('*').eq('status','pending').order('created_at',{ascending:false});
+  if(error){ wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:20px">تعذّر تحميل الدعوات</div>`; return; }
+  if(!data || !data.length){ wrap.innerHTML = `<div style="color:var(--muted);text-align:center;padding:20px;font-size:12px">مفيش دعوات معلّقة حاليًا</div>`; return; }
+  wrap.innerHTML = `<table>
+    <thead><tr><th>البريد الإلكتروني</th><th>الصلاحية المخصصة</th><th>تاريخ الدعوة</th><th>إجراءات</th></tr></thead>
+    <tbody>${data.map(i => `
+      <tr>
+        <td>${escapeHtml(i.email)}</td>
+        <td style="font-size:12px">${escapeHtml(i.role)}</td>
+        <td style="font-size:12px;color:var(--muted)">${(i.created_at||'').slice(0,10)}</td>
+        <td><button class="act-btn" style="background:var(--red);color:#fff;font-size:11px" onclick="revokeInvite('${i.id}','${escapeHtml(i.email)}')">🗑️ إلغاء الدعوة</button></td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function revokeInvite(id, email){
+  if(!confirm(`تأكيد إلغاء الدعوة المبعوتة لـ ${email}؟`)) return;
+  const { error } = await sdb.from('admin_invitations').update({status:'revoked'}).eq('id', id);
+  if(error){ showToast('✗ تعذّر إلغاء الدعوة'); return; }
+  showToast('✓ اتلغت الدعوة');
+  renderPendingInvites();
 }
 
 async function updateAdminRoleUI(adminId, newRole){
