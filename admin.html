@@ -806,6 +806,10 @@ body.ltr .toast{left:auto;right:24px;}
           <div class="panel-head"><span id="stats-geo-title">توزيع المستخدمين جغرافياً</span></div>
           <div id="geo-list" style="display:flex;flex-direction:column;gap:10px;padding-top:8px"></div>
         </div>
+        <div class="panel">
+          <div class="panel-head"><span id="stats-geo-visitors-title">توزيع الزوار جغرافياً (آخر 30 يوم)</span></div>
+          <div id="geo-visitors-list" style="display:flex;flex-direction:column;gap:10px;padding-top:8px"></div>
+        </div>
       </div>
     </div>
 
@@ -2483,6 +2487,40 @@ async function drawGeo(){
     </div>`).join('');
 }
 
+// ✅ توزيع الزوار (مش لازم يكونوا مسجلين) جغرافياً — من page_views، بعدد الجلسات الفريدة لكل دولة آخر 30 يوم
+async function drawGeoVisitors(){
+  const el = document.getElementById('geo-visitors-list');
+  if(!el) return;
+  const since = new Date(Date.now() - 30*24*60*60*1000).toISOString();
+  const { data, error } = await sdb.from('page_views').select('session_id,country').gte('visited_at', since).not('country','is', null);
+  if (error) { console.error('drawGeoVisitors error:', error); return; }
+  const seen = new Set();
+  const byCountry = {};
+  (data||[]).forEach(v => {
+    const key = v.session_id + '|' + v.country;
+    if (seen.has(key)) return;
+    seen.add(key);
+    const c = v.country || (lang==='ar'?'غير محدد':'Unknown');
+    byCountry[c] = (byCountry[c]||0) + 1;
+  });
+  const total = seen.size || 1;
+  const geo = Object.entries(byCountry)
+    .map(([country, count]) => ({ country, pct: Math.round(count/total*100) }))
+    .sort((a,b) => b.pct - a.pct)
+    .slice(0, 8);
+  if (!geo.length) { el.innerHTML = `<div style="color:var(--muted);font-size:13px">${lang==='ar'?'لا توجد بيانات كافية بعد':'Not enough data yet'}</div>`; return; }
+  el.innerHTML = geo.map(g=>`
+    <div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px">
+        <span>${escapeHtml(g.country)}</span>
+        <span style="color:var(--gold);font-family:var(--mono)">${g.pct}%</span>
+      </div>
+      <div style="height:6px;background:var(--dark);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${g.pct}%;background:linear-gradient(90deg,var(--gold),var(--gold-l));border-radius:3px;transition:.6s"></div>
+      </div>
+    </div>`).join('');
+}
+
 // ── CHART HELPERS ──
 function drawBarChart(canvasId, labels, data, color){
   const canvas = document.getElementById(canvasId);
@@ -4053,13 +4091,24 @@ async function addNewAdmin(){
   try {
     const { data, error } = await sdb.functions.invoke('invite-admin', { body: { email, role } });
     if(error || data?.error){
+      // ✅ FIX: لو الدالة رجعت status غير 2xx، supabase-js بيدّي رسالة عامة مش مفيدة
+      // ("Edge Function returned a non-2xx status code") — بنقرا الرسالة الحقيقية من جوه رد الدالة نفسه
+      let msg = data?.error;
+      if(!msg && error?.context){
+        try { const body = await error.context.json(); msg = body?.error; } catch(e){}
+      }
       err.style.display='block';
-      err.textContent = data?.error || error?.message || 'فشلت العملية';
+      err.textContent = msg || error?.message || 'فشلت العملية';
       return;
     }
     emailEl.value = '';
-    showToast('✓ اتبعتت الدعوة على ' + email);
+    if(data?.mode === 'existing_account_promoted'){
+      showToast('✓ الإيميل ده عنده حساب بالفعل — اترقّى لأدمن مباشرة، يقدر يدخل بنفس الباسورد بتاعه');
+    } else {
+      showToast('✓ اتبعتت الدعوة على ' + email);
+    }
     renderPendingInvites();
+    renderAdminsList();
   } finally {
     btn.disabled = false; btn.textContent = '📨 إرسال الدعوة';
   }
@@ -4234,7 +4283,7 @@ async function renderStats() {
   } catch(e) {
     setTimeout(() => { drawMonthlyChart(); drawRegChart(); }, 100);
   }
-  setTimeout(() => { drawCoinsChart(); drawGeo(); }, 150);
+  setTimeout(() => { drawCoinsChart(); drawGeo(); drawGeoVisitors(); }, 150);
 }
 
 console.log('%cCrysanto Admin Panel — Loaded ✓', 'color:#C9A84C;font-size:16px;font-weight:bold;');
