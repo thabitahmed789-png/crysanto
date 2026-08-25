@@ -4690,9 +4690,23 @@ document.addEventListener('DOMContentLoaded', init);
       :/t\.me|telegram/.test(ref)?'telegram'
       :new URL(ref).hostname;
 
+    // ✅ تحديد دولة الزائر — بنسأل الـ Edge Function مرة واحدة بس كل جلسة (بتقرا الـ IP الحقيقي من الهيدرز سيرفر-سايد)
+    // وبنكاشها في sessionStorage عشان مانضربش الفانكشن كل page view
+    async function getVisitorGeo(){
+      try {
+        const cached = sessionStorage.getItem('_cry_geo');
+        if(cached) return JSON.parse(cached);
+        const res = await fetch(SUPA_URL + '/functions/v1/resolve-visitor-geo', { method:'POST' });
+        const geo = await res.json();
+        sessionStorage.setItem('_cry_geo', JSON.stringify(geo));
+        return geo;
+      } catch(e){ return {country:null}; }
+    }
+
     // انتظر ثانية عشان الـ supabase client يكون جاهز
     setTimeout(async()=>{
       try {
+        const geo = await getVisitorGeo();
         // الصفحة الحالية
         const page = window.location.hash ? window.location.hash.replace('#','') : 'home';
         await db.from('page_views').insert({
@@ -4700,6 +4714,7 @@ document.addEventListener('DOMContentLoaded', init);
           user_id: userProfile?.id || null,
           page: page || 'home',
           referrer,
+          country: geo?.country || null,
           device_type: deviceType,
           browser,
           os,
@@ -4711,11 +4726,13 @@ document.addEventListener('DOMContentLoaded', init);
     // تتبع تغيير الصفحة داخل الـ SPA
     window._trackPage = async function(pageName){
       try {
+        const geo = await getVisitorGeo();
         await db.from('page_views').insert({
           session_id: sid,
           user_id: userProfile?.id || null,
           page: pageName,
           referrer,
+          country: geo?.country || null,
           device_type: deviceType,
           browser, os,
           is_new_visitor: false
