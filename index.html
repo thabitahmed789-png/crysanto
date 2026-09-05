@@ -338,6 +338,24 @@ body:not(.ltr) .footer-grid{text-align:right;}
   .mobile-menu .m-sep{height:1px;background:var(--border);margin:6px 0;}
 }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Crysanto",
+  "url": "https://crysanto.com",
+  "logo": "https://crysanto.com/og-image.png",
+  "description": "Crysanto is a digital crypto investment platform offering secure deposits, withdrawals, referral rewards, and investment plans in Arabic, English, and Turkish."
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Crysanto",
+  "url": "https://crysanto.com"
+}
+</script>
 </head>
 <body class="lang-en">
 
@@ -554,7 +572,7 @@ body:not(.ltr) .footer-grid{text-align:right;}
   <!-- HERO -->
   <div style="background:linear-gradient(135deg,var(--dark2),rgba(201,168,76,0.05));border-bottom:1px solid var(--border);padding:80px 40px;text-align:center;">
     <div class="gold-line"></div>
-    <h1 style="font-size:clamp(32px,5vw,56px);font-weight:900;letter-spacing:-2px;margin-bottom:16px" id="ab-hero-h" data-ar="نحن Crysanto" data-en="We are Crysanto" data-tr="Biz Crysanto'yuz">We are Crysanto</h1>
+    <h2 style="font-size:clamp(32px,5vw,56px);font-weight:900;letter-spacing:-2px;margin-bottom:16px" id="ab-hero-h" data-ar="نحن Crysanto" data-en="We are Crysanto" data-tr="Biz Crysanto'yuz">We are Crysanto</h2>
     <p style="font-size:16px;color:var(--muted);max-width:600px;margin:0 auto;line-height:1.9" id="ab-hero-sub" data-ar="منصة استثمار رقمي رائدة تجمع بين التكنولوجيا المتقدمة وخبرة المحللين الماليين لتقديم أفضل عوائد آمنة." data-en="A leading digital investment platform combining advanced technology and expert financial analysts to deliver the best safe returns." data-tr="Gelişmiş teknolojiyi uzman finansal analistlerle birleştiren önde gelen dijital yatırım platformu.">A leading digital investment platform combining advanced technology and expert financial analysts to deliver the best safe returns.</p>
   </div>
 
@@ -695,14 +713,14 @@ body:not(.ltr) .footer-grid{text-align:right;}
         <div class="form-group"><label id="cl1" data-ar="مبلغ الاستثمار ($)" data-en="Investment ($)" data-tr="Yatırım ($)">مبلغ الاستثمار ($)</label><input type="number" id="calc-amt" value="1000" min="100" oninput="calcProfit()"></div>
         <div class="form-group"><label id="cl2" data-ar="الخطة" data-en="Plan" data-tr="Plan">الخطة</label>
           <select id="calc-plan" onchange="calcProfit()" style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;font-family:inherit;width:100%;cursor:pointer">
-            <option value="2.5,30">Starter 2.5%/day</option>
-            <option value="4.8,60" selected>Gold 4.8%/day</option>
-            <option value="8.2,90">VIP 8.2%/day</option>
+            <option value="10,1">Starter Plan — 10%</option>
+            <option value="25,2" selected>Gold Plan — 25%</option>
+            <option value="40,3">VIP Plan — 40%</option>
           </select>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-        <div style="background:var(--dark);border-radius:10px;padding:18px;text-align:center"><div style="font-size:11px;color:var(--muted);margin-bottom:6px" id="cr1" data-ar="يومياً" data-en="Daily" data-tr="Günlük">يومياً</div><div style="font-size:24px;font-weight:800;color:var(--gold);font-family:var(--mono)" id="c-daily">$48</div></div>
+        <div style="background:var(--dark);border-radius:10px;padding:18px;text-align:center"><div style="font-size:11px;color:var(--muted);margin-bottom:6px" id="cr1" data-ar="نسبة العائد" data-en="Return Rate" data-tr="Getiri Oranı">نسبة العائد</div><div style="font-size:24px;font-weight:800;color:var(--gold);font-family:var(--mono)" id="c-daily">$48</div></div>
         <div style="background:var(--dark);border-radius:10px;padding:18px;text-align:center"><div style="font-size:11px;color:var(--muted);margin-bottom:6px" id="cr2" data-ar="إجمالي الربح" data-en="Total Profit" data-tr="Toplam Kar">إجمالي الربح</div><div style="font-size:24px;font-weight:800;color:var(--green);font-family:var(--mono)" id="c-total">$2,880</div></div>
         <div style="background:var(--dark);border-radius:10px;padding:18px;text-align:center"><div style="font-size:11px;color:var(--muted);margin-bottom:6px" id="cr3" data-ar="العائد الكلي" data-en="Final Return" data-tr="Toplam Getiri">العائد الكلي</div><div style="font-size:24px;font-weight:800;font-family:var(--mono)" id="c-return">$3,880</div></div>
       </div>
@@ -4498,7 +4516,7 @@ async function buildPlans(){
   if(_bpDash) _bpDash.innerHTML = html;
 }
 
-function calcProfit(){const a=parseFloat(document.getElementById('calc-amt').value)||0;const [r,d]=document.getElementById('calc-plan').value.split(',').map(Number);const dl=a*r/100,tot=dl*d,ret=a+tot;document.getElementById('c-daily').textContent='$'+dl.toFixed(2);document.getElementById('c-total').textContent='$'+tot.toFixed(0);document.getElementById('c-return').textContent='$'+ret.toFixed(0);}
+function calcProfit(){const a=parseFloat(document.getElementById('calc-amt').value)||0;const [r,d]=document.getElementById('calc-plan').value.split(',').map(Number);const tot=a*r/100,ret=a+tot;document.getElementById('c-daily').textContent=r.toFixed(1)+'%';document.getElementById('c-total').textContent='$'+tot.toFixed(0);document.getElementById('c-return').textContent='$'+ret.toFixed(0);}
 
 // ✅ FIX: Rate limiting لنموذج التواصل — منع إرسال أكثر من رسالة كل دقيقتين
 let _contactLastSent = 0;
@@ -4861,7 +4879,7 @@ async function loadCalcPlans() {
     const nameKey={ar:'name_ar',en:'name_en',tr:'name_tr'}[lang]||'name_en';
     sel.innerHTML=rows.map((r,i)=>
       `<option value="${r.daily_rate},${r.duration_days}" ${i===1?'selected':''}>
-        ${escapeHtml(r[nameKey]||r.name_en||'Plan')} — ${r.daily_rate}%/day
+        ${escapeHtml(r[nameKey]||r.name_en||'Plan')} — ${r.daily_rate}%
       </option>`
     ).join('');
     calcProfit();
