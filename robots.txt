@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin.html
+Disallow: /dashboard
+Disallow: /deposit
+Disallow: /withdraw
+Disallow: /kyc
+Disallow: /profile
+Disallow: /account
+Disallow: /referral
+
+Sitemap: https://crysanto.com/sitemap.xml
