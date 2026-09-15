@@ -3279,16 +3279,14 @@ function updateDepositEstimate(){
   const box = document.getElementById('dep-auto-estimate');
   const amount = parseFloat(document.getElementById('dep-auto-amount').value);
   if(!amount || amount <= 0){ box.style.display = 'none'; return; }
-  // ✅ FIX: العميل هو اللي بيدفع عمولة NOWPayments (1% ثابتة مع خيار fee-paid-by-user) —
-  // بيبان له بالظبط قد إيه هيبعت زيادة، وإنت تستلم المبلغ المطلوب كامل من غير خصم
-  const fee = Math.round(amount * 0.01 * 100) / 100;
-  const total = amount + fee;
+  // ✅ FIX: مفيش طريقة نعرف عمولة الشبكة الحقيقية إلا وقت توليد العنوان فعليًا (NOWPayments
+  // بتحسبها لحظتها حسب حالة الشبكة، مش نسبة ثابتة). عشان كده مبقناش نخمّن رقم غير دقيق
+  // ونوهم العميل إنه نهائي — بدل كده بنوضح إن الرقم الحقيقي هيبان فورًا وبدون أي التزام
+  // بمجرد ما يدوس على زرار التوليد (توليد العنوان نفسه مجاني ومفيهوش إرسال فلوس).
   box.style.display = 'block';
   box.innerHTML = `
     <div style="display:flex;justify-content:space-between;color:var(--muted)"><span>${lang==='ar'?'المبلغ الذي سيُضاف إلى رصيدك':lang==='tr'?'Bakiyenize eklenecek':'Amount credited to your balance'}</span><span>$${amount.toFixed(2)}</span></div>
-    <div style="display:flex;justify-content:space-between;color:var(--muted);margin-top:4px"><span>${lang==='ar'?'عمولة شبكة الدفع (~1%)':lang==='tr'?'Ödeme ağı ücreti (~%1)':'Payment network fee (~1%)'}</span><span>+$${fee.toFixed(2)}</span></div>
-    <div style="display:flex;justify-content:space-between;color:var(--gold);font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span>${lang==='ar'?'إجمالي المطلوب إرساله':lang==='tr'?'Gönderilecek toplam':'Total to send'}</span><span>≈$${total.toFixed(2)}</span></div>
-    <div id="dep-auto-estimate-crypto" style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono)"></div>`;
+    <div style="color:var(--muted);font-size:11.5px;margin-top:8px;line-height:1.6">${lang==='ar'?'عمولة الشبكة بتختلف حسب حالة الشبكة وقت اللحظة، فمش ثابتة. المبلغ الدقيق اللي هترسله هيبان فورًا بعد ما تدوس "توليد عنوان الإيداع" — التوليد نفسه مجاني ومفيهوش أي التزام أو إرسال فلوس.':lang==='tr'?'Ağ ücreti anlık ağ durumuna göre değişir, sabit değildir. Göndereceğiniz tam tutar "Yatırım Adresi Oluştur" butonuna bastıktan hemen sonra görünecektir — oluşturma ücretsizdir ve herhangi bir yükümlülük getirmez.':'The network fee varies with real-time network conditions, so it is not fixed. The exact amount to send will appear immediately after you click "Generate Deposit Address" — generating is free and involves no commitment or sending of funds.'}</div>`;
 }
 
 // ══ الإيداع التلقائي عبر NOWPayments ══
