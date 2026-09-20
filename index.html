@@ -3022,15 +3022,20 @@ function timeAgo(dateStr) {
   return lang==='ar'?`منذ ${d} يوم`:lang==='tr'?`${d} gün önce`:`${d}d ago`;
 }
 
-async function loadInvestments() {
+async function loadInvestments(_retryCount) {
   window.__myInvestments = []; // reset cache
   if(!userProfile) return;
   const el=document.getElementById('inv-list');
+  const retryCount = _retryCount || 0;
   try {
-    const {data}=await db.from('investments')
+    const {data, error}=await db.from('investments')
       .select('*, plans(name_ar, name_en, name_tr)')
       .eq('user_id',userProfile.id)
       .order('created_at',{ascending:false});
+    // ✅ FIX: قاعدة البيانات بترفض بعض الطلبات أحيانًا بسبب ضغط مؤقت (timeout)، وكانت
+    // الصفحة بتفضل فاضية بصمت من غير ما تحاول تاني. دلوقتي بنعيد المحاولة تلقائيًا (لحد
+    // مرتين) قبل ما نستسلم، عشان الزحمة المؤقتة متأثرش على تجربة العميل العادية.
+    if (error) throw error;
     window.__myInvestments = data || [];
     if(!data||!data.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">—</div>';return;}
     const statusColors = {active:'var(--green)',completed:'var(--muted)',cancelled:'var(--red)'};
@@ -3096,7 +3101,11 @@ async function loadInvestments() {
         (inv.status==='active' ? '<button onclick="cancelInvestment(\''+inv.id+'\')" style="width:100%;margin-top:10px;padding:8px;border-radius:8px;border:1px solid var(--red,#e44);background:transparent;color:var(--red,#e44);font-size:12px;font-weight:600;cursor:pointer">'+(lang==='ar'?'إلغاء الاستثمار وتحرير الفلوس':lang==='tr'?'Yatırımı İptal Et ve Bakiyeyi Aç':'Cancel Investment & Unlock Funds')+'</button>' : '')
         +'</div>';
     }).join('');
-  } catch(e){}
+  } catch(e){
+    if (retryCount < 2) {
+      setTimeout(()=>loadInvestments(retryCount + 1), 1200);
+    }
+  }
 }
 
 async function cancelInvestment(investmentId) {
